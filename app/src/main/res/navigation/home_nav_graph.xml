@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/home_nav_graph"
+    app:startDestination="@id/home">
+    <fragment
+        android:id="@+id/home"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.home.HomeFragment"
+        android:label="HomeFragment"
+        tools:layout="@layout/fragment_home" />
+    <fragment
+        android:id="@+id/profile"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.PofileFragment"
+        android:label="fragment_profile"
+        tools:layout="@layout/fragment_profile" />
+    <fragment
+        android:id="@+id/activity"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.activity.ActivityFragment"
+        android:label="fragment_activity"
+        tools:layout="@layout/fragment_activity" />
+    <fragment
+        android:id="@+id/nutrition"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.nutrition.NutritionFragment"
+        android:label="fragment_nutrition"
+        tools:layout="@layout/fragment_nutrition" />
+    <fragment
+        android:id="@+id/social"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.social.SocialFragment"
+        android:label="fragment_social"
+        tools:layout="@layout/fragment_social" />
+</navigation>

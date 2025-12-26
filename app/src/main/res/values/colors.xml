@@ -6,4 +6,5 @@
     <color name="orange_primary">#F36C33</color>
     <color name="input_stroke">#E0E0E0</color>
     <color name="background">#F9FAFB</color>
+    <color name="text_grey">#4A5565</color>
 </resources>
