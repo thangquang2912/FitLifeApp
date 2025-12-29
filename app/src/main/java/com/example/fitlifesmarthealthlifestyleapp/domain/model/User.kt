@@ -1,8 +1,13 @@
 package com.example.fitlifesmarthealthlifestyleapp.domain.model
 
+import android.os.Parcelable
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Exclude
+import kotlinx.parcelize.Parcelize
+import java.util.Calendar
 import java.util.Date
 
+@Parcelize
 data class User(
     var uid: String = "",
     var email: String = "",
@@ -25,19 +30,33 @@ data class User(
     var dailyWaterGoal: Int = 2000,      // (ml)
     var dailyCalorieGoal: Int = 2000,    // (kcal)
     var dailySleepGoal: Int = 8          // (giờ)
-) {
+): Parcelable {
     // Tính tuổi
-    fun getAge(): Int {
-        val today = Date()
-        val diff = today.time - birthday.toDate().time
-        val yearInMillis = 1000L * 60 * 60 * 24 * 365
-        return (diff / yearInMillis).toInt()
-    }
+    @get:Exclude
+    val age: Int
+        get() {
+            val today = Calendar.getInstance()
+            val dob = Calendar.getInstance()
+            dob.time = birthday.toDate()
 
-    // Tính BMI
-    fun getBMI(): Float {
-        if (height == 0) return 0f
-        val heightInMeter = height / 100f
-        return weight / (heightInMeter * heightInMeter)
-    }
+            if (dob.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+                dob.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
+                return 0
+            }
+
+            var calculatedAge = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR)
+            if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
+                calculatedAge--
+            }
+            return calculatedAge
+        }
+
+    // 2. Tính BMI
+    @get:Exclude
+    val bmi: Float
+        get() {
+            if (height <= 0) return 0f
+            val heightInMeter = height / 100f
+            return weight / (heightInMeter * heightInMeter)
+        }
 }

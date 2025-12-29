@@ -9,11 +9,28 @@
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.home.HomeFragment"
         android:label="HomeFragment"
         tools:layout="@layout/fragment_home" />
+
     <fragment
         android:id="@+id/profile"
-        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.PofileFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.ProfileFragment"
         android:label="fragment_profile"
-        tools:layout="@layout/fragment_profile" />
+        tools:layout="@layout/fragment_profile">
+        <action
+            android:id="@+id/action_profile_to_editProfile"
+            app:destination="@id/editProfileFragment" />
+    </fragment>
+
+    <dialog
+        android:id="@+id/editProfileFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.EditProfileFragment"
+        android:label="EditProfileFragment"
+        tools:layout="@layout/fragment_edit_profile">
+
+    <argument
+        android:name="user_data"
+        app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.User" />
+    </dialog>
+
     <fragment
         android:id="@+id/activity"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.activity.ActivityFragment"

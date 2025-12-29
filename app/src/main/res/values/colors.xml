@@ -7,4 +7,5 @@
     <color name="input_stroke">#E0E0E0</color>
     <color name="background">#F9FAFB</color>
     <color name="text_grey">#4A5565</color>
+    <color name="border">#99A1AF</color>
 </resources>
