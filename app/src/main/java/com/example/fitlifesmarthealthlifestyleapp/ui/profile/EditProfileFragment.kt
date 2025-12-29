@@ -2,12 +2,14 @@ package com.example.fitlifesmarthealthlifestyleapp.ui.profile
 
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.activityViewModels
 import com.bumptech.glide.Glide
@@ -23,10 +25,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import androidx.core.widget.addTextChangedListener
+import androidx.activity.result.PickVisualMediaRequest
 
 class EditProfileFragment : BottomSheetDialogFragment() {
 
     private val viewModel: ProfileViewModel by activityViewModels()
+    private var selectedImageUri: Uri? = null
     private lateinit var currentUser: User
     private lateinit var btnClose : ImageView
     private lateinit var ivAvatarEdit : ShapeableImageView
@@ -69,6 +73,7 @@ class EditProfileFragment : BottomSheetDialogFragment() {
             currentUser = userArg.copy()
             setupInitialData()
             setupActions()
+            observeViewModel()
         } else {
             Toast.makeText(context, "Error loading user data", Toast.LENGTH_SHORT).show()
             dismiss()
@@ -90,7 +95,7 @@ class EditProfileFragment : BottomSheetDialogFragment() {
             .into(ivAvatarEdit)
 
         // Date of Birth
-        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.US)
         etDob.setText(sdf.format(currentUser.birthday.toDate()))
 
         // Gender (Quan trọng: Gọi hàm update giao diện ngay khi mở lên)
@@ -100,6 +105,10 @@ class EditProfileFragment : BottomSheetDialogFragment() {
     private fun setupActions() {
         // Nút đóng
         btnClose.setOnClickListener { dismiss() }
+
+        ivAvatarEdit.setOnClickListener {
+            pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
 
         // 1. Xử lý Logic chọn giới tính
         btnMale.setOnClickListener {
@@ -128,6 +137,14 @@ class EditProfileFragment : BottomSheetDialogFragment() {
         etName.addTextChangedListener { etName.error = null }
         etWeight.addTextChangedListener { etWeight.error = null }
         etHeight.addTextChangedListener { etHeight.error = null }
+    }
+
+    private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            selectedImageUri = uri
+            // Hiển thị review ngay lập tức
+            Glide.with(this).load(uri).circleCrop().into(ivAvatarEdit)
+        }
     }
 
     private fun updateGenderUI(selectedGender: String) {
@@ -242,10 +259,30 @@ class EditProfileFragment : BottomSheetDialogFragment() {
         currentUser.weight = weightStr.toFloatOrNull() ?: 0f
 
         // 4. Gọi ViewModel để đẩy lên Firebase
-        viewModel.updateUserProfile(currentUser)
+        viewModel.saveUserProfile(currentUser, selectedImageUri)
 
-        // 5. Đóng Modal
-        dismiss()
-        Toast.makeText(context, "Updating profile...", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun observeViewModel() {
+        // 1. Lắng nghe trạng thái Loading
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            btnSave.isEnabled = !isLoading // Khóa nút khi đang lưu
+            btnSave.text = if (isLoading) "Saving..." else "Save"
+        }
+
+        // 2. Lắng nghe thông báo (Thành công/Thất bại)
+        viewModel.statusMessage.observe(viewLifecycleOwner) { message ->
+            if (message != null) {
+                // 1. Luôn hiện Toast cho người dùng biết
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+
+                // 2. Kiểm tra nếu là thông báo thành công thì đóng dialog
+                if (message.contains("successfully") || message.contains("thành công")) {
+                    dismiss()
+                }
+
+                viewModel.clearStatusMessage()
+            }
+        }
     }
 }
