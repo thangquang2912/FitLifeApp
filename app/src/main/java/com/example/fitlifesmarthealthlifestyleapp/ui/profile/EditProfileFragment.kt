@@ -1,5 +1,6 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.profile
 
+import android.app.Dialog
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
@@ -7,6 +8,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +28,7 @@ import java.util.Date
 import java.util.Locale
 import androidx.core.widget.addTextChangedListener
 import androidx.activity.result.PickVisualMediaRequest
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class EditProfileFragment : BottomSheetDialogFragment() {
 
@@ -44,6 +47,13 @@ class EditProfileFragment : BottomSheetDialogFragment() {
     private lateinit var btnSave : MaterialButton
 
 
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
+
+        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+
+        return dialog
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

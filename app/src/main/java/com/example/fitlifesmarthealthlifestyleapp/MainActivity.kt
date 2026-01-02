@@ -9,6 +9,7 @@ import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import com.google.firebase.auth.FirebaseAuth
+import kotlin.math.max
 
 class MainActivity : AppCompatActivity() {
     private lateinit var navController : NavController
@@ -19,7 +20,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val bottomPadding = max(systemBars.bottom, ime.bottom)
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, bottomPadding)
             insets
         }
 
@@ -48,7 +51,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp() : Boolean {
-//        navController = findNavController(R.id.navHostFragmentContainerView)
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
 }
