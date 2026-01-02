@@ -26,10 +26,10 @@ data class User(
     var activityLevel: String = "Sedentary",
 
     // 3. Mục tiêu cá nhân
-    var dailyStepGoal: Int = 10000,
-    var dailyWaterGoal: Int = 2000,      // (ml)
-    var dailyCalorieGoal: Int = 2000,    // (kcal)
-    var dailySleepGoal: Int = 8          // (giờ)
+//    var dailyStepGoal: Int = 10000,
+//    var dailyWaterGoal: Int = 2000,      // (ml)
+//    var dailyCalorieGoal: Int = 2000,    // (kcal)
+//    var dailySleepGoal: Int = 8          // (giờ)
 ): Parcelable {
     // Tính tuổi
     @get:Exclude

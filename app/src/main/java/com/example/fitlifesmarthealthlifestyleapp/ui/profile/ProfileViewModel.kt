@@ -62,6 +62,8 @@ class ProfileViewModel : ViewModel() {
         // TH2: Có ảnh -> Upload lên Cloudinary
         MediaManager.get().upload(imageUri)
             .option("folder", "fitlife_avatars")
+            .option("public_id", user.uid)
+            .option("overwrite", true)
             .callback(object : UploadCallback {
                 override fun onStart(requestId: String) { }
 
