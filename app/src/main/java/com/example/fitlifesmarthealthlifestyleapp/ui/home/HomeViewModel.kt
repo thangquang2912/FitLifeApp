@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.UserRepository
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
+import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
 import com.example.fitlifesmarthealthlifestyleapp.domain.utils.DateUtils
 import com.google.firebase.auth.FirebaseAuth
@@ -25,6 +26,11 @@ class HomeViewModel : ViewModel() {
     private val _toastMessage = MutableLiveData<String>()
     val toastMessage: LiveData<String> = _toastMessage
 
+
+    init {
+        // Kích hoạt lắng nghe Realtime ngay khi ViewModel được tạo
+        listenToUserChanges()
+    }
 
     fun loadTodayWaterLog() {
         val uid = auth.currentUser?.uid ?: return
@@ -60,12 +66,15 @@ class HomeViewModel : ViewModel() {
         val user = userResult.getOrNull()
 
         // 2. Tính toán mục tiêu
-        // Nếu user đã từng set cứng mục tiêu (ví dụ lưu trong field preferredGoal), ưu tiên lấy nó
-        // Ở đây mình làm đơn giản: Tính theo công thức Weight * 35
-        val weight = user?.weight ?: 60f // Mặc định 60kg nếu chưa có
-        val calculatedGoal = (weight * 35).toInt()
-        // Làm tròn đến hàng trăm (VD: 2135 -> 2100 hoặc 2200)
-        val finalGoal = (calculatedGoal / 100) * 100
+        val finalGoal = if (user != null && user.dailyWaterGoal > 0) {
+            // TH1: User đã từng tự set goal (ví dụ 3000ml) -> Dùng luôn số đó
+            user.dailyWaterGoal
+        } else {
+            // TH2: User chưa set hoặc reset -> Tính theo cân nặng (Weight * 35)
+            val weight = user?.weight ?: 60f
+            val calculated = (weight * 35).toInt()
+            (calculated / 100) * 100 // Làm tròn
+        }
 
         // 3. Tạo object mới
         val newLog = WaterLog(
@@ -97,13 +106,59 @@ class HomeViewModel : ViewModel() {
     // Hàm chỉnh sửa mục tiêu thủ công (Feature 3)
     fun updateDailyGoal(newGoal: Int) {
         val currentLog = _waterLog.value ?: return
+        val uid = auth.currentUser?.uid ?: return
 
+        // Update 1: Cập nhật UI và Log của ngày hôm nay ngay lập tức
         currentLog.dailyGoal = newGoal
         _waterLog.value = currentLog
 
         viewModelScope.launch {
+            // Lưu log hôm nay xuống Firestore (WaterLog collection)
             waterRepository.saveWaterLog(currentLog)
-            _toastMessage.value = "Đã cập nhật mục tiêu!"
+
+            // Update 2: Cập nhật vào User Profile
+            userRepository.updateUserWaterGoal(uid, newGoal)
+
+            _toastMessage.value = "Daily goal updated!"
+        }
+    }
+
+    private fun listenToUserChanges() {
+        val uid = auth.currentUser?.uid ?: return
+
+        viewModelScope.launch {
+            // Lắng nghe liên tục
+            userRepository.getUserDetailsStream(uid).collect { user ->
+                if (user != null) {
+                    // Khi có User mới (do thay đổi cân nặng, goal...), ta check logic ngay
+                    checkAndAutoUpdateGoal(user)
+                }
+            }
+        }
+    }
+
+    // Hàm logic tự động cập nhật Goal
+    private fun checkAndAutoUpdateGoal(user: User) {
+        val currentLog = _waterLog.value ?: return // Nếu chưa load được log hôm nay thì bỏ qua
+
+        // 1. Nếu User đã set cứng mục tiêu -> Không làm gì cả
+        if (user.dailyWaterGoal > 0) return
+
+        // 2. Nếu User để Auto -> Tính lại theo cân nặng mới nhất vừa nhận được
+        val weight = user.weight
+        val newAutoGoal = ((weight * 35).toInt() / 100) * 100
+
+        // 3. So sánh: Nếu khác với Goal hiện tại trong Log thì mới update
+        if (currentLog.dailyGoal != newAutoGoal) {
+            currentLog.dailyGoal = newAutoGoal
+
+            // Cập nhật UI ngay lập tức
+            _waterLog.value = currentLog
+
+            // Lưu xuống Firestore (update lại snapshot log hôm nay)
+            viewModelScope.launch {
+                waterRepository.saveWaterLog(currentLog)
+            }
         }
     }
 }

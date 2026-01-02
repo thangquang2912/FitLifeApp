@@ -27,27 +27,34 @@ class ProfileViewModel : ViewModel() {
     val statusMessage: LiveData<String> = _statusMessage
 
     fun fetchUserProfile() {
-        val uid = auth.currentUser?.uid ?: return
+        val currentUid = auth.currentUser?.uid
+        if (currentUid == null) {
+            _user.value = null
+            return
+        }
 
-        _isLoading.value = true;
+        if (_user.value == null || _user.value?.uid != currentUid) {
+            _isLoading.value = true;
 
-        viewModelScope.launch {
-            val result = userRepository.getUserDetails(uid)
+            viewModelScope.launch {
+                val result = userRepository.getUserDetails(currentUid)
 
-            if (result.isSuccess) {
-                _user.value = result.getOrNull()
-            } else {
-                val error = result.exceptionOrNull()
-                error?.printStackTrace()
-                _statusMessage.value = "Lỗi tải dữ liệu: ${result.exceptionOrNull()?.message}"
+                if (result.isSuccess) {
+                    _user.value = result.getOrNull()
+                } else {
+                    val error = result.exceptionOrNull()
+                    error?.printStackTrace()
+                    _statusMessage.value = "Lỗi tải dữ liệu: ${result.exceptionOrNull()?.message}"
+                }
+
+                _isLoading.value = false
             }
-
-            _isLoading.value = false
         }
     }
 
     fun signOut() {
         auth.signOut()
+        _user.value = null
     }
 
     fun saveUserProfile(user: User, imageUri: Uri?) {

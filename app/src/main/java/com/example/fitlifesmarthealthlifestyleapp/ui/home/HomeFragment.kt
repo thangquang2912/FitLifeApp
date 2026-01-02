@@ -126,7 +126,7 @@ class HomeFragment : Fragment() {
 
         // 3. Water
         waterIcon.setImageResource(R.drawable.ic_stat_water)
-        waterValue.text = "6"
+//        waterValue.text = "6"
         waterLabel.text = "Water"
     }
 
