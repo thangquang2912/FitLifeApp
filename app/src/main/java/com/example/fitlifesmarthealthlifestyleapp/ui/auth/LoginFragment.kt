@@ -1,11 +1,13 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.auth
 
+import android.app.AlertDialog
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,7 +34,7 @@ class LoginFragment : Fragment() {
     private val viewModel: AuthViewModel by viewModels()
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var btnGoogle : Button
-
+    private lateinit var tvForgotPassword : TextView
 
 
     override fun onCreateView(
@@ -54,6 +56,7 @@ class LoginFragment : Fragment() {
         etPassword = view.findViewById<TextInputEditText>(R.id.etPassword)
         loadingOverlay = view.findViewById<View>(R.id.loadingOverlay)
         btnGoogle = view.findViewById<Button>(R.id.btnGoogle)
+        tvForgotPassword = view.findViewById<TextView>(R.id.tvForgotPassword)
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id)) // Tự sinh từ google-services.json
@@ -63,6 +66,10 @@ class LoginFragment : Fragment() {
 
         etEmail.addTextChangedListener { tilEmail.error = null }
         etPassword.addTextChangedListener { tilPassword.error = null }
+
+        tvForgotPassword.setOnClickListener {
+            showForgotPasswordDialog()
+        }
 
         btnSignUp.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_signupFragment)
@@ -129,6 +136,19 @@ class LoginFragment : Fragment() {
                 else -> { /* Idle: Không làm gì */ }
             }
         }
+
+        viewModel.resetPasswordMessage.observe(viewLifecycleOwner) { msg ->
+            if (msg != null) {
+                if (msg.startsWith("Success")) {
+                    // Thành công
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+                } else {
+                    // Thất bại
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+                }
+                viewModel.clearResetMessage()
+            }
+        }
     }
 
     private val googleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -141,5 +161,20 @@ class LoginFragment : Fragment() {
         } catch (e: ApiException) {
             Toast.makeText(context, "Google fail: ${e.message}", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun showForgotPasswordDialog() {
+        val builder = AlertDialog.Builder(requireContext())
+        val view = layoutInflater.inflate(R.layout.dialog_forgot_password, null) // Bạn cần tạo layout này
+        val etEmail = view.findViewById<EditText>(R.id.etResetEmail)
+
+        builder.setView(view)
+        builder.setTitle("Reset Password")
+        builder.setPositiveButton("Send") { _, _ ->
+            val email = etEmail.text.toString().trim()
+            viewModel.resetPassword(email)
+        }
+        builder.setNegativeButton("Cancel", null)
+        builder.show()
     }
 }

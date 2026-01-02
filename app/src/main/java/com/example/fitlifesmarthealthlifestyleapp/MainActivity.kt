@@ -7,6 +7,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
     private lateinit var navController : NavController
@@ -20,10 +22,33 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.navHostFragmentContainerView) as NavHostFragment
+
+        navController = navHostFragment.navController
+
+        // 2. Tạo graph từ file XML
+        val navInflater = navController.navInflater
+        val graph = navInflater.inflate(R.navigation.main_nav_graph)
+
+        // 3. Kiểm tra user đã đăng nhập chưa
+        val currentUser = FirebaseAuth.getInstance().currentUser
+
+        if (currentUser != null) {
+            // Đã Login -> Vào thẳng MainFragment (Home)
+            graph.setStartDestination(R.id.mainFragment)
+        } else {
+            // Chưa Login -> Vào LoginFragment
+            graph.setStartDestination(R.id.loginFragment)
+        }
+
+        // 4. Gán graph đã chỉnh sửa vào Controller để bắt đầu chạy
+        navController.graph = graph
     }
 
     override fun onSupportNavigateUp() : Boolean {
-        navController = findNavController(R.id.navHostFragmentContainerView)
+//        navController = findNavController(R.id.navHostFragmentContainerView)
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
 }

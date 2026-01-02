@@ -24,12 +24,6 @@ data class User(
     // Mức độ vận động: "Sedentary", "Lightly Active", "Moderately Active", "Very Active"
     // Dùng để tính BMR (Feature 16)
     var activityLevel: String = "Sedentary",
-
-    // 3. Mục tiêu cá nhân
-//    var dailyStepGoal: Int = 10000,
-//    var dailyWaterGoal: Int = 2000,      // (ml)
-//    var dailyCalorieGoal: Int = 2000,    // (kcal)
-//    var dailySleepGoal: Int = 8          // (giờ)
 ): Parcelable {
     // Tính tuổi
     @get:Exclude

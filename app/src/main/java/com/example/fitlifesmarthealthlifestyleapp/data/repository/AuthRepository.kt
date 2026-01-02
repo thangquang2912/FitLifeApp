@@ -88,4 +88,15 @@ class AuthRepository {
     fun signOut() {
         firebaseAuth.signOut()
     }
+
+    suspend fun sendPasswordResetEmail(email: String): Result<Boolean> {
+        return try {
+            firebaseAuth.sendPasswordResetEmail(email).await()
+            Result.success(true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Có thể check lỗi cụ thể như: FirebaseAuthInvalidUserException (Email không tồn tại)
+            Result.failure(e)
+        }
+    }
 }

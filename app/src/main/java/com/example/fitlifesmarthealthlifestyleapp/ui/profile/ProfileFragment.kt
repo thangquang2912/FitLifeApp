@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
@@ -43,7 +44,7 @@ class ProfileFragment : Fragment() {
     private lateinit var tvAgeValue : TextView
     private lateinit var tvSubtitle : TextView
 
-    private val viewModel: ProfileViewModel by viewModels()
+    private val viewModel: ProfileViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -88,7 +89,10 @@ class ProfileFragment : Fragment() {
         btnLogout = view.findViewById<TextView>(R.id.btnLogout)
 
         setupStaticLabels()
-        viewModel.fetchUserProfile()
+
+        if (viewModel.user.value == null) {
+            viewModel.fetchUserProfile()
+        }
 
         viewModel.user.observe(viewLifecycleOwner) { user ->
             if (user != null) {
