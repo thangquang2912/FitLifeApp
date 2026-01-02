@@ -72,8 +72,8 @@ class HomeViewModel : ViewModel() {
         } else {
             // TH2: User chưa set hoặc reset -> Tính theo cân nặng (Weight * 35)
             val weight = user?.weight ?: 60f
-            val calculated = (weight * 35).toInt()
-            (calculated / 100) * 100 // Làm tròn
+            val activityLevel = user?.activityLevel
+            calculateWaterGoal(weight, activityLevel)
         }
 
         // 3. Tạo object mới
@@ -87,6 +87,22 @@ class HomeViewModel : ViewModel() {
         // 4. Lưu lên Firestore và cập nhật UI
         waterRepository.saveWaterLog(newLog)
         _waterLog.value = newLog
+    }
+
+    // Hàm tính toán lượng nước dựa trên Cân nặng + Activity Level
+    private fun calculateWaterGoal(weight: Float, activityLevel: String?): Int {
+        val factor = when (activityLevel) {
+            "Sedentary" -> 30
+            "Lightly Active" -> 35
+            "Moderately Active" -> 40
+            "Very Active" -> 45
+            else -> 35
+        }
+
+        val calculated = weight * factor
+
+        // Làm tròn đến hàng trăm
+        return ((calculated + 50) / 100).toInt() * 100
     }
 
     // Hàm thêm nước (Uống 1 ly)
@@ -144,9 +160,8 @@ class HomeViewModel : ViewModel() {
         // 1. Nếu User đã set cứng mục tiêu -> Không làm gì cả
         if (user.dailyWaterGoal > 0) return
 
-        // 2. Nếu User để Auto -> Tính lại theo cân nặng mới nhất vừa nhận được
-        val weight = user.weight
-        val newAutoGoal = ((weight * 35).toInt() / 100) * 100
+        // 2. Nếu User để Auto -> Tính lại theo cân nặng + mức độ vận động mới nhất vừa nhận được
+        val newAutoGoal = calculateWaterGoal(user.weight, user.activityLevel)
 
         // 3. So sánh: Nếu khác với Goal hiện tại trong Log thì mới update
         if (currentLog.dailyGoal != newAutoGoal) {

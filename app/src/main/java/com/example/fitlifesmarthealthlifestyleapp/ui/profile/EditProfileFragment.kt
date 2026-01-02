@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,6 +30,7 @@ import java.util.Locale
 import androidx.core.widget.addTextChangedListener
 import androidx.activity.result.PickVisualMediaRequest
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 
 class EditProfileFragment : BottomSheetDialogFragment() {
 
@@ -45,6 +47,8 @@ class EditProfileFragment : BottomSheetDialogFragment() {
     private lateinit var etWeight : TextInputEditText
     private lateinit var etHeight : TextInputEditText
     private lateinit var btnSave : MaterialButton
+    private lateinit var actvActivityLevel : MaterialAutoCompleteTextView
+    val activityLevels = arrayOf("Sedentary", "Lightly Active", "Moderately Active", "Very Active")
 
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -77,6 +81,15 @@ class EditProfileFragment : BottomSheetDialogFragment() {
         etHeight = view.findViewById<TextInputEditText>(R.id.etHeight)
         btnSave = view.findViewById<MaterialButton>(R.id.btnSave)
 
+        val adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line,
+            activityLevels
+        )
+
+        actvActivityLevel = view.findViewById<MaterialAutoCompleteTextView>(R.id.actvActivityLevel)
+        actvActivityLevel.setAdapter(adapter)
+
         val userArg = arguments?.getParcelable<User>("user_data")
 
         if (userArg != null) {
@@ -104,6 +117,9 @@ class EditProfileFragment : BottomSheetDialogFragment() {
             .circleCrop()
             .into(ivAvatarEdit)
 
+        // activity level
+        actvActivityLevel.setText(currentUser.activityLevel, false)
+
         // Date of Birth
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.US)
         etDob.setText(sdf.format(currentUser.birthday.toDate()))
@@ -120,7 +136,12 @@ class EditProfileFragment : BottomSheetDialogFragment() {
             pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
 
-        // 1. Xử lý Logic chọn giới tính
+        actvActivityLevel.setOnItemClickListener { _, _, position, _ ->
+            val selectedLevel = activityLevels[position]
+            currentUser.activityLevel = selectedLevel
+        }
+
+        // Xử lý Logic chọn giới tính
         btnMale.setOnClickListener {
             currentUser.gender = "Male"
             updateGenderUI("Male")
@@ -134,12 +155,12 @@ class EditProfileFragment : BottomSheetDialogFragment() {
             updateGenderUI("Other")
         }
 
-        // 2. Xử lý chọn ngày sinh (DatePicker)
+        // Xử lý chọn ngày sinh (DatePicker)
         etDob.setOnClickListener {
             showDatePicker()
         }
 
-        // 3. Xử lý Lưu (Save)
+        // Xử lý Lưu (Save)
         btnSave.setOnClickListener {
             saveChanges()
         }
@@ -206,6 +227,7 @@ class EditProfileFragment : BottomSheetDialogFragment() {
             val date = Date(timestamp)
             // Hiển thị lên EditText
             val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+            sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
             etDob.setText(sdf.format(date))
             // Lưu vào biến user
             currentUser.birthday = Timestamp(date)
