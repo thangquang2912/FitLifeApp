@@ -2,4 +2,18 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="gray_text">#757575</color>
+    <color name="orange_primary">#F36C33</color>
+    <color name="input_stroke">#E0E0E0</color>
+    <color name="background">#F9FAFB</color>
+    <color name="text_grey">#4A5565</color>
+    <color name="border">#99A1AF</color>
+
+    <color name="purple_primary">#9747FF</color>
+    <color name="purple_secondary">#B070FF</color>
+    <color name="purple_light_alpha">#4DFFFFFF</color>
+
+    <color name="chart_protein">#40E0D0</color>
+    <color name="chart_fat">#FFD33C</color>
+    <color name="orange_light_bg">#FFF5E5</color>
 </resources>
