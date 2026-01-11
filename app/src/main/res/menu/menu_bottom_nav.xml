@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:title="Home"
+        android:icon="@drawable/icon_home_selector"
+        android:id="@+id/home"/>
+
+    <item android:title="Activity"
+        android:icon="@drawable/icon_activity_selector"
+        android:id="@+id/activity"/>
+
+    <item android:title="Nutrition"
+        android:icon="@drawable/icon_nutrition_selector"
+        android:id="@+id/nutrition"/>
+
+    <item android:title="Social"
+        android:icon="@drawable/icon_social_selector"
+        android:id="@+id/social"/>
+
+    <item android:title="Profile"
+        android:icon="@drawable/icon_profile_selector"
+        android:id="@+id/profile"/>
+</menu>
