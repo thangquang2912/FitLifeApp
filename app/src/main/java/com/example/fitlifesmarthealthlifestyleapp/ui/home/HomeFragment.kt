@@ -5,7 +5,6 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.view.LayoutInflater
 import android.view.View
@@ -80,6 +79,7 @@ class HomeFragment : Fragment() {
 
 
         homeViewModel.loadTodayWaterLog()
+        homeViewModel.loadUserGoals()
     }
 
     private fun initViews(view:View) {
@@ -177,12 +177,12 @@ class HomeFragment : Fragment() {
 
     private fun showSetGoalsDialog() {
         val dialog = Dialog(requireContext())
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.requestWindowFeature(Window. FEATURE_NO_TITLE)
         dialog.setContentView(R.layout.dialog_set_goals)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?. setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setLayout(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+            ViewGroup.LayoutParams. MATCH_PARENT,
+            ViewGroup.LayoutParams. WRAP_CONTENT
         )
 
         // Initialize dialog views
@@ -191,37 +191,115 @@ class HomeFragment : Fragment() {
 
         // Steps controls
         val tvStepsValue = dialog.findViewById<TextView>(R.id.tvStepsValue)
-        val tvStepsTarget = dialog.findViewById<TextView>(R.id.tvStepsTarget)
-        val sliderSteps = dialog.findViewById<Slider>(R.id.sliderSteps)
-        val progressSteps = dialog.findViewById<ProgressBar>(R.id.progressSteps)
-        val btnIncreaseSteps = dialog.findViewById<ImageView>(R.id.btnIncreaseSteps)
+        val tvStepsTarget = dialog.findViewById<TextView>(R. id.tvStepsTarget)
+        val sliderSteps = dialog.findViewById<Slider>(R. id.sliderSteps)
+        val btnIncreaseSteps = dialog.findViewById<ImageView>(R.id. btnIncreaseSteps)
         val btnDecreaseSteps = dialog.findViewById<ImageView>(R.id.btnDecreaseSteps)
 
         // Water controls
-        val tvWaterValue = dialog.findViewById<TextView>(R.id.tvWaterValue)
+        val tvWaterValue = dialog.findViewById<TextView>(R. id.tvWaterValue)
         val tvWaterTarget = dialog.findViewById<TextView>(R.id.tvWaterTarget)
-        val sliderWater = dialog.findViewById<Slider>(R.id.sliderWater)
-        val progressWater = dialog.findViewById<ProgressBar>(R.id.progressWater)
+        val sliderWater = dialog. findViewById<Slider>(R.id.sliderWater)
         val btnIncreaseWater = dialog.findViewById<ImageView>(R.id.btnIncreaseWater)
         val btnDecreaseWater = dialog.findViewById<ImageView>(R.id.btnDecreaseWater)
 
-        // Initial values
-        var stepsGoal = 10000
-        var waterGoal = 2000
+        // Active Calories controls
+        val tvActiveCaloriesValue = dialog.findViewById<TextView>(R.id.tvActiveCaloriesValue)
+        val tvActiveCaloriesTarget = dialog.findViewById<TextView>(R.id.tvActiveCaloriesTarget)
+        val sliderActiveCalories = dialog.findViewById<Slider>(R.id.sliderActiveCalories)
+        val btnIncreaseActiveCalories = dialog.findViewById<ImageView>(R.id.btnIncreaseActiveCalories)
+        val btnDecreaseActiveCalories = dialog. findViewById<ImageView>(R.id.btnDecreaseActiveCalories)
+
+        // Calories Consume controls
+        val tvCaloriesConsumeValue = dialog.findViewById<TextView>(R.id.tvCaloriesConsumeValue)
+        val tvCaloriesConsumeTarget = dialog.findViewById<TextView>(R.id.tvCaloriesConsumeTarget)
+        val sliderCaloriesConsume = dialog.findViewById<Slider>(R.id.sliderCaloriesConsume)
+        val btnIncreaseCaloriesConsume = dialog.findViewById<ImageView>(R.id.btnIncreaseCaloriesConsume)
+        val btnDecreaseCaloriesConsume = dialog.findViewById<ImageView>(R.id.btnDecreaseCaloriesConsume)
+
+        // Weekly Running controls
+        val tvWeeklyRunningValue = dialog.findViewById<TextView>(R.id.tvWeeklyRunningValue)
+        val tvWeeklyRunningTarget = dialog.findViewById<TextView>(R.id.tvWeeklyRunningTarget)
+        val sliderWeeklyRunning = dialog.findViewById<Slider>(R.id.sliderWeeklyRunning)
+        val btnIncreaseWeeklyRunning = dialog.findViewById<ImageView>(R.id.btnIncreaseWeeklyRunning)
+        val btnDecreaseWeeklyRunning = dialog. findViewById<ImageView>(R.id.btnDecreaseWeeklyRunning)
+
+        // ✨ Load current goals from ViewModel
+        val user = homeViewModel.user.value
+
+        // ✨ FIXED: Validate values to match slider ranges
+        var stepsGoal = (user?.dailyStepsGoal ?: 0).let {
+            if (it == 0) 10000 else it. coerceIn(1000, 30000)
+        }
+
+        var waterGoal = (user?.dailyWaterGoal ?: 0).let {
+            if (it == 0) 2000 else it.coerceIn(500, 5000)
+        }
+
+        var activeCaloriesGoal = (user?.dailyActiveCalories ?: 0).let {
+            if (it == 0) 500 else it.coerceIn(100, 2000)
+        }
+
+        var caloriesConsumeGoal = (user?.dailyCaloriesConsume ?: 0).let {
+            if (it == 0) 2000 else it.coerceIn(1000, 5000)
+        }
+
+        var weeklyRunningGoal = (user?.weeklyRunning ?: 0).let {
+            if (it == 0) 20 else it.coerceIn(5, 100)
+        }
+
+        // ✨ Setup initial values - Steps
+        sliderSteps.value = stepsGoal. toFloat()
+        tvStepsValue.text = String.format("%,d", stepsGoal)
+        tvStepsTarget.text = if (user?.dailyStepsGoal == 0) {
+            "Target:  None (tap to set)"
+        } else {
+            "Target: ${String. format("%,d", stepsGoal)} steps"
+        }
+
+        // Water
+        sliderWater.value = waterGoal.toFloat()
+        tvWaterValue.text = String.format("%,d", waterGoal)
+        tvWaterTarget.text = if (user?.dailyWaterGoal == 0) {
+            "Target: None (tap to set)"
+        } else {
+            "Target: ${String.format("%,d", waterGoal)} ml"
+        }
+
+        // Active Calories
+        sliderActiveCalories. value = activeCaloriesGoal.toFloat()
+        tvActiveCaloriesValue.text = activeCaloriesGoal.toString()
+        tvActiveCaloriesTarget.text = if (user?.dailyActiveCalories == 0) {
+            "Target: None (tap to set)"
+        } else {
+            "Target: $activeCaloriesGoal kcal"
+        }
+
+        // Calories Consume
+        sliderCaloriesConsume.value = caloriesConsumeGoal. toFloat()
+        tvCaloriesConsumeValue.text = String.format("%,d", caloriesConsumeGoal)
+        tvCaloriesConsumeTarget.text = if (user?. dailyCaloriesConsume == 0) {
+            "Target: None (tap to set)"
+        } else {
+            "Target: ${String.format("%,d", caloriesConsumeGoal)} kcal"
+        }
+
+        // Weekly Running
+        sliderWeeklyRunning.value = weeklyRunningGoal.toFloat()
+        tvWeeklyRunningValue.text = weeklyRunningGoal.toString()
+        tvWeeklyRunningTarget.text = if (user?.weeklyRunning == 0) {
+            "Target: None (tap to set)"
+        } else {
+            "Target: $weeklyRunningGoal km"
+        }
 
         // Setup Steps Slider
         sliderSteps.addOnChangeListener { _, value, _ ->
             stepsGoal = value.toInt()
-            tvStepsValue.text = String.format("%,d", stepsGoal)
+            tvStepsValue. text = String.format("%,d", stepsGoal)
             tvStepsTarget.text = "Target: ${String.format("%,d", stepsGoal)} steps"
-
-            // Update progress (giả sử current = 8000)
-            val currentSteps = 8000
-            val progress = (currentSteps.toFloat() / stepsGoal * 100).toInt()
-            progressSteps.progress = progress.coerceIn(0, 100)
         }
 
-        // Steps increase/decrease buttons
         btnIncreaseSteps.setOnClickListener {
             val newValue = (sliderSteps.value + 1000).coerceAtMost(sliderSteps.valueTo)
             sliderSteps.value = newValue
@@ -235,24 +313,69 @@ class HomeFragment : Fragment() {
         // Setup Water Slider
         sliderWater.addOnChangeListener { _, value, _ ->
             waterGoal = value.toInt()
-            tvWaterValue.text = String.format("%,d", waterGoal)
+            tvWaterValue. text = String.format("%,d", waterGoal)
             tvWaterTarget.text = "Target: ${String.format("%,d", waterGoal)} ml"
-
-            // Update progress (giả sử current = 1250)
-            val currentWater = 1250
-            val progress = (currentWater.toFloat() / waterGoal * 100).toInt()
-            progressWater.progress = progress.coerceIn(0, 100)
         }
 
-        // Water increase/decrease buttons
         btnIncreaseWater.setOnClickListener {
             val newValue = (sliderWater.value + 250).coerceAtMost(sliderWater.valueTo)
             sliderWater.value = newValue
         }
 
         btnDecreaseWater.setOnClickListener {
-            val newValue = (sliderWater.value - 250).coerceAtLeast(sliderWater.valueFrom)
+            val newValue = (sliderWater. value - 250).coerceAtLeast(sliderWater.valueFrom)
             sliderWater.value = newValue
+        }
+
+        // Setup Active Calories Slider
+        sliderActiveCalories.addOnChangeListener { _, value, _ ->
+            activeCaloriesGoal = value. toInt()
+            tvActiveCaloriesValue.text = activeCaloriesGoal.toString()
+            tvActiveCaloriesTarget. text = "Target: $activeCaloriesGoal kcal"
+        }
+
+        btnIncreaseActiveCalories.setOnClickListener {
+            val newValue = (sliderActiveCalories.value + 50).coerceAtMost(sliderActiveCalories.valueTo)
+            sliderActiveCalories.value = newValue
+        }
+
+        btnDecreaseActiveCalories.setOnClickListener {
+            val newValue = (sliderActiveCalories.value - 50).coerceAtLeast(sliderActiveCalories.valueFrom)
+            sliderActiveCalories.value = newValue
+        }
+
+        // Setup Calories Consume Slider
+        sliderCaloriesConsume.addOnChangeListener { _, value, _ ->
+            caloriesConsumeGoal = value.toInt()
+            tvCaloriesConsumeValue.text = String.format("%,d", caloriesConsumeGoal)
+            tvCaloriesConsumeTarget.text = "Target: ${String.format("%,d", caloriesConsumeGoal)} kcal"
+        }
+
+        btnIncreaseCaloriesConsume.setOnClickListener {
+            val newValue = (sliderCaloriesConsume.value + 100).coerceAtMost(sliderCaloriesConsume. valueTo)
+            sliderCaloriesConsume.value = newValue
+        }
+
+        btnDecreaseCaloriesConsume. setOnClickListener {
+            val newValue = (sliderCaloriesConsume.value - 100).coerceAtLeast(sliderCaloriesConsume. valueFrom)
+            sliderCaloriesConsume.value = newValue
+        }
+
+        // Setup Weekly Running Slider
+        sliderWeeklyRunning.addOnChangeListener { _, value, _ ->
+            weeklyRunningGoal = value.toInt()
+            tvWeeklyRunningValue. text = weeklyRunningGoal.toString()
+            tvWeeklyRunningTarget.text = "Target: $weeklyRunningGoal km"
+        }
+
+        btnIncreaseWeeklyRunning.setOnClickListener {
+            val newValue = (sliderWeeklyRunning.value + 5).coerceAtMost(sliderWeeklyRunning.valueTo)
+            sliderWeeklyRunning.value = newValue
+        }
+
+        btnDecreaseWeeklyRunning.setOnClickListener {
+            val newValue = (sliderWeeklyRunning.value - 5).coerceAtLeast(sliderWeeklyRunning.valueFrom)
+            sliderWeeklyRunning.value = newValue
         }
 
         // Close button
@@ -262,18 +385,18 @@ class HomeFragment : Fragment() {
 
         // Save button
         btnSaveGoals.setOnClickListener {
-            // TODO: Save goals to ViewModel/Database
-            Toast.makeText(
-                requireContext(),
-                "Goals saved! Steps: $stepsGoal, Water: ${waterGoal}ml",
-                Toast.LENGTH_SHORT
-            ).show()
+            homeViewModel.saveGoals(
+                waterGoal = waterGoal,
+                stepsGoal = stepsGoal,
+                activeCalories = activeCaloriesGoal,
+                caloriesConsume = caloriesConsumeGoal,
+                weeklyRunning = weeklyRunningGoal
+            )
             dialog.dismiss()
         }
 
         dialog.show()
     }
-
 
     private fun observeViewModel() {
         // Khi data WaterLog thay đổi -> Cập nhật UI

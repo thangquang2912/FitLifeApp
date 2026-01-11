@@ -1,7 +1,9 @@
 package com.example.fitlifesmarthealthlifestyleapp.data.repository
 
+import android.util.Log
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -9,6 +11,7 @@ import kotlinx.coroutines.tasks.await
 
 class UserRepository {
     private val db = FirebaseFirestore.getInstance()
+    private val TAG = "UserRepository"
 
     // Hàm lấy thông tin User
     suspend fun getUserDetails(uid: String): Result<User> {
@@ -51,6 +54,36 @@ class UserRepository {
         }
     }
 
+    suspend fun updateUserGoals(
+        uid: String,
+        dailyWaterGoal: Int,
+        dailyStepsGoal:  Int,
+        dailyActiveCalories: Int,
+        dailyCaloriesConsume: Int,
+        weeklyRunning: Int
+    ): Result<Unit> {
+        return try {
+            val goalsMap = mapOf(
+                "dailyWaterGoal" to dailyWaterGoal,
+                "dailyStepsGoal" to dailyStepsGoal,
+                "dailyActiveCalories" to dailyActiveCalories,
+                "dailyCaloriesConsume" to dailyCaloriesConsume,
+                "weeklyRunning" to weeklyRunning
+            )
+
+            // Dùng set() với merge() thay vì update()
+            val task = db.collection("users")
+                .document(uid)
+                .set(goalsMap, SetOptions.merge())
+            task.await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+
     // Hàm lắng nghe dữ liệu User thay đổi theo thời gian thực
     fun getUserDetailsStream(uid: String): Flow<User?> = callbackFlow {
         // 1. Đăng ký listener với Firestore
@@ -70,6 +103,8 @@ class UserRepository {
             }
 
         // 2. Hủy đăng ký khi ViewModel không cần nữa (để tránh rò rỉ bộ nhớ)
-        awaitClose { registration.remove() }
+        awaitClose {
+            Log.d(TAG, "getUserDetailsStream: Removing listener")
+            registration.remove() }
     }
 }
