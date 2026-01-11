@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="200dp"
+    android:viewportWidth="400"
+    android:viewportHeight="200">
+
+    <!-- Start circle -->
+    <path
+        android:fillColor="#FF6B35"
+        android:pathData="
+            M32,100
+            a8,8 0 1,0 16,0
+            a8,8 0 1,0 -16,0" />
+
+    <!-- Route line -->
+    <path
+        android:pathData="M40,100 Q100,60 160,80 T280,100 Q320,120 360,90"
+        android:strokeColor="#FF6B35"
+        android:strokeWidth="4"
+        android:fillColor="@android:color/transparent"
+        android:strokeLineCap="round" />
+
+    <!-- End circle -->
+    <path
+        android:fillColor="#FF6B35"
+        android:pathData="
+            M352,90
+            a8,8 0 1,0 16,0
+            a8,8 0 1,0 -16,0" />
+
+</vector>

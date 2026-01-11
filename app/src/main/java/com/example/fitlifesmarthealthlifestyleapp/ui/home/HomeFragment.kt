@@ -1,10 +1,16 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.home
 
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -14,6 +20,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.slider.Slider
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -43,6 +51,9 @@ class HomeFragment : Fragment() {
     private lateinit var layoutDropsContainer : LinearLayout
     private lateinit var imgWaterIcon : ImageView
 
+    private lateinit var btnStart : MaterialButton
+    private lateinit var btnSetGoals : MaterialButton
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -60,6 +71,7 @@ class HomeFragment : Fragment() {
 
         setupHeader()
         setupDashboard()
+        setupButtonListeners()
 
         observeViewModel()
         imgWaterIcon.setOnClickListener {
@@ -93,6 +105,9 @@ class HomeFragment : Fragment() {
         progressBarWater = view.findViewById<ProgressBar>(R.id.progressBarWater)
         layoutDropsContainer = view.findViewById<LinearLayout>(R.id.layoutDropsContainer)
         imgWaterIcon = view.findViewById<ImageView>(R.id.imgWaterIcon)
+
+        btnStart = view.findViewById(R.id.btnStart)
+        btnSetGoals = view.findViewById(R.id.btnSetGoals)
     }
 
     private fun setupHeader() {
@@ -129,6 +144,136 @@ class HomeFragment : Fragment() {
 //        waterValue.text = "6"
         waterLabel.text = "Water"
     }
+
+    private fun setupButtonListeners() {
+
+        btnStart.setOnClickListener {
+            navigateToActivityTracking()
+        }
+
+        // Click Set Goals -> Hiển thị Dialog
+        btnSetGoals.setOnClickListener {
+            showSetGoalsDialog()
+        }
+    }
+
+    private fun navigateToActivityTracking() {
+        try {
+            // Tìm BottomNavigationView từ Activity
+            val bottomNav = requireActivity().findViewById<BottomNavigationView>(
+                R.id.bottom_nav // ID thực tế của bottom nav trong MainFragment/MainActivity
+            )
+
+            bottomNav?.selectedItemId = R.id.activity // ID của menu item Activity
+
+        } catch (e: Exception) {
+            Toast.makeText(
+                requireContext(),
+                "Cannot navigate to Activity tab",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun showSetGoalsDialog() {
+        val dialog = Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_set_goals)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setLayout(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        // Initialize dialog views
+        val btnClose = dialog.findViewById<ImageView>(R.id.btnClose)
+        val btnSaveGoals = dialog.findViewById<MaterialButton>(R.id.btnSaveGoals)
+
+        // Steps controls
+        val tvStepsValue = dialog.findViewById<TextView>(R.id.tvStepsValue)
+        val tvStepsTarget = dialog.findViewById<TextView>(R.id.tvStepsTarget)
+        val sliderSteps = dialog.findViewById<Slider>(R.id.sliderSteps)
+        val progressSteps = dialog.findViewById<ProgressBar>(R.id.progressSteps)
+        val btnIncreaseSteps = dialog.findViewById<ImageView>(R.id.btnIncreaseSteps)
+        val btnDecreaseSteps = dialog.findViewById<ImageView>(R.id.btnDecreaseSteps)
+
+        // Water controls
+        val tvWaterValue = dialog.findViewById<TextView>(R.id.tvWaterValue)
+        val tvWaterTarget = dialog.findViewById<TextView>(R.id.tvWaterTarget)
+        val sliderWater = dialog.findViewById<Slider>(R.id.sliderWater)
+        val progressWater = dialog.findViewById<ProgressBar>(R.id.progressWater)
+        val btnIncreaseWater = dialog.findViewById<ImageView>(R.id.btnIncreaseWater)
+        val btnDecreaseWater = dialog.findViewById<ImageView>(R.id.btnDecreaseWater)
+
+        // Initial values
+        var stepsGoal = 10000
+        var waterGoal = 2000
+
+        // Setup Steps Slider
+        sliderSteps.addOnChangeListener { _, value, _ ->
+            stepsGoal = value.toInt()
+            tvStepsValue.text = String.format("%,d", stepsGoal)
+            tvStepsTarget.text = "Target: ${String.format("%,d", stepsGoal)} steps"
+
+            // Update progress (giả sử current = 8000)
+            val currentSteps = 8000
+            val progress = (currentSteps.toFloat() / stepsGoal * 100).toInt()
+            progressSteps.progress = progress.coerceIn(0, 100)
+        }
+
+        // Steps increase/decrease buttons
+        btnIncreaseSteps.setOnClickListener {
+            val newValue = (sliderSteps.value + 1000).coerceAtMost(sliderSteps.valueTo)
+            sliderSteps.value = newValue
+        }
+
+        btnDecreaseSteps.setOnClickListener {
+            val newValue = (sliderSteps.value - 1000).coerceAtLeast(sliderSteps.valueFrom)
+            sliderSteps.value = newValue
+        }
+
+        // Setup Water Slider
+        sliderWater.addOnChangeListener { _, value, _ ->
+            waterGoal = value.toInt()
+            tvWaterValue.text = String.format("%,d", waterGoal)
+            tvWaterTarget.text = "Target: ${String.format("%,d", waterGoal)} ml"
+
+            // Update progress (giả sử current = 1250)
+            val currentWater = 1250
+            val progress = (currentWater.toFloat() / waterGoal * 100).toInt()
+            progressWater.progress = progress.coerceIn(0, 100)
+        }
+
+        // Water increase/decrease buttons
+        btnIncreaseWater.setOnClickListener {
+            val newValue = (sliderWater.value + 250).coerceAtMost(sliderWater.valueTo)
+            sliderWater.value = newValue
+        }
+
+        btnDecreaseWater.setOnClickListener {
+            val newValue = (sliderWater.value - 250).coerceAtLeast(sliderWater.valueFrom)
+            sliderWater.value = newValue
+        }
+
+        // Close button
+        btnClose.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // Save button
+        btnSaveGoals.setOnClickListener {
+            // TODO: Save goals to ViewModel/Database
+            Toast.makeText(
+                requireContext(),
+                "Goals saved! Steps: $stepsGoal, Water: ${waterGoal}ml",
+                Toast.LENGTH_SHORT
+            ).show()
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
 
     private fun observeViewModel() {
         // Khi data WaterLog thay đổi -> Cập nhật UI
