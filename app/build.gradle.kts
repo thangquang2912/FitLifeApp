@@ -91,4 +91,12 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.cloudinary:cloudinary-android:2.5.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    implementation("org.osmdroid:osmdroid-android:6.1.17")
+
+    // Location services vẫn giữ nguyên
+    implementation("com.google.android.gms:play-services-location:21.1.0")
+
+    // Lifecycle Service
+    implementation("androidx.lifecycle:lifecycle-service:2.7.0")
 }
