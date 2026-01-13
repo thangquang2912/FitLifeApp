@@ -1,6 +1,6 @@
 package com.example.fitlifesmarthealthlifestyleapp.data.repository
 
-import android.util.Log // 1. Thêm Import này
+import android.util.Log
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.Meal
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -15,6 +15,7 @@ class NutritionRepository {
     private val db = FirebaseFirestore.getInstance()
     private val mealsCollection = db.collection("meals")
     private val summaryCollection = db.collection("daily_nutrition")
+    private val usersCollection = db.collection("users")
 
     suspend fun addMeal(meal: Meal): Result<Boolean> {
         return try {
@@ -78,6 +79,22 @@ class NutritionRepository {
             Log.e("NutritionRepo", "LỖI LẤY DỮ LIỆU: ${e.message}")
             e.printStackTrace()
             Result.failure(e)
+        }
+    }
+
+    suspend fun getUserCalorieGoal(userId: String): Int {
+        return try {
+            val snapshot = usersCollection.document(userId).get().await()
+
+            // Lấy trường "dailyCaloriesConsume", ép kiểu về Long rồi sang Int
+            // Nếu không tìm thấy hoặc lỗi, trả về mặc định 2000
+            val goal = snapshot.getLong("dailyCaloriesConsume")?.toInt() ?: 2000
+
+            Log.d("NutritionRepo", "User Goal: $goal")
+            goal
+        } catch (e: Exception) {
+            Log.e("NutritionRepo", "Error fetching goal: ${e.message}")
+            2000 // Fallback an toàn
         }
     }
 

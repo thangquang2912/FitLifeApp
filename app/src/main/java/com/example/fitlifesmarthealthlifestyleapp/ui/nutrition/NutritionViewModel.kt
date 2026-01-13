@@ -61,7 +61,7 @@ class NutritionViewModel(application: Application) : AndroidViewModel(applicatio
         val dateToLoad = _selectedDate.value ?: Date()
 
         viewModelScope.launch {
-            val goal = 2000
+            val goal = repository.getUserCalorieGoal(uid)
             _calorieGoal.value = goal
 
             // A. Lấy Summary
