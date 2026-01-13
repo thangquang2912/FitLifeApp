@@ -31,6 +31,7 @@ android {
         buildConfigField("String", "CLOUD_NAME", "\"${localProperties.getProperty("CLOUDINARY_CLOUD_NAME")}\"")
         buildConfigField("String", "API_KEY", "\"${localProperties.getProperty("CLOUDINARY_API_KEY")}\"")
         buildConfigField("String", "API_SECRET", "\"${localProperties.getProperty("CLOUDINARY_API_SECRET")}\"")
+        buildConfigField("String", "API_KEY_GEMINI", "\"${localProperties.getProperty("API_KEY_GEMINI")}\"")
     }
 
     buildTypes {
@@ -66,6 +67,7 @@ dependencies {
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.generativeai)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -84,4 +86,8 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.cloudinary:cloudinary-android:2.5.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    implementation("com.google.android.gms:play-services-location:21.1.0")
+    implementation("androidx.lifecycle:lifecycle-service:2.7.0")
+    implementation("org.osmdroid:osmdroid-android:6.1.17")
 }

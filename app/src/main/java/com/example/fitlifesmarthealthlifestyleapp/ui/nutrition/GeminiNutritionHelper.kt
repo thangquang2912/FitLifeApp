@@ -9,7 +9,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 class GeminiNutritionHelper {
-    private val apiKey = BuildConfig.API_KEY_GEMINI // Đảm bảo bạn đã có Key ở đây
+    private val apiKey = BuildConfig.API_KEY_GEMINI
 
     private val generativeModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
