@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:layout_marginHorizontal="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imgMeal"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_launcher_background"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <TextView
+            android:id="@+id/tvMealName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="Pho Bo"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:ellipsize="end"
+            android:maxLines="1"
+            app:layout_constraintStart_toEndOf="@id/imgMeal"
+            app:layout_constraintTop_toTopOf="@id/imgMeal"
+            app:layout_constraintEnd_toStartOf="@id/tvMealCalories"/>
+
+        <TextView
+            android:id="@+id/tvMealCalories"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="450 kcal"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/orange_primary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvMealName"
+            app:layout_constraintBottom_toBottomOf="@id/tvMealName"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/tvMealName"
+            app:layout_constraintStart_toEndOf="@id/imgMeal"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:id="@+id/tvCarbDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="C: 50g"
+                android:textSize="12sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginEnd="12dp"/>
+
+            <TextView
+                android:id="@+id/tvProDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="P: 30g"
+                android:textSize="12sp"
+                android:textColor="@color/gray_text"
+                android:layout_marginEnd="12dp"/>
+
+            <TextView
+                android:id="@+id/tvFatDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="F: 12g"
+                android:textSize="12sp"
+                android:textColor="@color/gray_text"/>
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

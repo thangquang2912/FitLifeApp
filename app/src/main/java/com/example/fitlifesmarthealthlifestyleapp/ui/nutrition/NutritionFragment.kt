@@ -1,35 +1,51 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.nutrition
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
+import androidx.cardview.widget.CardView
 import androidx.lifecycle.ViewModelProvider
 import com.example.fitlifesmarthealthlifestyleapp.R
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class NutritionFragment : Fragment() {
 
     private lateinit var nutritionViewModel: NutritionViewModel
 
-    // Khai báo các View trong layout fragment_nutrition.xml
+    // Views
     private lateinit var tvTotalMacro: TextView
     private lateinit var tvCarbValue: TextView
     private lateinit var tvProteinValue: TextView
     private lateinit var tvFatValue: TextView
-
-    // Progress Bars (Vòng tròn biểu đồ)
-    private lateinit var progressRingMain: ProgressBar
-
-    // Cards Summary (3 thẻ dưới cùng)
+    private lateinit var macroRingView: MacroRingView
     private lateinit var tvCalorieValue: TextView
     private lateinit var tvMealsCount: TextView
-
     private lateinit var btnAddMeal: ImageButton
+    private lateinit var tvRemainingValue: TextView
+    private lateinit var tvDateSelector: TextView
+
+    // AI Views
+    private lateinit var cardAiInsights: CardView
+    private lateinit var layoutAiInvite: LinearLayout
+    private lateinit var layoutAiLoading: LinearLayout
+    private lateinit var layoutAiContent: LinearLayout
+    private lateinit var btnAskAi: View
+    private lateinit var tvAiDesc: TextView
+    private lateinit var tvSuggestionIcon: TextView
+    private lateinit var tvSuggestionName: TextView
+    private lateinit var tvSuggestionDetail: TextView
+    private lateinit var btnRefreshAi: TextView
+    private lateinit var cardMacros: CardView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -41,88 +57,155 @@ class NutritionFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Khởi tạo ViewModel
         nutritionViewModel = ViewModelProvider(this)[NutritionViewModel::class.java]
 
-        // 2. Ánh xạ View
         initViews(view)
-
-        // 3. Lắng nghe sự kiện click
         setupListeners()
-
-        // 4. Quan sát dữ liệu từ ViewModel để cập nhật UI
         observeViewModel()
 
-        // 5. Load dữ liệu ban đầu
         nutritionViewModel.loadData()
     }
 
     private fun initViews(view: View) {
         tvTotalMacro = view.findViewById(R.id.tvTotalMacro)
-
-        // Tìm các TextView trong phần Legend (Chú thích)
         tvCarbValue = view.findViewById(R.id.tvCarbValue)
         tvProteinValue = view.findViewById(R.id.tvProteinValue)
         tvFatValue = view.findViewById(R.id.tvFatValue)
-
-        progressRingMain = view.findViewById(R.id.progressRingMain)
+        macroRingView = view.findViewById(R.id.macroRingView)
         btnAddMeal = view.findViewById(R.id.btnAddMeal)
+        tvCalorieValue = view.findViewById(R.id.tvCalorieValue)
+        tvMealsCount = view.findViewById(R.id.tvMealsValue)
+        tvRemainingValue = view.findViewById(R.id.tvRemainingValue)
+        tvDateSelector = view.findViewById(R.id.tvDateSelector)
+        cardMacros = view.findViewById(R.id.cardMacros)
 
-        // Ánh xạ các TextView trong 3 thẻ bottom (sử dụng include id)
-        // Lưu ý: Vì dùng <include>, ta cần tìm view cha trước hoặc tìm thẳng ID nếu ID là duy nhất
-        val cardCalories = view.findViewById<View>(R.id.cardSummaryCalories)
-        tvCalorieValue = cardCalories.findViewById(R.id.tvValue) // ID bên trong item_nutrition_summary
-        // Set label thủ công nếu cần, hoặc set cứng trong XML
-        cardCalories.findViewById<TextView>(R.id.tvLabel).text = "Calories"
+        // Ánh xạ AI Views
+        cardAiInsights = view.findViewById(R.id.cardAiInsights)
 
-        val cardMeals = view.findViewById<View>(R.id.cardSummaryMeals)
-        tvMealsCount = cardMeals.findViewById(R.id.tvValue)
-        cardMeals.findViewById<TextView>(R.id.tvLabel).text = "Meals"
+        layoutAiInvite = view.findViewById(R.id.layoutAiInvite)
+        layoutAiLoading = view.findViewById(R.id.layoutAiLoading)
+        layoutAiContent = view.findViewById(R.id.layoutAiContent)
 
-        val cardRemaining = view.findViewById<View>(R.id.cardSummaryRemaining)
-        cardRemaining.findViewById<TextView>(R.id.tvValue).text = "1,355" // Fake data remaining
-        cardRemaining.findViewById<TextView>(R.id.tvLabel).text = "Remaining"
+        btnAskAi = view.findViewById(R.id.btnAskAi)
+        btnRefreshAi = view.findViewById(R.id.btnRefreshAi)
+
+        tvAiDesc = view.findViewById(R.id.tvAiDesc)
+        tvSuggestionIcon = view.findViewById(R.id.tvSuggestionIcon)
+        tvSuggestionName = view.findViewById(R.id.tvSuggestionName)
+        tvSuggestionDetail = view.findViewById(R.id.tvSuggestionDetail)
     }
 
     private fun setupListeners() {
-        // Mở Dialog Add Meal khi bấm nút +
         btnAddMeal.setOnClickListener {
-            val dialog = AddMealDialogFragment { name, calories, carb, pro, fat ->
-                // Callback: Khi bấm Save ở Dialog, code này sẽ chạy
-                nutritionViewModel.addMeal(name, calories, carb, pro, fat)
+            val dialog = AddMealDialogFragment { name, calories, carb, pro, fat, portion, imgUri ->
+                nutritionViewModel.addMeal(name, calories, carb, pro, fat, portion, imgUri)
             }
             dialog.show(parentFragmentManager, "AddMealDialog")
         }
+
+        tvDateSelector.setOnClickListener { showDatePicker() }
+
+        // SỰ KIỆN NÚT HỎI AI (Lần đầu)
+        btnAskAi.setOnClickListener {
+            performAiRequest()
+        }
+
+        // --- BỔ SUNG: SỰ KIỆN NÚT REFRESH (Thử món khác) ---
+        btnRefreshAi.setOnClickListener {
+            performAiRequest()
+        }
+
+        cardMacros.setOnClickListener {
+            // Lấy danh sách món ăn hiện tại từ ViewModel
+            val currentMeals = nutritionViewModel.meals.value ?: emptyList()
+
+            // Mở BottomSheet
+            val bottomSheet = MealHistoryBottomSheet(currentMeals)
+            bottomSheet.show(parentFragmentManager, "MealHistoryBottomSheet")
+        }
+    }
+
+    // Hàm gọi AI dùng chung cho cả 2 nút
+    private fun performAiRequest() {
+        // 1. Chuyển sang Loading
+        layoutAiInvite.visibility = View.GONE
+        layoutAiContent.visibility = View.GONE
+        layoutAiLoading.visibility = View.VISIBLE
+
+        // 2. Gọi ViewModel (Hàm này sẽ tự động ghi đè cache cũ)
+        nutritionViewModel.generateAiSuggestion()
     }
 
     private fun observeViewModel() {
-        // Cập nhật UI khi dữ liệu dinh dưỡng thay đổi
         nutritionViewModel.nutritionSummary.observe(viewLifecycleOwner) { summary ->
-            // Update Text
             tvCalorieValue.text = summary.totalCalories.toString()
-
-            // Format số float thành chuỗi gọn (ví dụ 105.0 -> 105g)
+            tvMealsCount.text = summary.mealsCount.toString()
             tvCarbValue.text = "${summary.totalCarbs.toInt()}g"
             tvProteinValue.text = "${summary.totalProtein.toInt()}g"
             tvFatValue.text = "${summary.totalFat.toInt()}g"
 
-            // Update Tổng Macro ở giữa vòng tròn (Ví dụ tổng gam các chất)
             val totalGrams = (summary.totalCarbs + summary.totalProtein + summary.totalFat).toInt()
             tvTotalMacro.text = "${totalGrams}g"
 
-            // Update Progress Bar (Ví dụ: Calo hiện tại so với Goal 2000)
-            // progressRingMain.progress = (summary.totalCalories * 100 / 2000)
+            val goal = nutritionViewModel.calorieGoal.value ?: 2000
+            val remaining = goal - summary.totalCalories
+            tvRemainingValue.text = if (remaining < 0) "0" else remaining.toString()
 
-            // Hoặc update theo logic Macro (ở đây demo set cứng hoặc theo logic bạn muốn)
-            progressRingMain.progress = 65
+            macroRingView.setMacros(summary.totalCarbs, summary.totalProtein, summary.totalFat, goal)
         }
 
-        nutritionViewModel.meals.observe(viewLifecycleOwner) { meals ->
-            tvMealsCount.text = meals.size.toString()
+        nutritionViewModel.selectedDate.observe(viewLifecycleOwner) { date ->
+            tvDateSelector.text = formatDateDisplay(date)
         }
 
-        nutritionViewModel.toastMessage.observe(viewLifecycleOwner) { message ->
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        nutritionViewModel.aiSuggestion.observe(viewLifecycleOwner) { suggestion ->
+            if (suggestion != null) {
+                // A. CÓ KẾT QUẢ -> Hiện Content
+                layoutAiInvite.visibility = View.GONE
+                layoutAiLoading.visibility = View.GONE
+                layoutAiContent.visibility = View.VISIBLE
+
+                tvAiDesc.text = suggestion.reason
+                tvSuggestionIcon.text = suggestion.icon
+                tvSuggestionName.text = suggestion.dishName
+                tvSuggestionDetail.text = "${suggestion.protein}g protein • ${suggestion.calories} calories"
+            } else {
+                // B. NULL -> Hiện nút Invite (nếu không phải đang loading)
+                if (layoutAiLoading.visibility != View.VISIBLE) {
+                    layoutAiInvite.visibility = View.VISIBLE
+                    layoutAiLoading.visibility = View.GONE
+                    layoutAiContent.visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    private fun showDatePicker() {
+        val calendar = Calendar.getInstance()
+        nutritionViewModel.selectedDate.value?.let { calendar.time = it }
+
+        val datePickerDialog = DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth ->
+                val selectedCalendar = Calendar.getInstance()
+                selectedCalendar.set(year, month, dayOfMonth)
+                nutritionViewModel.changeDate(selectedCalendar.time)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        datePickerDialog.datePicker.maxDate = System.currentTimeMillis()
+        datePickerDialog.show()
+    }
+
+    private fun formatDateDisplay(date: Date): String {
+        val today = Calendar.getInstance()
+        val target = Calendar.getInstance()
+        target.time = date
+        return when {
+            android.text.format.DateUtils.isToday(date.time) -> "Today, " + SimpleDateFormat("dd MMM", Locale.getDefault()).format(date)
+            else -> SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(date)
         }
     }
 }

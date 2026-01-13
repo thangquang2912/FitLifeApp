@@ -31,6 +31,7 @@ android {
         buildConfigField("String", "CLOUD_NAME", "\"${localProperties.getProperty("CLOUDINARY_CLOUD_NAME")}\"")
         buildConfigField("String", "API_KEY", "\"${localProperties.getProperty("CLOUDINARY_API_KEY")}\"")
         buildConfigField("String", "API_SECRET", "\"${localProperties.getProperty("CLOUDINARY_API_SECRET")}\"")
+        buildConfigField("String", "API_KEY_GEMINI", "\"${localProperties.getProperty("API_KEY_GEMINI")}\"")
     }
 
     buildTypes {
@@ -84,4 +85,8 @@ dependencies {
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.cloudinary:cloudinary-android:2.5.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("com.google.code.gson:gson:2.10.1")
 }
