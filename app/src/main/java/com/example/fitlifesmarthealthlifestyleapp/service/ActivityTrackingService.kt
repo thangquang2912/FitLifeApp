@@ -16,8 +16,11 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import com.example.fitlifesmarthealthlifestyleapp.MainActivity
 import com.example.fitlifesmarthealthlifestyleapp.R
+import com.example.fitlifesmarthealthlifestyleapp.domain.model.LatLngPoint
 import com.google.android.gms.location.*
+import java.util.concurrent.CopyOnWriteArrayList
 
 class ActivityTrackingService : Service() {
 
@@ -27,12 +30,19 @@ class ActivityTrackingService : Service() {
 
     private var isTracking = false
     private var lastLocation: Location? = null
-    private var totalDistance = 0.0 // in meters
+    private var totalDistance = 0.0 // meters
+
+    private val routePoints = CopyOnWriteArrayList<LatLngPoint>()
 
     private var listener: TrackingListener? = null
 
     interface TrackingListener {
-        fun onLocationUpdate(location: Location, distanceKm: Double, speedKmh: Double)
+        fun onLocationUpdate(
+            location: Location,
+            distanceKm: Double,
+            speedKmh: Double,
+            routePoints: List<LatLngPoint>
+        )
     }
 
     inner class LocalBinder : Binder() {
@@ -47,16 +57,12 @@ class ActivityTrackingService : Service() {
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { location ->
-                    handleLocationUpdate(location)
-                }
+                result.lastLocation?.let { handleLocationUpdate(it) }
             }
         }
     }
 
-    override fun onBind(intent: Intent?): IBinder {
-        return binder
-    }
+    override fun onBind(intent: Intent?): IBinder = binder
 
     fun setListener(listener: TrackingListener) {
         this.listener = listener
@@ -64,11 +70,10 @@ class ActivityTrackingService : Service() {
 
     fun startTracking() {
         if (isTracking) return
-
-        Log.d(TAG, "Starting location tracking")
         isTracking = true
         totalDistance = 0.0
         lastLocation = null
+        routePoints.clear()
 
         startForeground(NOTIFICATION_ID, createNotification())
         requestLocationUpdates()
@@ -76,66 +81,64 @@ class ActivityTrackingService : Service() {
 
     fun stopTracking(): Double {
         if (!isTracking) return 0.0
-
-        Log.d(TAG, "Stopping location tracking")
         isTracking = false
 
         fusedLocationClient.removeLocationUpdates(locationCallback)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
 
-        return totalDistance / 1000.0 // Convert to km
+        return totalDistance / 1000.0
     }
 
-    fun getCurrentDistance(): Double {
-        return totalDistance / 1000.0 // in km
-    }
+    fun getRoutePoints(): List<LatLngPoint> = routePoints.toList()
 
     private fun requestLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
         ) {
             Log.e(TAG, "Location permission not granted")
             return
         }
 
-        val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            UPDATE_INTERVAL_MS
-        ).apply {
-            setMinUpdateIntervalMillis(FASTEST_INTERVAL_MS)
-            setMaxUpdateDelayMillis(UPDATE_INTERVAL_MS)
-        }.build()
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL_MS)
+            .setMinUpdateIntervalMillis(FASTEST_INTERVAL_MS)
+            .setMaxUpdateDelayMillis(UPDATE_INTERVAL_MS)
+            .build()
 
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper()
-        )
+        fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
     }
 
     private fun handleLocationUpdate(newLocation: Location) {
-        if (! isTracking) return
+        if (!isTracking) return
+
+        val shouldAddPoint = when (val last = lastLocation) {
+            null -> true
+            else -> last.distanceTo(newLocation) > 5f // lọc nhiễu GPS
+        }
+
+        if (shouldAddPoint) {
+            routePoints.add(
+                LatLngPoint(
+                    lat = newLocation.latitude,
+                    lng = newLocation.longitude,
+                    timeMs = System.currentTimeMillis()
+                )
+            )
+        }
 
         lastLocation?.let { last ->
-            val distance = last.distanceTo(newLocation)
-
-            // Only count if moved more than 5 meters (filter GPS noise)
-            if (distance > 5f) {
-                totalDistance += distance
-
-                val speedKmh = if (newLocation.hasSpeed()) {
-                    (newLocation.speed * 3.6).toDouble() // m/s to km/h
-                } else {
-                    0.0
-                }
-
-                listener?.onLocationUpdate(newLocation, totalDistance / 1000.0, speedKmh)
-                Log.d(TAG, "Distance: %.2f km, Speed: %.1f km/h".format(totalDistance / 1000.0, speedKmh))
-            }
+            val d = last.distanceTo(newLocation)
+            if (d > 5f) totalDistance += d
         }
+
+        val speedKmh = if (newLocation.hasSpeed()) (newLocation.speed * 3.6).toDouble() else 0.0
+
+        listener?.onLocationUpdate(
+            newLocation,
+            totalDistance / 1000.0,
+            speedKmh,
+            routePoints.toList()
+        )
 
         lastLocation = newLocation
     }
@@ -143,11 +146,8 @@ class ActivityTrackingService : Service() {
     private fun createNotification(): android.app.Notification {
         createNotificationChannel()
 
-        val notificationIntent = Intent(this, com.example.fitlifesmarthealthlifestyleapp.MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, notificationIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
+        val intent = Intent(this, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Activity Tracking")
@@ -174,7 +174,7 @@ class ActivityTrackingService : Service() {
         private const val TAG = "ActivityTrackingService"
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "activity_tracking_channel"
-        private const val UPDATE_INTERVAL_MS = 2000L // 2 seconds
-        private const val FASTEST_INTERVAL_MS = 1000L // 1 second
+        private const val UPDATE_INTERVAL_MS = 2000L
+        private const val FASTEST_INTERVAL_MS = 1000L
     }
 }
