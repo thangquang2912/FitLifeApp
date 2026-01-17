@@ -13,5 +13,6 @@ data class ActivityLog(
     var avgSpeedKmh: Double = 0.0,
     var paceMinPerKm: String = "0:00",
     var caloriesBurned: Int = 0,
-    var createdAt: Timestamp = Timestamp.now()
+    var createdAt: Timestamp = Timestamp.now(),
+    val routePoints: List<LatLngPoint> = emptyList()
 )

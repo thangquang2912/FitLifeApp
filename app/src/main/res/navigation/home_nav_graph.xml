@@ -46,4 +46,18 @@
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.social.SocialFragment"
         android:label="fragment_social"
         tools:layout="@layout/fragment_social" />
+
+    <!-- NEW: workout history -->
+    <fragment
+        android:id="@+id/workoutHistoryFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.WorkoutHistoryFragment"
+        android:label="WorkoutHistoryFragment"
+        tools:layout="@layout/fragment_workout_history" />
+
+    <!-- NEW: activity details -->
+    <fragment
+        android:id="@+id/activityDetailsFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.ActivityDetailsFragment"
+        android:label="ActivityDetailsFragment"
+        tools:layout="@layout/fragment_activity_details" />
 </navigation>
