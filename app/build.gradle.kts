@@ -53,6 +53,7 @@ android {
 
     buildFeatures {
         buildConfig = true
+        viewBinding = true
     }
 }
 
@@ -90,4 +91,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-location:21.1.0")
     implementation("androidx.lifecycle:lifecycle-service:2.7.0")
     implementation("org.osmdroid:osmdroid-android:6.1.17")
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 }
