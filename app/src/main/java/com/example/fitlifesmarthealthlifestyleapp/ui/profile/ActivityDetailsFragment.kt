@@ -6,10 +6,12 @@ import android.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.LatLngPoint
 import org.osmdroid.config.Configuration
@@ -23,8 +25,14 @@ import kotlin.math.max
 class ActivityDetailsFragment : Fragment() {
 
     private lateinit var mapView: MapView
+    private lateinit var btnBack: ImageButton
     private lateinit var tvTitle: TextView
-    private lateinit var tvStats: TextView
+    private lateinit var tvSubtitle: TextView
+
+    private lateinit var tvDistanceValue: TextView
+    private lateinit var tvPaceValue: TextView
+    private lateinit var tvCaloriesValue: TextView
+    private lateinit var tvDurationValue: TextView
 
     private lateinit var viewModel: ActivityDetailsViewModel
     private var polyline: Polyline? = null
@@ -40,10 +48,16 @@ class ActivityDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        btnBack = view.findViewById(R.id.btnBack)
         tvTitle = view.findViewById(R.id.tvTitle)
-        tvStats = view.findViewById(R.id.tvStats)
-        mapView = view.findViewById(R.id.mapViewDetails)
+        tvSubtitle = view.findViewById(R.id.tvSubtitle)
 
+        tvDistanceValue = view.findViewById(R.id.tvDistanceValue)
+        tvPaceValue = view.findViewById(R.id.tvPaceValue)
+        tvCaloriesValue = view.findViewById(R.id.tvCaloriesValue)
+        tvDurationValue = view.findViewById(R.id.tvDurationValue)
+
+        mapView = view.findViewById(R.id.mapViewDetails)
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
 
@@ -53,6 +67,11 @@ class ActivityDetailsFragment : Fragment() {
             outlinePaint.isAntiAlias = true
         }
         mapView.overlays.add(polyline)
+
+        btnBack.setOnClickListener {
+            // quay về WorkoutHistoryFragment
+            findNavController().popBackStack()
+        }
 
         viewModel = ViewModelProvider(this)[ActivityDetailsViewModel::class.java]
 
@@ -64,15 +83,13 @@ class ActivityDetailsFragment : Fragment() {
         viewModel.state.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ActivityDetailsState.Loading -> {
-                    tvTitle.text = "Loading..."
-                    tvStats.text = ""
+                    tvTitle.text = "Activity Details"
+                    tvSubtitle.text = "Loading..."
                 }
                 is ActivityDetailsState.Error -> {
                     Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                 }
-                is ActivityDetailsState.Success -> {
-                    render(state.ui)
-                }
+                is ActivityDetailsState.Success -> render(state.ui)
             }
         }
 
@@ -80,14 +97,13 @@ class ActivityDetailsFragment : Fragment() {
     }
 
     private fun render(ui: ActivityDetailsUi) {
-        tvTitle.text = "${ui.title}\n${ui.subtitle}"
+        tvTitle.text = ui.title
+        tvSubtitle.text = ui.subtitle
 
-        tvStats.text =
-            "Distance: ${ui.distanceText}\n" +
-                    "Duration: ${ui.durationText}\n" +
-                    "Avg Speed: ${ui.avgSpeedText}\n" +
-                    "Pace: ${ui.paceText}\n" +
-                    "Calories: ${ui.caloriesText}"
+        tvDistanceValue.text = ui.distanceText
+        tvPaceValue.text = ui.paceText
+        tvCaloriesValue.text = ui.caloriesText
+        tvDurationValue.text = ui.durationText
 
         val clean = sanitizeRoute(ui.raw.routePoints)
         val geoPoints = clean.map { GeoPoint(it.lat, it.lng) }
@@ -106,8 +122,8 @@ class ActivityDetailsFragment : Fragment() {
 
     private fun sanitizeRoute(points: List<LatLngPoint>): List<LatLngPoint> {
         if (points.size <= 2) return points
-        val sorted = points.sortedBy { it.timeMs }
 
+        val sorted = points.sortedBy { it.timeMs }
         val out = ArrayList<LatLngPoint>(sorted.size)
         var last: LatLngPoint? = null
 
