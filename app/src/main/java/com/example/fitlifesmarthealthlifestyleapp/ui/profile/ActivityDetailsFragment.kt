@@ -69,8 +69,7 @@ class ActivityDetailsFragment : Fragment() {
         mapView.overlays.add(polyline)
 
         btnBack.setOnClickListener {
-            // quay về WorkoutHistoryFragment
-            findNavController().popBackStack()
+            findNavController().popBackStack(R.id.workoutHistoryFragment, false)
         }
 
         viewModel = ViewModelProvider(this)[ActivityDetailsViewModel::class.java]
