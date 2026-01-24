@@ -4,6 +4,7 @@ import androidx. lifecycle.LiveData
 import androidx. lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.NutritionRepository
 import com.example.fitlifesmarthealthlifestyleapp.data. repository.UserRepository
 import com. example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
 import com.example.fitlifesmarthealthlifestyleapp.domain. model.User
@@ -11,10 +12,12 @@ import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
 import com.example. fitlifesmarthealthlifestyleapp.domain.utils.DateUtils
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import java.util.Date
 
 class HomeViewModel : ViewModel() {
     private val waterRepository = WaterRepository()
     private val userRepository = UserRepository()
+    private val nutritionRepository = NutritionRepository()
     private val auth = FirebaseAuth.getInstance()
     private val TAG = "HomeViewModel"
 
@@ -30,9 +33,21 @@ class HomeViewModel : ViewModel() {
     private val _user = MutableLiveData<User?>()
     val user: LiveData<User?> = _user
 
+    private val _totalCalories = MutableLiveData<Int>()
+    val totalCalories: LiveData<Int> = _totalCalories
+
     init {
         // Kích hoạt lắng nghe Realtime ngay khi ViewModel được tạo
         listenToUserChanges()
+    }
+
+    fun loadTodayCalories() {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            val summary = nutritionRepository.getDailySummary(uid, Date())
+            val calories = summary?.get("totalCalories") as? Long ?: 0L
+            _totalCalories.value = calories.toInt()
+        }
     }
 
     fun loadTodayWaterLog() {

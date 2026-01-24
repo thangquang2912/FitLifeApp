@@ -80,6 +80,7 @@ class HomeFragment : Fragment() {
 
         homeViewModel.loadTodayWaterLog()
         homeViewModel.loadUserGoals()
+        homeViewModel.loadTodayCalories()
     }
 
 
@@ -161,12 +162,12 @@ class HomeFragment : Fragment() {
     private fun setupDashboard() {
         // 1. Steps
         stepsIcon.setImageResource(R.drawable.ic_steps)
-        stepsValue.text = "8,234"
+        stepsValue.text = "0"
         stepsLabel.text = "Steps"
 
         // 2. Calories
         caloriesIcon.setImageResource(R.drawable.ic_calories)
-        caloriesValue.text = "1,847"
+        caloriesValue.text = "0"
         caloriesLabel.text = "Calories"
 
         // 3. Water
@@ -436,6 +437,11 @@ class HomeFragment : Fragment() {
             }
         }
 
+        // Cập nhật Calories
+        homeViewModel.totalCalories.observe(viewLifecycleOwner) { calories ->
+            caloriesValue.text = String.format("%,d", calories)
+        }
+
         // Khi có thông báo lỗi hoặc thành công (Toast)
         homeViewModel.toastMessage.observe(viewLifecycleOwner) { message ->
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
@@ -488,4 +494,3 @@ class HomeFragment : Fragment() {
         }
     }
 }
-
