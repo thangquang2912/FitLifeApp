@@ -1,8 +1,11 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.home
 
+import android.Manifest
 import android.app.Dialog
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.GestureDetector
 import androidx.fragment.app.Fragment
@@ -16,10 +19,12 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
+import com.example.fitlifesmarthealthlifestyleapp.domain.service.StepSensorManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import java.text.SimpleDateFormat
@@ -55,6 +60,18 @@ class HomeFragment : Fragment() {
     private lateinit var btnStart : MaterialButton
     private lateinit var btnSetGoals : MaterialButton
 
+    private var stepSensorManager: StepSensorManager? = null
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            startStepCounter()
+        } else {
+            Toast.makeText(requireContext(), "Permission denied for step counting", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -81,6 +98,39 @@ class HomeFragment : Fragment() {
         homeViewModel.loadTodayWaterLog()
         homeViewModel.loadUserGoals()
         homeViewModel.loadTodayCalories()
+        homeViewModel.loadTodaySteps()
+
+        checkStepPermission()
+    }
+
+    private fun checkStepPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACTIVITY_RECOGNITION
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    startStepCounter()
+                }
+                else -> {
+                    requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+                }
+            }
+        } else {
+            startStepCounter()
+        }
+    }
+
+    private fun startStepCounter() {
+        stepSensorManager = StepSensorManager(requireContext()) { steps ->
+            homeViewModel.updateSteps(steps)
+        }
+        stepSensorManager?.startListening()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        stepSensorManager?.stopListening()
     }
 
 
@@ -440,6 +490,11 @@ class HomeFragment : Fragment() {
         // Cập nhật Calories
         homeViewModel.totalCalories.observe(viewLifecycleOwner) { calories ->
             caloriesValue.text = String.format("%,d", calories)
+        }
+
+        // Cập nhật Steps
+        homeViewModel.todaySteps.observe(viewLifecycleOwner) { steps ->
+            stepsValue.text = String.format("%,d", steps)
         }
 
         // Khi có thông báo lỗi hoặc thành công (Toast)

@@ -5,6 +5,7 @@ import androidx. lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.NutritionRepository
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.StepRepository
 import com.example.fitlifesmarthealthlifestyleapp.data. repository.UserRepository
 import com. example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
 import com.example.fitlifesmarthealthlifestyleapp.domain. model.User
@@ -18,6 +19,7 @@ class HomeViewModel : ViewModel() {
     private val waterRepository = WaterRepository()
     private val userRepository = UserRepository()
     private val nutritionRepository = NutritionRepository()
+    private val stepRepository = StepRepository()
     private val auth = FirebaseAuth.getInstance()
     private val TAG = "HomeViewModel"
 
@@ -36,6 +38,9 @@ class HomeViewModel : ViewModel() {
     private val _totalCalories = MutableLiveData<Int>()
     val totalCalories: LiveData<Int> = _totalCalories
 
+    private val _todaySteps = MutableLiveData<Int>()
+    val todaySteps: LiveData<Int> = _todaySteps
+
     init {
         // Kích hoạt lắng nghe Realtime ngay khi ViewModel được tạo
         listenToUserChanges()
@@ -47,6 +52,25 @@ class HomeViewModel : ViewModel() {
             val summary = nutritionRepository.getDailySummary(uid, Date())
             val calories = summary?.get("totalCalories") as? Long ?: 0L
             _totalCalories.value = calories.toInt()
+        }
+    }
+
+    fun loadTodaySteps() {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            val steps = stepRepository.getTodaySteps(uid)
+            _todaySteps.value = steps
+        }
+    }
+
+    fun updateSteps(steps: Int) {
+        val uid = auth.currentUser?.uid ?: return
+        val currentSteps = _todaySteps.value ?: 0
+        val newTotalSteps = currentSteps + steps
+        _todaySteps.value = newTotalSteps
+        
+        viewModelScope.launch {
+            stepRepository.updateSteps(uid, newTotalSteps)
         }
     }
 
