@@ -18,6 +18,11 @@
         <action
             android:id="@+id/action_profile_to_editProfile"
             app:destination="@id/editProfileFragment" />
+        <action
+            android:id="@+id/action_profile_to_workoutHistory"
+            app:destination="@id/workoutHistoryFragment"
+            app:popUpTo="@id/profile"
+            app:popUpToInclusive="false" />
     </fragment>
 
     <dialog
@@ -55,7 +60,12 @@
         android:id="@+id/workoutHistoryFragment"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.WorkoutHistoryFragment"
         android:label="WorkoutHistoryFragment"
-        tools:layout="@layout/fragment_workout_history" />
+        tools:layout="@layout/fragment_workout_history">
+
+        <action
+            android:id="@+id/action_workoutHistory_to_activityDetails"
+            app:destination="@id/activityDetailsFragment" />
+    </fragment>
 
     <!-- NEW: activity details -->
     <fragment

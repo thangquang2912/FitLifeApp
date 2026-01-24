@@ -192,7 +192,7 @@ class ProfileFragment : Fragment() {
         // Các nút menu khác...
         // Workout History -> mở màn hình danh sách lịch sử
         btnWorkoutHistory.setOnClickListener {
-            findNavController().navigate(R.id.workoutHistoryFragment)
+            findNavController().navigate(R.id.action_profile_to_workoutHistory)
         }
     }
 }

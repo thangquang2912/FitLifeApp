@@ -1,8 +1,12 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.profile
 
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -22,11 +26,27 @@ class WorkoutHistoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // System back -> Profile
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    findNavController().popBackStack(R.id.profile, false)
+                }
+            }
+        )
+
+        // NEW: Back button in UI -> Profile
+        val btnBack = view.findViewById<ImageButton>(R.id.btnBack)
+        btnBack.setOnClickListener {
+            findNavController().popBackStack(R.id.profile, false)
+        }
+
         viewModel = ViewModelProvider(this)[WorkoutHistoryViewModel::class.java]
 
         adapter = WorkoutHistoryAdapter { log ->
             val bundle = Bundle().apply { putString("activityId", log.id) }
-            findNavController().navigate(R.id.activityDetailsFragment, bundle)
+            findNavController().navigate(R.id.action_workoutHistory_to_activityDetails, bundle)
         }
 
         val rv = view.findViewById<RecyclerView>(R.id.rvHistory)
