@@ -1,0 +1,94 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="8dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivCommentAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_user"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent" />
+
+    <LinearLayout
+        android:id="@+id/layoutContent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/bg_edittext"
+        android:orientation="vertical"
+        android:padding="10dp"
+        app:layout_constraintEnd_toStartOf="@+id/btnLikeComment"
+        app:layout_constraintStart_toEndOf="@+id/ivCommentAvatar"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tvCommentUser"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User Name"
+            android:textStyle="bold"
+            android:textSize="13sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/tvCommentContent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="This is a comment content..."
+            android:textSize="14sp"
+            android:textColor="#333333" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvCommentTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2h"
+        android:textSize="12sp"
+        android:textColor="@color/gray_text"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="4dp"
+        app:layout_constraintStart_toStartOf="@+id/layoutContent"
+        app:layout_constraintTop_toBottomOf="@+id/layoutContent" />
+
+    <TextView
+        android:id="@+id/tvReply"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Reply"
+        android:textStyle="bold"
+        android:textSize="12sp"
+        android:textColor="@color/gray_text"
+        android:layout_marginStart="16dp"
+        app:layout_constraintStart_toEndOf="@+id/tvCommentTime"
+        app:layout_constraintTop_toTopOf="@+id/tvCommentTime" />
+
+    <ImageView
+        android:id="@+id/btnLikeComment"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_heart_outline"
+        android:layout_marginTop="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvCommentLikes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="2"
+        android:textSize="10sp"
+        android:textColor="@color/gray_text"
+        app:layout_constraintEnd_toEndOf="@+id/btnLikeComment"
+        app:layout_constraintStart_toStartOf="@+id/btnLikeComment"
+        app:layout_constraintTop_toBottomOf="@+id/btnLikeComment"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

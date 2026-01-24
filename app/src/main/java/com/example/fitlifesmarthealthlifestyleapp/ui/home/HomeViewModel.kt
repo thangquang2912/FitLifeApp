@@ -1,14 +1,14 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.home
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx. lifecycle.LiveData
+import androidx. lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fitlifesmarthealthlifestyleapp.data.repository.UserRepository
-import com.example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
-import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
+import com.example.fitlifesmarthealthlifestyleapp.data. repository.UserRepository
+import com. example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
+import com.example.fitlifesmarthealthlifestyleapp.domain. model.User
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
-import com.example.fitlifesmarthealthlifestyleapp.domain.utils.DateUtils
+import com.example. fitlifesmarthealthlifestyleapp.domain.utils.DateUtils
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
@@ -16,6 +16,7 @@ class HomeViewModel : ViewModel() {
     private val waterRepository = WaterRepository()
     private val userRepository = UserRepository()
     private val auth = FirebaseAuth.getInstance()
+    private val TAG = "HomeViewModel"
 
     private val _waterLog = MutableLiveData<WaterLog>()
     val waterLog: LiveData<WaterLog> = _waterLog
@@ -26,6 +27,8 @@ class HomeViewModel : ViewModel() {
     private val _toastMessage = MutableLiveData<String>()
     val toastMessage: LiveData<String> = _toastMessage
 
+    private val _user = MutableLiveData<User?>()
+    val user: LiveData<User?> = _user
 
     init {
         // Kích hoạt lắng nghe Realtime ngay khi ViewModel được tạo
@@ -33,31 +36,83 @@ class HomeViewModel : ViewModel() {
     }
 
     fun loadTodayWaterLog() {
-        val uid = auth.currentUser?.uid ?: return
+        val uid = auth.currentUser?.uid ?: run {
+            return
+        }
         val todayId = DateUtils.getCurrentDateId()
-
         _isLoading.value = true
 
         viewModelScope.launch {
-            // Lấy log của ngày hôm nay
             val result = waterRepository.getWaterLog(uid, todayId)
 
             if (result.isSuccess) {
                 val existingLog = result.getOrNull()
 
                 if (existingLog != null) {
-                    // TH1: Đã có log hôm nay -> Hiển thị lên
-                    _waterLog.value = existingLog!!
+                    _waterLog.value = existingLog
                 } else {
-                    // TH2: Chưa có log (Ngày mới) -> TẠO MỚI TỰ ĐỘNG
                     createNewLogForToday(uid, todayId)
                 }
             } else {
-                _toastMessage.value = "Lỗi tải dữ liệu: ${result.exceptionOrNull()?.message}"
+                _toastMessage.value = "Lỗi tải dữ liệu:  ${result.exceptionOrNull()?.message}"
             }
             _isLoading.value = false
         }
     }
+
+    fun loadUserGoals() {
+        val uid = auth.currentUser?.uid ?: run {
+            return
+        }
+        _isLoading.value = true
+
+        viewModelScope.launch {
+            val result = userRepository.getUserDetails(uid)
+            if (result.isSuccess) {
+                val user = result.getOrNull()
+                _user.value = user
+            } else {
+                _toastMessage.value = "Failed to load goals: ${result.exceptionOrNull()?.message}"
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun saveGoals(
+        waterGoal: Int,
+        stepsGoal: Int,
+        activeCalories: Int,
+        caloriesConsume: Int,
+        weeklyRunning: Int
+    ) {
+        val uid = auth.currentUser?.uid ?:  return
+        _isLoading.value = true
+
+        viewModelScope.launch {
+            val result = userRepository.updateUserGoals(
+                uid = uid,
+                dailyWaterGoal = waterGoal,
+                dailyStepsGoal = stepsGoal,
+                dailyActiveCalories = activeCalories,
+                dailyCaloriesConsume = caloriesConsume,
+                weeklyRunning = weeklyRunning
+            )
+
+            if (result.isSuccess) {
+                // Cập nhật water log nếu thay đổi water goal
+                updateDailyGoal(waterGoal)
+
+                // Reload user data
+                loadUserGoals()
+                _toastMessage.value = "Goals saved successfully! "
+            } else {
+                _toastMessage.value = "Failed to save goals: ${result. exceptionOrNull()?.message}"
+            }
+
+            _isLoading.value = false
+        }
+    }
+
 
     // Logic tạo log mới (Hybrid Goal)
     private suspend fun createNewLogForToday(uid: String, todayId: String) {
