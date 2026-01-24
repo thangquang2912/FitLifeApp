@@ -119,6 +119,25 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+    // Hàm trừ nước
+    fun removeWater(amount: Int) {
+        val currentLog = _waterLog.value ?: return
+
+        // Kiểm tra nếu lượng nước hiện tại > 0 thì mới trừ
+        if (currentLog.currentIntake > 0) {
+            // Sử dụng coerceAtLeast(0) để đảm bảo không bao giờ bị âm
+            currentLog.currentIntake = (currentLog.currentIntake - amount).coerceAtLeast(0)
+            _waterLog.value = currentLog
+
+            // Cập nhật lên Firestore
+            viewModelScope.launch {
+                waterRepository.saveWaterLog(currentLog)
+            }
+        } else {
+            _toastMessage.value = "Lượng nước đã về 0 rồi!"
+        }
+    }
+
     // Hàm chỉnh sửa mục tiêu thủ công (Feature 3)
     fun updateDailyGoal(newGoal: Int) {
         val currentLog = _waterLog.value ?: return

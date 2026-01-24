@@ -1,6 +1,7 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.home
 
 import android.os.Bundle
+import android.view.GestureDetector
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -42,6 +43,7 @@ class HomeFragment : Fragment() {
     private lateinit var progressBarWater : ProgressBar
     private lateinit var layoutDropsContainer : LinearLayout
     private lateinit var imgWaterIcon : ImageView
+    private lateinit var gestureDetector: GestureDetector
 
 
     override fun onCreateView(
@@ -62,12 +64,40 @@ class HomeFragment : Fragment() {
         setupDashboard()
 
         observeViewModel()
-        imgWaterIcon.setOnClickListener {
-            homeViewModel.addWater(250)
-        }
+        setupWaterClickEvents()
 
 
         homeViewModel.loadTodayWaterLog()
+    }
+
+
+    private fun setupWaterClickEvents() {
+        val listener = object : GestureDetector.SimpleOnGestureListener() {
+            // 1. Xử lý chạm 1 lần (Single Tap)
+            override fun onSingleTapConfirmed(e: android.view.MotionEvent): Boolean {
+                homeViewModel.addWater(250)
+                return true
+            }
+
+            // 2. Xử lý chạm 2 lần (Double Tap)
+            override fun onDoubleTap(e: android.view.MotionEvent): Boolean {
+                homeViewModel.removeWater(250)
+                return true
+            }
+
+            // 3. Bắt buộc: Phải trả về true ở onDown để GestureDetector bắt đầu hoạt động
+            override fun onDown(e: android.view.MotionEvent): Boolean {
+                return true
+            }
+        }
+
+        val detector = GestureDetector(requireContext(), listener)
+
+        // Gán vào biểu tượng giọt nước
+        imgWaterIcon.setOnTouchListener { _, event ->
+            // Chỉ cần gọi detector xử lý, không gọi performClick() ở đây nữa
+            detector.onTouchEvent(event)
+        }
     }
 
     private fun initViews(view:View) {
