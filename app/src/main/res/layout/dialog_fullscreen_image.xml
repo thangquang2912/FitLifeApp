@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_dialog_rounded"
+    android:clipToOutline="true"> <com.github.chrisbanes.photoview.PhotoView
+    android:id="@+id/photoViewFullScreen"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_gravity="center" />
+
+    <ImageButton
+        android:id="@+id/btnCloseFullScreen"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="12dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_arrow_back_ios_new_24"
+        app:tint="@android:color/white" />
+
+    <ProgressBar
+        android:id="@+id/progressBarFullScreen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminateTint="@android:color/white"/>
+</FrameLayout>
