@@ -11,6 +11,7 @@ import com.example.fitlifesmarthealthlifestyleapp.domain.model.LatLngPoint
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 class ActivityViewModel : ViewModel() {
@@ -25,13 +26,13 @@ class ActivityViewModel : ViewModel() {
     private val _currentLocation = MutableLiveData<Location>()
     val currentLocation: LiveData<Location> = _currentLocation
 
-    private val _distance = MutableLiveData(0.0)
+    private val _distance = MutableLiveData(0.0) // km
     val distance: LiveData<Double> = _distance
 
-    private val _speed = MutableLiveData(0.0)
+    private val _speed = MutableLiveData(0.0) // km/h (instant/derived)
     val speed: LiveData<Double> = _speed
 
-    private val _duration = MutableLiveData(0)
+    private val _duration = MutableLiveData(0) // seconds
     val duration: LiveData<Int> = _duration
 
     private val _calories = MutableLiveData(0)
@@ -40,22 +41,26 @@ class ActivityViewModel : ViewModel() {
     private val _toastMessage = MutableLiveData<String>()
     val toastMessage: LiveData<String> = _toastMessage
 
-    // NEW
     private val _routePoints = MutableLiveData<List<LatLngPoint>>(emptyList())
     val routePoints: LiveData<List<LatLngPoint>> = _routePoints
 
     private var startTime: Long = 0
-    private var userWeight: Float = 70f
+    private var userWeightKg: Float = 70f
 
-    init { loadUserWeight() }
+    // smooth speed to reduce spikes
+    private var smoothedSpeedKmh: Double = 0.0
+
+    init {
+        loadUserWeight()
+    }
 
     private fun loadUserWeight() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             val result = userRepository.getUserDetails(uid)
             if (result.isSuccess) {
-                userWeight = result.getOrNull()?.weight ?: 70f
-                Log.d(TAG, "User weight loaded: $userWeight kg")
+                userWeightKg = result.getOrNull()?.weight ?: 70f
+                Log.d(TAG, "User weight loaded: $userWeightKg kg")
             }
         }
     }
@@ -65,6 +70,7 @@ class ActivityViewModel : ViewModel() {
         startTime = System.currentTimeMillis()
         _distance.value = 0.0
         _speed.value = 0.0
+        smoothedSpeedKmh = 0.0
         _duration.value = 0
         _calories.value = 0
         _routePoints.value = emptyList()
@@ -72,6 +78,7 @@ class ActivityViewModel : ViewModel() {
 
     fun stopTracking() {
         _isTracking.value = false
+        Log.d(TAG, "Tracking stopped")
     }
 
     fun updateFromService(
@@ -82,7 +89,11 @@ class ActivityViewModel : ViewModel() {
     ) {
         _currentLocation.value = location
         _distance.value = distanceKm
-        _speed.value = speedKmh
+
+        // smooth speed: EMA
+        smoothedSpeedKmh = if (smoothedSpeedKmh == 0.0) speedKmh else (0.25 * speedKmh + 0.75 * smoothedSpeedKmh)
+        _speed.value = smoothedSpeedKmh
+
         _routePoints.value = route
     }
 
@@ -91,19 +102,41 @@ class ActivityViewModel : ViewModel() {
         calculateCalories()
     }
 
+    /**
+     * Calories for running:
+     * ACSM running equation (flat):
+     * VO2 = 3.5 + 0.2*speed(m/min)
+     * kcal/min ≈ VO2 * weight(kg)/1000 * 5
+     *
+     * We use speed derived from distance & duration for stability:
+     * avgSpeedKmh = distanceKm / hours
+     */
     private fun calculateCalories() {
-        val durationHours = (_duration.value ?: 0) / 3600.0
-        val avgSpeed = _speed.value ?: 0.0
-
-        val met = when {
-            avgSpeed < 6.0 -> 6.0
-            avgSpeed < 8.0 -> 8.3
-            avgSpeed < 10.0 -> 9.8
-            avgSpeed < 12.0 -> 11.0
-            else -> 12.5
+        val distanceKm = _distance.value ?: 0.0
+        val durationSec = _duration.value ?: 0
+        if (durationSec <= 0) {
+            _calories.value = 0
+            return
         }
 
-        _calories.value = (met * userWeight * durationHours).roundToInt()
+        val hours = durationSec / 3600.0
+        val avgSpeedKmh = if (hours > 0) (distanceKm / hours) else 0.0
+
+        // clamp running realistic range to avoid spikes (walking->running)
+        val clampedKmh = avgSpeedKmh.coerceIn(3.0, 20.0)
+
+        val speedMPerMin = (clampedKmh * 1000.0) / 60.0
+        val vo2 = 3.5 + 0.2 * speedMPerMin
+
+        val kcalPerMin = vo2 * userWeightKg / 1000.0 * 5.0
+        val minutes = durationSec / 60.0
+        val kcal = (kcalPerMin * minutes)
+
+        // additional sanity: calories should not exceed (distanceKm*~120) for running
+        val maxByDistance = distanceKm * 120.0
+        val finalKcal = minOf(kcal, maxByDistance).roundToInt()
+
+        _calories.value = max(0, finalKcal)
     }
 
     fun completeActivity() {
@@ -114,7 +147,10 @@ class ActivityViewModel : ViewModel() {
 
         val distanceKm = _distance.value ?: 0.0
         val durationSec = _duration.value ?: 0
-        val avgSpeed = _speed.value ?: 0.0
+        val avgSpeedKmh = run {
+            val hours = durationSec / 3600.0
+            if (hours > 0) distanceKm / hours else 0.0
+        }
         val calories = _calories.value ?: 0
         val route = _routePoints.value ?: emptyList()
 
@@ -138,7 +174,7 @@ class ActivityViewModel : ViewModel() {
             endTime = Timestamp.now(),
             durationSeconds = durationSec,
             distanceKm = distanceKm,
-            avgSpeedKmh = avgSpeed,
+            avgSpeedKmh = avgSpeedKmh,
             paceMinPerKm = paceMinPerKm,
             caloriesBurned = calories,
             routePoints = route
@@ -158,6 +194,7 @@ class ActivityViewModel : ViewModel() {
     private fun resetStats() {
         _distance.value = 0.0
         _speed.value = 0.0
+        smoothedSpeedKmh = 0.0
         _duration.value = 0
         _calories.value = 0
         _routePoints.value = emptyList()

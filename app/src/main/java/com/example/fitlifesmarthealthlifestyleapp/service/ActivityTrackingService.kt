@@ -21,6 +21,7 @@ import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.LatLngPoint
 import com.google.android.gms.location.*
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.math.max
 
 class ActivityTrackingService : Service() {
 
@@ -29,8 +30,8 @@ class ActivityTrackingService : Service() {
     private lateinit var locationCallback: LocationCallback
 
     private var isTracking = false
-    private var lastLocation: Location? = null
-    private var totalDistance = 0.0 // meters
+    private var lastAcceptedLocation: Location? = null
+    private var totalDistanceMeters = 0.0
 
     private val routePoints = CopyOnWriteArrayList<LatLngPoint>()
 
@@ -51,8 +52,6 @@ class ActivityTrackingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "Service created")
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         locationCallback = object : LocationCallback() {
@@ -70,9 +69,10 @@ class ActivityTrackingService : Service() {
 
     fun startTracking() {
         if (isTracking) return
+
         isTracking = true
-        totalDistance = 0.0
-        lastLocation = null
+        totalDistanceMeters = 0.0
+        lastAcceptedLocation = null
         routePoints.clear()
 
         startForeground(NOTIFICATION_ID, createNotification())
@@ -87,7 +87,7 @@ class ActivityTrackingService : Service() {
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
 
-        return totalDistance / 1000.0
+        return totalDistanceMeters / 1000.0
     }
 
     fun getRoutePoints(): List<LatLngPoint> = routePoints.toList()
@@ -100,6 +100,7 @@ class ActivityTrackingService : Service() {
             return
         }
 
+        // Để ổn định hơn: BALANCED hoặc HIGH_ACCURACY tùy bạn
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL_MS)
             .setMinUpdateIntervalMillis(FASTEST_INTERVAL_MS)
             .setMaxUpdateDelayMillis(UPDATE_INTERVAL_MS)
@@ -111,36 +112,67 @@ class ActivityTrackingService : Service() {
     private fun handleLocationUpdate(newLocation: Location) {
         if (!isTracking) return
 
-        val shouldAddPoint = when (val last = lastLocation) {
-            null -> true
-            else -> last.distanceTo(newLocation) > 5f // lọc nhiễu GPS
+        // ---- 1) Basic accuracy filter ----
+        if (newLocation.hasAccuracy() && newLocation.accuracy > MAX_ACCEPTED_ACCURACY_M) {
+            Log.w(TAG, "Drop point due to low accuracy: ${newLocation.accuracy}m")
+            return
         }
 
-        if (shouldAddPoint) {
-            routePoints.add(
-                LatLngPoint(
-                    lat = newLocation.latitude,
-                    lng = newLocation.longitude,
-                    timeMs = System.currentTimeMillis()
-                )
-            )
+        val last = lastAcceptedLocation
+
+        // ---- 2) Jump filter (teleport) ----
+        if (last != null) {
+            val dtSec = max(1.0, (newLocation.time - last.time) / 1000.0)
+            val dMeters = last.distanceTo(newLocation).toDouble()
+
+            // speed derived from distance/time, more stable than location.speed sometimes
+            val derivedSpeedMps = dMeters / dtSec
+
+            // nếu nhảy quá xa trong thời gian ngắn -> bỏ
+            if (dMeters > MAX_JUMP_DISTANCE_M && derivedSpeedMps > MAX_JUMP_SPEED_MPS) {
+                Log.w(TAG, "Drop point due to GPS jump: d=${"%.1f".format(dMeters)}m dt=${"%.1f".format(dtSec)}s v=${"%.1f".format(derivedSpeedMps)}m/s")
+                return
+            }
+
+            // ---- 3) Accept distance if moved enough ----
+            if (dMeters >= MIN_MOVE_TO_COUNT_M) {
+                totalDistanceMeters += dMeters
+            } else {
+                // nếu đứng yên, vẫn cho update UI speed=0 nhưng không add point để khỏi răng cưa
+                notifyListener(newLocation, 0.0)
+                return
+            }
         }
 
-        lastLocation?.let { last ->
-            val d = last.distanceTo(newLocation)
-            if (d > 5f) totalDistance += d
-        }
-
-        val speedKmh = if (newLocation.hasSpeed()) (newLocation.speed * 3.6).toDouble() else 0.0
-
-        listener?.onLocationUpdate(
-            newLocation,
-            totalDistance / 1000.0,
-            speedKmh,
-            routePoints.toList()
+        // ---- 4) Accept point ----
+        val p = LatLngPoint(
+            lat = newLocation.latitude,
+            lng = newLocation.longitude,
+            timeMs = System.currentTimeMillis(),
+            accuracyMeters = if (newLocation.hasAccuracy()) newLocation.accuracy else 999f
         )
+        routePoints.add(p)
 
-        lastLocation = newLocation
+        // speedKmh dùng derived nếu có last; fallback location.speed
+        val speedKmh = if (last != null) {
+            val dtSec = max(1.0, (newLocation.time - last.time) / 1000.0)
+            val dMeters = last.distanceTo(newLocation).toDouble()
+            ((dMeters / dtSec) * 3.6)
+        } else {
+            if (newLocation.hasSpeed()) (newLocation.speed * 3.6).toDouble() else 0.0
+        }
+
+        lastAcceptedLocation = newLocation
+        notifyListener(newLocation, speedKmh)
+    }
+
+    private fun notifyListener(location: Location, speedKmh: Double) {
+        listener?.onLocationUpdate(
+            location = location,
+            distanceKm = totalDistanceMeters / 1000.0,
+            speedKmh = speedKmh,
+            routePoints = routePoints.toList()
+        )
     }
 
     private fun createNotification(): android.app.Notification {
@@ -174,7 +206,14 @@ class ActivityTrackingService : Service() {
         private const val TAG = "ActivityTrackingService"
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "activity_tracking_channel"
+
         private const val UPDATE_INTERVAL_MS = 2000L
         private const val FASTEST_INTERVAL_MS = 1000L
+
+        // Filters
+        private const val MAX_ACCEPTED_ACCURACY_M = 25f     // loại điểm quá sai
+        private const val MIN_MOVE_TO_COUNT_M = 5.0        // lọc nhiễu đứng yên
+        private const val MAX_JUMP_DISTANCE_M = 120.0      // nhảy quá xa
+        private const val MAX_JUMP_SPEED_MPS = 12.0        // ~43 km/h (chạy bộ khó tới) => coi là jump
     }
 }

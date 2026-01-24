@@ -11,8 +11,9 @@ import android.os.IBinder
 import android.os.Looper
 import android.preference.PreferenceManager
 import android.provider.Settings
-import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -32,13 +33,13 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
+import kotlin.math.max
 
 class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
 
     private lateinit var viewModel: ActivityViewModel
     private lateinit var mapView: MapView
     private var currentMarker: Marker? = null
-
     private var routePolyline: Polyline? = null
 
     private lateinit var tvTime: TextView
@@ -55,10 +56,11 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
     private val handler = Handler(Looper.getMainLooper())
     private var seconds = 0
 
-    // realtime location (for marker follow even when not tracking)
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private var isLocationUpdatesActive = false
+
+    private var didAutoZoomToRoute = false
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -66,9 +68,6 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
             trackingService = binder.getService()
             trackingService?.setListener(this@ActivityFragment)
             isServiceBound = true
-            Log.d(TAG, "Service connected")
-
-            // đảm bảo startTracking gọi sau khi bound
             trackingService?.startTracking()
         }
 
@@ -82,10 +81,7 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         when {
-            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true -> {
-                startRealtimeLocationUpdates()
-                Toast.makeText(requireContext(), "Location tracking enabled", Toast.LENGTH_SHORT).show()
-            }
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true -> startRealtimeLocationUpdates()
             else -> Toast.makeText(requireContext(), "Location permission required", Toast.LENGTH_LONG).show()
         }
     }
@@ -105,14 +101,7 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
         setupLocationCallback()
 
         viewModel = ViewModelProvider(this)[ActivityViewModel::class.java]
-        initViews(view)
-        setupMap()
-        setupObservers()
-        setupListeners()
-        checkLocationPermission()
-    }
 
-    private fun initViews(view: View) {
         mapView = view.findViewById(R.id.mapView)
         tvTime = view.findViewById(R.id.tvTime)
         tvDistance = view.findViewById(R.id.tvDistance)
@@ -121,6 +110,11 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
         tvCalories = view.findViewById(R.id.tvCalories)
         btnStartActivity = view.findViewById(R.id.btnStartActivity)
         btnComplete = view.findViewById(R.id.btnComplete)
+
+        setupMap()
+        setupObservers()
+        setupListeners()
+        checkLocationPermission()
     }
 
     private fun setupMap() {
@@ -191,11 +185,11 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
                 title = "You are here"
             }
             mapView.overlays.add(currentMarker)
-            mapView.controller.animateTo(geoPoint)
         } else {
             currentMarker?.position = geoPoint
-            mapView.controller.animateTo(geoPoint)
         }
+
+        mapView.controller.animateTo(geoPoint)
         mapView.invalidate()
     }
 
@@ -229,7 +223,6 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
             btnComplete.visibility = if (isTracking) View.VISIBLE else View.GONE
         }
 
-        // NEW: vẽ route
         viewModel.routePoints.observe(viewLifecycleOwner) { drawRoute(it) }
     }
 
@@ -247,6 +240,7 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
 
     private fun startTracking() {
         viewModel.startTracking()
+        didAutoZoomToRoute = false
         drawRoute(emptyList())
 
         val intent = Intent(requireContext(), ActivityTrackingService::class.java)
@@ -275,14 +269,66 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
     }
 
     private fun drawRoute(points: List<LatLngPoint>) {
-        val geoPoints = points.map { GeoPoint(it.lat, it.lng) }
+        val clean = sanitizeRoute(points)
+        val geoPoints = clean.map { GeoPoint(it.lat, it.lng) }
+
         routePolyline?.setPoints(geoPoints)
         mapView.invalidate()
 
-        if (geoPoints.size >= 2) {
+        // Auto zoom ONLY once when enough points
+        if (!didAutoZoomToRoute && geoPoints.size >= 5) {
             val bb = BoundingBox.fromGeoPointsSafe(geoPoints)
-            if (bb != null) mapView.zoomToBoundingBox(bb, true, 120)
+            if (bb != null) {
+                mapView.zoomToBoundingBox(bb, true, 120)
+                didAutoZoomToRoute = true
+            }
         }
+    }
+
+    /**
+     * Last safety net to avoid wrong polyline:
+     * - remove points with bad accuracy
+     * - remove teleport jumps
+     * - keep order by timeMs
+     */
+    private fun sanitizeRoute(points: List<LatLngPoint>): List<LatLngPoint> {
+        if (points.size <= 2) return points
+
+        val sorted = points.sortedBy { it.timeMs }
+
+        val out = ArrayList<LatLngPoint>(sorted.size)
+        var last: LatLngPoint? = null
+
+        for (p in sorted) {
+            if (p.accuracyMeters > 25f) continue
+
+            val l = last
+            if (l == null) {
+                out.add(p)
+                last = p
+                continue
+            }
+
+            val d = distanceMeters(l, p)
+            val dtSec = max(1.0, (p.timeMs - l.timeMs) / 1000.0)
+            val v = d / dtSec // m/s
+
+            // jump filter
+            if (d > 120.0 && v > 12.0) continue
+
+            // avoid duplicate very close points
+            if (d < 2.0) continue
+
+            out.add(p)
+            last = p
+        }
+        return out
+    }
+
+    private fun distanceMeters(a: LatLngPoint, b: LatLngPoint): Double {
+        val res = FloatArray(1)
+        Location.distanceBetween(a.lat, a.lng, b.lat, b.lng, res)
+        return res[0].toDouble()
     }
 
     private val timeRunnable = object : Runnable {
@@ -308,7 +354,6 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
         } else "0:00"
     }
 
-    // Service callback
     override fun onLocationUpdate(location: Location, distanceKm: Double, speedKmh: Double, routePoints: List<LatLngPoint>) {
         viewModel.updateFromService(location, distanceKm, speedKmh, routePoints)
     }
@@ -334,6 +379,4 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
         if (isServiceBound) requireContext().unbindService(serviceConnection)
         mapView.onDetach()
     }
-
-    companion object { private const val TAG = "ActivityFragment" }
 }
