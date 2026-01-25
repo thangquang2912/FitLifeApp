@@ -28,7 +28,7 @@ class ActivityRepository {
 
             Log.d(TAG, "Activity log saved successfully ✅")
             Result.success(Unit)
-        } catch (e:  Exception) {
+        } catch (e: Exception) {
             Log.e(TAG, "Failed to save activity log", e)
             Result.failure(e)
         }
@@ -49,6 +49,25 @@ class ActivityRepository {
                 Result.success(logs)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load activity logs", e)
+                Result.failure(e)
+            }
+        }
+
+    // NEW: load detail by id
+    suspend fun getActivityLogById(userId: String, logId: String): Result<ActivityLog> =
+        withContext(Dispatchers.IO) {
+            try {
+                val doc = db.collection("users")
+                    .document(userId)
+                    .collection("activity_logs")
+                    .document(logId)
+                    .get()
+                    .await()
+
+                val log = doc.toObject(ActivityLog::class.java)
+                if (log != null) Result.success(log) else Result.failure(IllegalStateException("Activity not found"))
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load activity log by id", e)
                 Result.failure(e)
             }
         }
