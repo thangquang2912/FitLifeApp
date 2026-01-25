@@ -25,7 +25,9 @@
             android:layout_height="40dp"
             android:layout_margin="16dp"
             android:background="@android:color/transparent"
-            android:src="@drawable/ic_back"
+            android:src="@drawable/ic_arrow_right"
+            android:rotation="180"
+            app:tint="@color/black"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 

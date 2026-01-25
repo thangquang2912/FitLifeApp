@@ -52,6 +52,27 @@
         android:label="fragment_social"
         tools:layout="@layout/fragment_social" />
 
+    <fragment
+        android:id="@+id/workoutProgramFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutProgramFragment"
+        android:label="Workout Programs"
+        tools:layout="@layout/fragment_workout_program">
+
+        <action
+            android:id="@+id/action_workoutList_to_workoutDetail"
+            app:destination="@id/workoutDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/workoutDetailFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutDetailFragment"
+        android:label="WorkoutDetailFragment"
+        tools:layout="@layout/fragment_workout_detail">
+        <argument
+            android:name="workoutProgram"
+            app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.WorkoutProgram" />
+    </fragment>
+
     <!-- NEW: workout history -->
     <fragment
         android:id="@+id/workoutHistoryFragment"

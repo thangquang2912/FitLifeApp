@@ -34,5 +34,26 @@ class MainFragment : Fragment() {
         val navController = navHostFragment.navController
 
         bottomNav.setupWithNavController(navController)
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            when (destination.id) {
+                // 1. Các màn hình chính (Tabs) -> HIỆN thanh điều hướng
+                R.id.home, R.id.activity, R.id.nutrition, R.id.social, R.id.profile -> {
+                    bottomNav.visibility = View.VISIBLE
+                }
+
+                // 2. Các màn hình con của tab Profile (Workout, Edit Profile) -> ẨN thanh điều hướng
+                // Đồng thời ép icon Profile luôn sáng
+                R.id.workoutProgramFragment, R.id.workoutDetailFragment, R.id.editProfileFragment -> {
+                    bottomNav.visibility = View.GONE
+                    bottomNav.menu.findItem(R.id.profile)?.isChecked = true
+                }
+
+                // 3. Các màn hình con khác (nếu có sau này) -> ẨN thanh điều hướng
+                else -> {
+                    bottomNav.visibility = View.GONE
+                }
+            }
+        }
     }
 }
