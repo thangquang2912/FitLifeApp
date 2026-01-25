@@ -20,8 +20,6 @@ import com.example.fitlifesmarthealthlifestyleapp.domain.usecase.classifyBMI
 import com.google.android.material.imageview.ShapeableImageView
 
 class ProfileFragment : Fragment() {
-
-    private lateinit var btnTheme : ImageButton
     private lateinit var ivAvatar: ShapeableImageView
     private lateinit var tvName : TextView
     private lateinit var cardHeight: View
@@ -43,6 +41,8 @@ class ProfileFragment : Fragment() {
     private lateinit var tvAgeLabel : TextView
     private lateinit var tvAgeValue : TextView
     private lateinit var tvSubtitle : TextView
+    
+    private lateinit var waterWeeklyChart: WaterWeeklyChartView
 
     private val viewModel: ProfileViewModel by activityViewModels()
 
@@ -57,7 +57,18 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        btnTheme = view.findViewById<ImageButton>(R.id.btnTheme)
+        initViews(view)
+        setupStaticLabels()
+
+        if (viewModel.user.value == null) {
+            viewModel.fetchUserProfile()
+        }
+
+        observeViewModel()
+        setupClickEvents()
+    }
+
+    private fun initViews(view: View) {
         ivAvatar = view.findViewById<ShapeableImageView>(R.id.ivAvatar)
         tvSubtitle = view.findViewById<TextView>(R.id.tvSubtitle)
         tvName = view.findViewById<TextView>(R.id.tvName)
@@ -87,25 +98,26 @@ class ProfileFragment : Fragment() {
         btnLeaderboardChallenges = view.findViewById<TextView>(R.id.btnLeaderboardChallenges)
         btnWorkoutHistory = view.findViewById<TextView>(R.id.btnWorkoutHistory)
         btnLogout = view.findViewById<TextView>(R.id.btnLogout)
+        
+        waterWeeklyChart = view.findViewById(R.id.waterWeeklyChart)
+    }
 
-        setupStaticLabels()
-
-        if (viewModel.user.value == null) {
-            viewModel.fetchUserProfile()
-        }
-
+    private fun observeViewModel() {
         viewModel.user.observe(viewLifecycleOwner) { user ->
             if (user != null) {
                 updateUI(user)
             }
         }
 
+        viewModel.weeklyWaterLogs.observe(viewLifecycleOwner) { logs ->
+            val goal = viewModel.user.value?.dailyWaterGoal ?: 2000
+            waterWeeklyChart.setWeeklyData(logs, goal)
+        }
+
         // Lắng nghe trạng thái Loading (để hiện ProgressBar nếu cần)
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             // Ví dụ: binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
-
-        setupClickEvents()
     }
 
     private fun setupStaticLabels() {
