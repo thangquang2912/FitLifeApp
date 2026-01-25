@@ -189,14 +189,10 @@ class ProfileFragment : Fragment() {
             rootNavController.navigate(R.id.loginFragment, null, navOptions)
         }
 
-        btnWorkoutPrograms.setOnClickListener {
-            try {
-                findNavController().navigate(R.id.workoutProgramFragment)
-            } catch (e: Exception) {
-                Toast.makeText(context, "Chưa thiết lập Navigation!", Toast.LENGTH_SHORT).show()
-                e.printStackTrace()
-            }
+        // Các nút menu khác...
+        // Workout History -> mở màn hình danh sách lịch sử
+        btnWorkoutHistory.setOnClickListener {
+            findNavController().navigate(R.id.action_profile_to_workoutHistory)
         }
-
     }
 }
