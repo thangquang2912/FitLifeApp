@@ -63,21 +63,35 @@
                 android:layout_marginTop="8dp"
                 android:gravity="center_vertical">
 
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_clock"
+                    app:tint="@color/gray_text" />
+
                 <TextView
                     android:id="@+id/tvTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🕒 30 mins"
+                    android:layout_marginStart="4dp"
+                    android:text="30 mins"
                     android:textSize="13sp"
                     android:textColor="@color/gray_text"/>
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginStart="16dp"
+                    android:src="@drawable/ic_burn"
+                    app:tint="@color/gray_text" />
 
                 <TextView
                     android:id="@+id/tvCal"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="🔥 250 cal"
+                    android:layout_marginStart="4dp"
+                    android:text="250 cal"
                     android:textSize="13sp"
                     android:textColor="@color/gray_text"/>
 
@@ -85,7 +99,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="View"
-                    android:textColor="#FF5722"
+                    android:textColor="#2196F3"
                     android:textStyle="bold"
                     android:textSize="14sp"/>
             </LinearLayout>

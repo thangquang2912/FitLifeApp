@@ -106,6 +106,7 @@ class ProfileFragment : Fragment() {
         }
 
         setupClickEvents()
+        // com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutDataSeeder.seedAllExercises()
     }
 
     private fun setupStaticLabels() {

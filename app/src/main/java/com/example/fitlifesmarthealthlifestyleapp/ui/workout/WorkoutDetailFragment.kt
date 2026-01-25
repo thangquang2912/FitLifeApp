@@ -7,6 +7,11 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.WorkoutRepository
+import kotlinx.coroutines.launch
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -18,6 +23,10 @@ class WorkoutDetailFragment : Fragment() {
 
     // Lấy argument do SafeArgs tự tạo ra
     private val args: WorkoutDetailFragmentArgs by navArgs()
+
+    // Khởi tạo Repository và Adapter
+    private val repository = WorkoutRepository()
+    private lateinit var exerciseAdapter: ExerciseAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,15 +49,18 @@ class WorkoutDetailFragment : Fragment() {
         val btnBack = view.findViewById<ImageButton>(R.id.btnBack)
         val btnStart = view.findViewById<MaterialButton>(R.id.btnStartWorkout)
 
+        // THÊM: Ánh xạ RecyclerView cho danh sách động tác
+        val rvExercises = view.findViewById<RecyclerView>(R.id.rvExercises)
+
         // Lấy dữ liệu từ argument
         val program = args.workoutProgram
 
-        // Cập nhật UI
+        // Cập nhật UI thông tin cơ bản
         tvTitle.text = program.name
         tvCategory.text = program.category
         tvDifficulty.text = program.difficulty
-        tvTime.text = "🕒 ${program.durationMins} mins"
-        tvCal.text = "🔥 ${program.caloriesBurn} cal"
+        tvTime.text = "${program.durationMins} mins"
+        tvCal.text = "${program.caloriesBurn} cal"
         tvDesc.text = program.description
 
         // Load ảnh bằng Glide
@@ -57,6 +69,24 @@ class WorkoutDetailFragment : Fragment() {
             .centerCrop()
             .into(ivThumb)
 
+        // -------------------------------------------------------------------
+        // XỬ LÝ DANH SÁCH ĐỘNG TÁC (EXERCISES)
+        // -------------------------------------------------------------------
+        // 1. Cài đặt Adapter
+        exerciseAdapter = ExerciseAdapter(emptyList())
+        rvExercises.layoutManager = LinearLayoutManager(requireContext())
+        rvExercises.adapter = exerciseAdapter
+
+        // 2. Lấy dữ liệu từ Firebase dựa vào ID của bài tập hiện tại
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = repository.getExercisesByProgramId(program.id)
+            if (result.isSuccess) {
+                val exercises = result.getOrDefault(emptyList())
+                exerciseAdapter.updateData(exercises)
+            }
+        }
+        // -------------------------------------------------------------------
+
         // Xử lý nút Back
         btnBack.setOnClickListener {
             findNavController().navigateUp()
@@ -64,7 +94,6 @@ class WorkoutDetailFragment : Fragment() {
 
         // Xử lý nút Bắt đầu tập
         btnStart.setOnClickListener {
-            // TODO: Điều hướng sang màn hình video bài tập hoặc bấm giờ
         }
     }
 }

@@ -27,7 +27,11 @@
             ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                 val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
-                val bottomPadding = max(systemBars.bottom, ime.bottom)
+
+                // CHỈ LẤY PADDING CỦA BÀN PHÍM (IME), KHÔNG LẤY CỦA SYSTEM BAR
+                val bottomPadding = ime.bottom
+
+                // Áp dụng padding: Lề dưới bây giờ sẽ là 0 khi không mở bàn phím
                 v.setPadding(systemBars.left, systemBars.top, systemBars.right, bottomPadding)
                 insets
             }

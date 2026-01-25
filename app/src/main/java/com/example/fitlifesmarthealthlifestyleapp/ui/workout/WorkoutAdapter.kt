@@ -31,8 +31,8 @@ class WorkoutAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = list[position]
         holder.title.text = item.name
-        holder.time.text = "🕒 ${item.durationMins} mins"
-        holder.cal.text = "🔥 ${item.caloriesBurn} cal"
+        holder.time.text = "${item.durationMins} mins"
+        holder.cal.text = "${item.caloriesBurn} cal"
         holder.badge.text = item.difficulty
 
         // Đổi màu badge

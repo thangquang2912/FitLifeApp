@@ -24,7 +24,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_margin="16dp"
-            android:background="@android:color/transparent"
+            android:background="@drawable/bg_circle_gray"
             android:src="@drawable/ic_arrow_right"
             android:rotation="180"
             app:tint="@color/black"
@@ -49,6 +49,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:layout_marginHorizontal="16dp"
             android:layout_marginTop="8dp"
             app:layout_constraintTop_toBottomOf="@id/tvDetailTitle">
@@ -78,18 +79,33 @@
                 android:textStyle="bold"
                 tools:text="Beginner" />
 
+            <ImageView
+                android:id="@+id/ivTimeIcon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_clock" />
+
             <TextView
                 android:id="@+id/tvDetailTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
                 android:layout_marginEnd="16dp"
-                tools:text="🕒 30 mins" />
+                tools:text="30 mins" />
+
+            <ImageView
+                android:id="@+id/ivCalIcon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_burn" />
 
             <TextView
                 android:id="@+id/tvDetailCal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                tools:text="🔥 250 cal" />
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="16dp"
+                tools:text="250 cal" />
         </LinearLayout>
 
         <TextView
@@ -118,6 +134,28 @@
             app:layout_constraintTop_toBottomOf="@id/tvDescLabel"
             tools:text="Chi tiết bài tập hiển thị ở đây..." />
 
+        <TextView
+            android:id="@+id/tvExerciseLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Exercises"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvDetailDescription" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvExercises"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="16dp"
+            android:nestedScrollingEnabled="false"
+            app:layout_constraintTop_toBottomOf="@id/tvExerciseLabel" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnStartWorkout"
             android:layout_width="match_parent"
@@ -125,9 +163,10 @@
             android:layout_margin="16dp"
             android:text="Start Workout"
             android:padding="12dp"
+            android:layout_marginBottom="40dp"
             app:cornerRadius="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvDetailDescription"
+            app:layout_constraintTop_toBottomOf="@id/rvExercises"
             app:layout_constraintVertical_bias="1.0" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
