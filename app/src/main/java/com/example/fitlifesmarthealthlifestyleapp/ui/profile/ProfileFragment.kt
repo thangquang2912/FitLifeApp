@@ -189,6 +189,14 @@ class ProfileFragment : Fragment() {
             rootNavController.navigate(R.id.loginFragment, null, navOptions)
         }
 
-        // Các nút menu khác...
+        btnWorkoutPrograms.setOnClickListener {
+            try {
+                findNavController().navigate(R.id.workoutProgramFragment)
+            } catch (e: Exception) {
+                Toast.makeText(context, "Chưa thiết lập Navigation!", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
+            }
+        }
+
     }
 }

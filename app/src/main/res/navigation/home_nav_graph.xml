@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/home_nav_graph"
     app:startDestination="@id/home">
+
     <fragment
         android:id="@+id/home"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.home.HomeFragment"
@@ -26,9 +27,9 @@
         android:label="EditProfileFragment"
         tools:layout="@layout/fragment_edit_profile">
 
-    <argument
-        android:name="user_data"
-        app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.User" />
+        <argument
+            android:name="user_data"
+            app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.User" />
     </dialog>
 
     <fragment
@@ -36,14 +37,38 @@
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.activity.ActivityFragment"
         android:label="fragment_activity"
         tools:layout="@layout/fragment_activity" />
+
     <fragment
         android:id="@+id/nutrition"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.nutrition.NutritionFragment"
         android:label="fragment_nutrition"
         tools:layout="@layout/fragment_nutrition" />
+
     <fragment
         android:id="@+id/social"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.social.SocialFragment"
         android:label="fragment_social"
         tools:layout="@layout/fragment_social" />
+
+    <fragment
+        android:id="@+id/workoutProgramFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutProgramFragment"
+        android:label="Workout Programs"
+        tools:layout="@layout/fragment_workout_program">
+
+        <action
+            android:id="@+id/action_workoutList_to_workoutDetail"
+            app:destination="@id/workoutDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/workoutDetailFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutDetailFragment"
+        android:label="WorkoutDetailFragment"
+        tools:layout="@layout/fragment_workout_detail">
+        <argument
+            android:name="workoutProgram"
+            app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.WorkoutProgram" />
+    </fragment>
+
 </navigation>
