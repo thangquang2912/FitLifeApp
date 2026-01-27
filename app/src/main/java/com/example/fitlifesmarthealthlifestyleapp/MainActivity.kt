@@ -12,6 +12,8 @@
     import androidx.work.PeriodicWorkRequestBuilder
     import androidx.work.WorkManager
     import com.example.fitlifesmarthealthlifestyleapp.workers.WaterReminderWorker
+    import com.example.fitlifesmarthealthlifestyleapp.workers.CaloriesReminderWorker
+    import com.example.fitlifesmarthealthlifestyleapp.workers.StepsReminderWorker
     import com.google.firebase.auth.FirebaseAuth
     import java.util.Calendar
     import java.util.concurrent.TimeUnit
@@ -74,41 +76,53 @@
         }
 
         private fun setupDailyReminder() {
-            // 1. Tính toán thời gian delay để chạy vào đúng 20:00 tối
             val currentTime = Calendar.getInstance()
             val dueTime = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 20) // 20 giờ
+                set(Calendar.HOUR_OF_DAY, 20)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
             }
 
             if (dueTime.before(currentTime)) {
-                dueTime.add(Calendar.HOUR_OF_DAY, 24) // Nếu qua 20h rồi thì dời sang hôm sau
+                dueTime.add(Calendar.DAY_OF_YEAR, 1)
             }
 
             val initialDelay = dueTime.timeInMillis - currentTime.timeInMillis
 
-            // 2. Tạo Request lặp lại mỗi 24 giờ
-            val workRequest = PeriodicWorkRequestBuilder<WaterReminderWorker>(24, TimeUnit.HOURS)
+            // 🔹 Water
+            val waterWork = PeriodicWorkRequestBuilder<WaterReminderWorker>(24, TimeUnit.HOURS)
                 .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
-                .addTag("water_reminder")
                 .build()
 
-            // 3. Gửi cho WorkManager (Dùng KEEP để không bị trùng lặp task khi mở app nhiều lần)
-            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                "daily_water_check",
+            // 🔹 Calories
+            val caloriesWork = PeriodicWorkRequestBuilder<CaloriesReminderWorker>(24, TimeUnit.HOURS)
+                .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                .build()
+
+            // 🔹 Steps
+            val stepsWork = PeriodicWorkRequestBuilder<StepsReminderWorker>(24, TimeUnit.HOURS)
+                .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                .build()
+
+            val workManager = WorkManager.getInstance(this)
+
+            workManager.enqueueUniquePeriodicWork(
+                "daily_water_reminder",
                 ExistingPeriodicWorkPolicy.KEEP,
-                workRequest
+                waterWork
             )
 
-    //        val testRequest = androidx.work.OneTimeWorkRequestBuilder<WaterReminderWorker>()
-    //            .setInitialDelay(10, TimeUnit.SECONDS) // Chờ 10 giây rồi bắn
-    //            .build()
-    //
-    //        WorkManager.getInstance(this).enqueueUniqueWork(
-    //            "test_notification_immediate",
-    //            androidx.work.ExistingWorkPolicy.REPLACE, // Dùng REPLACE để đè task cũ, chạy task mới ngay
-    //            testRequest
-    //        )
+            workManager.enqueueUniquePeriodicWork(
+                "daily_calories_reminder",
+                ExistingPeriodicWorkPolicy.KEEP,
+                caloriesWork
+            )
+
+            workManager.enqueueUniquePeriodicWork(
+                "daily_steps_reminder",
+                ExistingPeriodicWorkPolicy.KEEP,
+                stepsWork
+            )
         }
+
     }
