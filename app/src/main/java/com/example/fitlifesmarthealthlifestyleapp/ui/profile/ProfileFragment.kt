@@ -33,7 +33,7 @@ class ProfileFragment : Fragment() {
     private lateinit var bmrCategory : TextView
     private lateinit var btnEditProfile : TextView
     private lateinit var btnWorkoutPrograms : TextView
-    private lateinit var btnLeaderboardChallenges : TextView
+    private lateinit var btnLeaderboard: TextView
     private lateinit var btnWorkoutHistory : TextView
     private lateinit var btnLogout : TextView
     private lateinit var tvHeightLabel : TextView
@@ -84,7 +84,7 @@ class ProfileFragment : Fragment() {
 
         btnEditProfile = view.findViewById<TextView>(R.id.btnEditProfile)
         btnWorkoutPrograms = view.findViewById<TextView>(R.id.btnWorkoutPrograms)
-        btnLeaderboardChallenges = view.findViewById<TextView>(R.id.btnLeaderboardChallenges)
+        btnLeaderboard = view.findViewById<TextView>(R.id.btnLeaderboardChallenges)
         btnWorkoutHistory = view.findViewById<TextView>(R.id.btnWorkoutHistory)
         btnLogout = view.findViewById<TextView>(R.id.btnLogout)
 
@@ -106,7 +106,6 @@ class ProfileFragment : Fragment() {
         }
 
         setupClickEvents()
-        // com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutDataSeeder.seedAllExercises()
     }
 
     private fun setupStaticLabels() {
@@ -198,6 +197,10 @@ class ProfileFragment : Fragment() {
 
         btnWorkoutPrograms.setOnClickListener {
             findNavController().navigate(R.id.workoutProgramFragment)
+        }
+
+        btnLeaderboard.findViewById<TextView>(R.id.btnLeaderboardChallenges).setOnClickListener {
+            findNavController().navigate(R.id.action_profile_to_leaderboard)
         }
 
     }

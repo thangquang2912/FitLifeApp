@@ -226,6 +226,8 @@
             app:cardCornerRadius="16dp"
             app:cardBackgroundColor="@color/white"
             app:layout_constraintTop_toBottomOf="@+id/layoutMetrics"
+            android:layout_marginBottom="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:strokeWidth="0dp"
             app:cardElevation="2dp">
 
@@ -254,7 +256,7 @@
 
                 <TextView
                     android:id="@+id/btnLeaderboardChallenges"
-                    android:text="Leaderboard - Challenges"
+                    android:text="Leaderboard"
                     android:drawableStart="@drawable/icon_leaderboard"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>

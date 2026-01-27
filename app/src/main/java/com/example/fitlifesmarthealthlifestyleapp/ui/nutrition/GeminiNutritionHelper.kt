@@ -39,11 +39,12 @@ class GeminiNutritionHelper {
     suspend fun analyzeFoodImage(image: Bitmap): NutritionResult? {
         return withContext(Dispatchers.IO) {
             try {
+                // SỬA ĐOẠN PROMPT NÀY
                 val prompt = """
-                    Analyze this food image. Identify the main dish name (in English or Vietnamese) and estimate nutrition for 1 serving.
+                    Analyze this food image. Identify the main dish name in Vietnamese (Tiếng Việt) and estimate nutrition for 1 serving.
                     Return ONLY a raw JSON object with this structure (no markdown, no ```json tags):
                     {
-                      "name": "dish name",
+                      "name": "Tên món ăn bằng Tiếng Việt",
                       "calories": 400,
                       "carbs": 50.0,
                       "protein": 30.0,

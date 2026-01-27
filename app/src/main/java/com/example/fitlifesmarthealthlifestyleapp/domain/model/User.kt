@@ -30,6 +30,7 @@ data class User(
     var dailyActiveCalories: Int = 0,
     var dailyCaloriesConsume: Int = 0,
     var weeklyRunning: Int = 0,
+    var totalDistanceKm: Double = 0.0
 ): Parcelable {
     // Tính tuổi
     @get:Exclude

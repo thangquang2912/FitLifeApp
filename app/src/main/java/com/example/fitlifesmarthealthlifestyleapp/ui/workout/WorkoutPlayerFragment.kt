@@ -145,7 +145,7 @@ class WorkoutPlayerFragment : Fragment() {
 
         // Cập nhật giao diện
         tvStatus.text = "WORK"
-        tvStatus.setTextColor(resources.getColor(R.color.black, null)) // Màu đen cho WORK
+        tvStatus.background = resources.getDrawable(R.drawable.bg_badge_beginner, null)
         tvExerciseName.text = exercise.name
         tvProgress.text = "${currentExerciseIndex + 1} / ${exerciseList.size}"
 
@@ -171,10 +171,12 @@ class WorkoutPlayerFragment : Fragment() {
 
         // Cập nhật giao diện nghỉ
         tvStatus.text = "REST"
-        tvStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark, null)) // Màu xanh cho REST
+        tvStatus.background = resources.getDrawable(R.drawable.bg_badge_intermediate, null)
+
         tvExerciseName.text = "Next: ${exerciseList.getOrNull(currentExerciseIndex + 1)?.name ?: "Finish"}"
 
-        // Ẩn GIF đi cho đỡ rối mắt (hoặc hiện ảnh tĩnh)
+
+        // Ẩn GIF đi
         cardGif.visibility = View.INVISIBLE
 
         // Bắt đầu đếm ngược nghỉ

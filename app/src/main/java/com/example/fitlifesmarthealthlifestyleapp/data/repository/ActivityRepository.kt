@@ -17,16 +17,24 @@ class ActivityRepository {
         try {
             Log.d(TAG, "Saving activity log: ${log.id}")
 
-            withTimeout(10000L) {
-                db.collection("users")
-                    .document(log.userId)
-                    .collection("activity_logs")
-                    .document(log.id)
-                    .set(log, SetOptions.merge())
-                    .await()
-            }
+            val batch = db.batch()
 
-            Log.d(TAG, "Activity log saved successfully ✅")
+            // 1. Lưu chi tiết vào sub-collection activity_logs
+            val logRef = db.collection("users")
+                .document(log.userId)
+                .collection("activity_logs")
+                .document(log.id)
+
+            batch.set(logRef, log, SetOptions.merge())
+
+            // 2. Cập nhật tổng quãng đường vào document User cha (Atomic Increment)
+            val userRef = db.collection("users").document(log.userId)
+            batch.update(userRef, "totalDistanceKm", com.google.firebase.firestore.FieldValue.increment(log.distanceKm))
+
+            // Thực thi cả 2 lệnh cùng lúc
+            batch.commit().await()
+
+            Log.d(TAG, "Activity log saved & Total distance updated ✅")
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save activity log", e)
