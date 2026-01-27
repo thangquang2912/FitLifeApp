@@ -42,8 +42,5 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location" />
-        <service
-            android:name=".service.StepCounterService"
-            android:foregroundServiceType="health" />
     </application>
 </manifest>

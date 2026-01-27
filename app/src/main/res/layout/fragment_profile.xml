@@ -24,18 +24,6 @@
             app:layout_constraintTop_toTopOf="parent"
             android:textColor="@color/black"/>
 
-        <ImageButton
-            android:id="@+id/btnTheme"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="24dp"
-            android:background="@drawable/bg_circle_gray"
-            android:src="@drawable/ic_moon"
-            android:backgroundTint="#EEE"
-            app:layout_constraintBottom_toBottomOf="@+id/tvTitle"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/tvTitle" />
-
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivAvatar"
             android:layout_width="100dp"

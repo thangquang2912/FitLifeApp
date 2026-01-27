@@ -70,7 +70,7 @@ class HomeViewModel : ViewModel() {
         _todaySteps.value = newTotalSteps
         
         viewModelScope.launch {
-            stepRepository.updateSteps(uid, newTotalSteps)
+            stepRepository.incrementSteps(uid, steps)
         }
     }
 

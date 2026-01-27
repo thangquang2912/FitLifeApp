@@ -1,8 +1,9 @@
 package com.example.fitlifesmarthealthlifestyleapp.data.repository
 
-import android.util.Log
 import com.example.fitlifesmarthealthlifestyleapp.domain.utils.DateUtils
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
@@ -28,18 +29,20 @@ class StepRepository {
         }
     }
 
-    suspend fun updateSteps(uid: String, steps: Int) {
+    // Hàm cộng dồn số bước chân (Dùng FieldValue.increment để tránh ghi đè dữ liệu cũ)
+    suspend fun incrementSteps(uid: String, delta: Int) {
         try {
             val dateId = DateUtils.getCurrentDateId()
-            val data = mapOf(
+            val data = hashMapOf(
                 "userId" to uid,
                 "dateId" to dateId,
-                "steps" to steps,
+                "steps" to FieldValue.increment(delta.toLong()),
                 "lastUpdated" to com.google.firebase.Timestamp.now()
             )
+            // Dùng set với merge để tạo mới nếu chưa có hoặc cộng dồn nếu đã có
             db.collection("daily_steps")
                 .document("${uid}_$dateId")
-                .set(data)
+                .set(data, SetOptions.merge())
                 .await()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -49,7 +52,6 @@ class StepRepository {
     suspend fun getWeeklySteps(uid: String): Result<List<Map<String, Any>>> {
         return try {
             val calendar = Calendar.getInstance()
-            // SỬA LỖI: Đổi định dạng từ yyyyMMdd thành yyyy-MM-dd để khớp với Firestore
             val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val dateIds = mutableListOf<String>()
             
@@ -63,9 +65,6 @@ class StepRepository {
                 .whereEqualTo("userId", uid)
                 .whereIn("__name__", dateIds)
                 .get().await()
-
-            Log.d("WEEKLY_STEPS", "docs size = ${snapshots.size()}")
-
 
             val results = snapshots.documents.mapNotNull { it.data }
             Result.success(results)
