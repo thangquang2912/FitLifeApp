@@ -1,9 +1,13 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.home
 
+import android.Manifest
 import android.app.Dialog
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
+import android.view.GestureDetector
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.view.LayoutInflater
@@ -15,10 +19,12 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
+import com.example.fitlifesmarthealthlifestyleapp.domain.service.StepSensorManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.slider.Slider
 import java.text.SimpleDateFormat
@@ -49,9 +55,22 @@ class HomeFragment : Fragment() {
     private lateinit var progressBarWater : ProgressBar
     private lateinit var layoutDropsContainer : LinearLayout
     private lateinit var imgWaterIcon : ImageView
+    private lateinit var gestureDetector: GestureDetector
 
     private lateinit var btnStart : MaterialButton
     private lateinit var btnSetGoals : MaterialButton
+
+    private var stepSensorManager: StepSensorManager? = null
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            startStepCounter()
+        } else {
+            Toast.makeText(requireContext(), "Permission denied for step counting", Toast.LENGTH_SHORT).show()
+        }
+    }
 
 
     override fun onCreateView(
@@ -73,13 +92,75 @@ class HomeFragment : Fragment() {
         setupButtonListeners()
 
         observeViewModel()
-        imgWaterIcon.setOnClickListener {
-            homeViewModel.addWater(250)
-        }
+        setupWaterClickEvents()
 
 
         homeViewModel.loadTodayWaterLog()
         homeViewModel.loadUserGoals()
+        homeViewModel.loadTodayCalories()
+        homeViewModel.loadTodaySteps()
+
+        checkStepPermission()
+    }
+
+    private fun checkStepPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            when {
+                ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACTIVITY_RECOGNITION
+                ) == PackageManager.PERMISSION_GRANTED -> {
+                    startStepCounter()
+                }
+                else -> {
+                    requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+                }
+            }
+        } else {
+            startStepCounter()
+        }
+    }
+
+    private fun startStepCounter() {
+        stepSensorManager = StepSensorManager(requireContext()) { steps ->
+            homeViewModel.updateSteps(steps)
+        }
+        stepSensorManager?.startListening()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        stepSensorManager?.stopListening()
+    }
+
+
+    private fun setupWaterClickEvents() {
+        val listener = object : GestureDetector.SimpleOnGestureListener() {
+            // 1. Xử lý chạm 1 lần (Single Tap)
+            override fun onSingleTapConfirmed(e: android.view.MotionEvent): Boolean {
+                homeViewModel.addWater(250)
+                return true
+            }
+
+            // 2. Xử lý chạm 2 lần (Double Tap)
+            override fun onDoubleTap(e: android.view.MotionEvent): Boolean {
+                homeViewModel.removeWater(250)
+                return true
+            }
+
+            // 3. Bắt buộc: Phải trả về true ở onDown để GestureDetector bắt đầu hoạt động
+            override fun onDown(e: android.view.MotionEvent): Boolean {
+                return true
+            }
+        }
+
+        val detector = GestureDetector(requireContext(), listener)
+
+        // Gán vào biểu tượng giọt nước
+        imgWaterIcon.setOnTouchListener { _, event ->
+            // Chỉ cần gọi detector xử lý, không gọi performClick() ở đây nữa
+            detector.onTouchEvent(event)
+        }
     }
 
     private fun initViews(view:View) {
@@ -131,12 +212,12 @@ class HomeFragment : Fragment() {
     private fun setupDashboard() {
         // 1. Steps
         stepsIcon.setImageResource(R.drawable.ic_steps)
-        stepsValue.text = "8,234"
+        stepsValue.text = "0"
         stepsLabel.text = "Steps"
 
         // 2. Calories
         caloriesIcon.setImageResource(R.drawable.ic_calories)
-        caloriesValue.text = "1,847"
+        caloriesValue.text = "0"
         caloriesLabel.text = "Calories"
 
         // 3. Water
@@ -406,6 +487,16 @@ class HomeFragment : Fragment() {
             }
         }
 
+        // Cập nhật Calories
+        homeViewModel.totalCalories.observe(viewLifecycleOwner) { calories ->
+            caloriesValue.text = String.format("%,d", calories)
+        }
+
+        // Cập nhật Steps
+        homeViewModel.todaySteps.observe(viewLifecycleOwner) { steps ->
+            stepsValue.text = String.format("%,d", steps)
+        }
+
         // Khi có thông báo lỗi hoặc thành công (Toast)
         homeViewModel.toastMessage.observe(viewLifecycleOwner) { message ->
             Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
@@ -458,4 +549,3 @@ class HomeFragment : Fragment() {
         }
     }
 }
-

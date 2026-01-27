@@ -51,7 +51,10 @@
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.social.SocialFragment"
         android:label="fragment_social"
         tools:layout="@layout/fragment_social" />
-
+    <dialog
+        android:id="@+id/createPostDialogFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.social.CreatePostDialogFragment"
+        android:label="Create Post" />
     <!-- NEW: workout history -->
     <fragment
         android:id="@+id/workoutHistoryFragment"

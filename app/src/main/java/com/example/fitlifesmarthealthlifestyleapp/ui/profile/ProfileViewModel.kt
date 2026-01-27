@@ -8,13 +8,18 @@ import androidx.lifecycle.viewModelScope
 import com.cloudinary.android.MediaManager
 import com.cloudinary.android.callback.ErrorInfo
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.UserRepository
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
+import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import com.cloudinary.android.callback.UploadCallback
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ProfileViewModel : ViewModel() {
     private val userRepository = UserRepository()
+    private val waterRepository = WaterRepository()
     private val auth = FirebaseAuth.getInstance()
 
     private val _user = MutableLiveData<User?>()
@@ -25,6 +30,9 @@ class ProfileViewModel : ViewModel() {
 
     private val _statusMessage = MutableLiveData<String>()
     val statusMessage: LiveData<String> = _statusMessage
+
+    private val _weeklyWaterLogs = MutableLiveData<List<Int>>()
+    val weeklyWaterLogs: LiveData<List<Int>> = _weeklyWaterLogs
 
     fun fetchUserProfile() {
         val currentUid = auth.currentUser?.uid
@@ -41,6 +49,7 @@ class ProfileViewModel : ViewModel() {
 
                 if (result.isSuccess) {
                     _user.value = result.getOrNull()
+                    fetchWeeklyWaterData(currentUid)
                 } else {
                     val error = result.exceptionOrNull()
                     error?.printStackTrace()
@@ -48,6 +57,36 @@ class ProfileViewModel : ViewModel() {
                 }
 
                 _isLoading.value = false
+            }
+        }
+    }
+
+    private fun fetchWeeklyWaterData(uid: String) {
+        viewModelScope.launch {
+            val result = waterRepository.getWeeklyWaterLogs(uid)
+            if (result.isSuccess) {
+                val logs = result.getOrNull() ?: emptyList()
+                
+                // Chuẩn bị dữ liệu cho 7 ngày gần nhất (đảm bảo đủ 7 cột kể cả khi thiếu data Firestore)
+                val calendar = Calendar.getInstance()
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val last7DaysData = mutableListOf<Int>()
+                
+                val logMap = logs.associateBy { it.id }
+                
+                // Lấy data ngược từ hôm nay về 6 ngày trước
+                val tempDays = mutableListOf<String>()
+                for (i in 0 until 7) {
+                    tempDays.add(sdf.format(calendar.time))
+                    calendar.add(Calendar.DAY_OF_YEAR, -1)
+                }
+                
+                // Đảo ngược lại để chart hiện từ cũ -> mới
+                tempDays.reversed().forEach { dateId ->
+                    last7DaysData.add(logMap[dateId]?.currentIntake ?: 0)
+                }
+                
+                _weeklyWaterLogs.value = last7DaysData
             }
         }
     }
