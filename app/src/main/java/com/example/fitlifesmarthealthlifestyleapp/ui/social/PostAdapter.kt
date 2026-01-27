@@ -31,7 +31,8 @@ class PostAdapter(
     private val onLikeClick: (Post) -> Unit,
     private val onCommentClick: (Post) -> Unit,
     private val onLikeCountClick: (List<String>) -> Unit,
-    private val onUserClick: (String) -> Unit
+    private val onUserClick: (String) -> Unit,
+    private val onShareClick: (Post) -> Unit
 ) : ListAdapter<Post, PostAdapter.PostViewHolder>(PostDiffCallback()) {
 
     // Cache để tránh load lại thông tin user quá nhiều lần
@@ -60,11 +61,13 @@ class PostAdapter(
         private val btnComment: ImageView = itemView.findViewById(R.id.btnComment)
         private val tvCommentCount: TextView = itemView.findViewById(R.id.tvCommentCount)
         private val ivMore: ImageView = itemView.findViewById(R.id.ivMore)
+        private val btnShare: ImageView = itemView.findViewById(R.id.btnShare)
 
         // Firebase & User
         private val db = FirebaseFirestore.getInstance()
         private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
-
+        private val tvShareCount: TextView = itemView.findViewById(R.id.tvShareCount)
+        private var lastClickTime: Long = 0
         fun bind(post: Post) {
             // 1. Hiển thị nội dung Text
             tvCaption.text = post.caption
@@ -129,7 +132,27 @@ class PostAdapter(
                 onCommentClick(post)
             }
 
-            // 8. Menu 3 chấm (Chỉ hiện nếu là bài của mình)
+            // Hiển thị số share
+            if (post.shareCount > 0) {
+                tvShareCount.visibility = View.VISIBLE
+                tvShareCount.text = "${post.shareCount}"
+            } else {
+                tvShareCount.visibility = View.GONE
+            }
+
+            // 8. Xử lý Share
+            btnShare.setOnClickListener {
+                // Kiểm tra thời gian: Nếu lần bấm này cách lần trước dưới 1 giây (1000ms) thì bỏ qua
+                if (android.os.SystemClock.elapsedRealtime() - lastClickTime < 1000) {
+                    return@setOnClickListener
+                }
+                lastClickTime = android.os.SystemClock.elapsedRealtime()
+
+                // Gọi hàm share
+                onShareClick(post)
+            }
+
+            // 9. Menu 3 chấm (Chỉ hiện nếu là bài của mình)
             if (post.userId == currentUid) {
                 ivMore.visibility = View.VISIBLE
                 ivMore.setOnClickListener { showOptionsMenu(it, post) }

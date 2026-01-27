@@ -12,6 +12,7 @@ data class Post(
     var duration: String = "",
     var calories: String = "",
     var likeCount: Int = 0,
+    val shareCount: Int = 0,
     var likedBy: MutableList<String> = mutableListOf(), // Lưu danh sách UID của những người đã Like
     var createdAt: Timestamp = Timestamp.now(),
     var commentCount: Int = 0,

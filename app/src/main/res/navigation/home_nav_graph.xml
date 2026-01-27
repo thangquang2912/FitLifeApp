@@ -51,11 +51,43 @@
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.social.SocialFragment"
         android:label="fragment_social"
         tools:layout="@layout/fragment_social" />
-    <dialog
-        android:id="@+id/createPostDialogFragment"
-        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.social.CreatePostDialogFragment"
-        android:label="Create Post" />
-    <!-- NEW: workout history -->
+
+    <fragment
+        android:id="@+id/workoutProgramFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutProgramFragment"
+        android:label="Workout Programs"
+        tools:layout="@layout/fragment_workout_program">
+
+        <action
+            android:id="@+id/action_workoutList_to_workoutDetail"
+            app:destination="@id/workoutDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/workoutPlayerFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutPlayerFragment"
+        android:label="WorkoutPlayerFragment"
+        tools:layout="@layout/fragment_workout_player">
+
+        <argument
+            android:name="workoutProgram"
+            app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.WorkoutProgram" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/workoutDetailFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutDetailFragment"
+        android:label="WorkoutDetailFragment"
+        tools:layout="@layout/fragment_workout_detail">
+        <argument
+            android:name="workoutProgram"
+            app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.WorkoutProgram" />
+
+        <action
+            android:id="@+id/action_detail_to_player"
+            app:destination="@id/workoutPlayerFragment" />
+    </fragment>
+
     <fragment
         android:id="@+id/workoutHistoryFragment"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.WorkoutHistoryFragment"
@@ -67,11 +99,9 @@
             app:destination="@id/activityDetailsFragment" />
     </fragment>
 
-    <!-- NEW: activity details -->
     <fragment
         android:id="@+id/activityDetailsFragment"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.ActivityDetailsFragment"
         android:label="ActivityDetailsFragment"
         tools:layout="@layout/fragment_activity_details" />
-
 </navigation>

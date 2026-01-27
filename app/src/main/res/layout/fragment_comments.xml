@@ -3,9 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_dialog_rounded"
-    android:clickable="true"
-    android:focusable="true">
+    android:background="@drawable/bg_dialog_rounded">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbarComments"
@@ -29,19 +27,29 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:orientation="horizontal"
-        android:padding="12dp"
+        android:padding="8dp"
+        android:gravity="center_vertical"
         android:background="@color/white"
         android:elevation="16dp">
+
+        <ImageView
+            android:id="@+id/btnAddMedia"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_image"
+            app:tint="@color/gray_text"
+            android:layout_marginEnd="4dp"/>
 
         <EditText
             android:id="@+id/etCommentInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Add a comment..."
             android:background="@drawable/bg_edittext"
-            android:padding="12dp"
-            android:maxLines="3" />
+            android:hint="Add a comment..."
+            android:maxLines="3"
+            android:padding="10dp" />
 
         <ImageView
             android:id="@+id/btnSendComment"
@@ -53,20 +61,48 @@
             app:tint="@color/orange_primary" />
     </LinearLayout>
 
+    <RelativeLayout
+        android:id="@+id/layoutMediaPreview"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:layout_above="@id/layoutInput"
+        android:background="#F5F5F5"
+        android:padding="8dp"
+        android:visibility="gone"> <ImageView
+        android:id="@+id/ivMediaPreview"
+        android:layout_width="100dp"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg_search_rounded"
+        android:layout_centerVertical="true"/>
+
+        <ImageView
+            android:id="@+id/btnRemoveMedia"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_close"
+            app:tint="@color/black"
+            android:background="@drawable/bg_white_circle"
+            android:layout_alignTop="@id/ivMediaPreview"
+            android:layout_alignEnd="@id/ivMediaPreview"
+            android:layout_marginTop="-8dp"
+            android:layout_marginEnd="-8dp"/>
+    </RelativeLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvComments"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/layoutInput"
+        android:layout_above="@id/layoutMediaPreview"
         android:layout_below="@id/toolbarComments"
         android:clipToPadding="false"
         android:paddingBottom="16dp" />
-
     <ProgressBar
         android:id="@+id/progressBarComments"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
+        android:visibility="gone"
         android:indeterminateTint="@color/orange_primary"/>
 
 </RelativeLayout>
