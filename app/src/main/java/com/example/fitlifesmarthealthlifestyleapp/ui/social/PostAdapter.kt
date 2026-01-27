@@ -32,7 +32,6 @@ class PostAdapter(
     private val onCommentClick: (Post) -> Unit,
     private val onLikeCountClick: (List<String>) -> Unit,
     private val onUserClick: (String) -> Unit,
-    // [MỚI] Thêm callback cho sự kiện Share
     private val onShareClick: (Post) -> Unit
 ) : ListAdapter<Post, PostAdapter.PostViewHolder>(PostDiffCallback()) {
 
@@ -62,13 +61,12 @@ class PostAdapter(
         private val btnComment: ImageView = itemView.findViewById(R.id.btnComment)
         private val tvCommentCount: TextView = itemView.findViewById(R.id.tvCommentCount)
         private val ivMore: ImageView = itemView.findViewById(R.id.ivMore)
-
-        // [MỚI] Ánh xạ nút Share (Đảm bảo ID btnShare có trong file xml)
         private val btnShare: ImageView = itemView.findViewById(R.id.btnShare)
 
         // Firebase & User
         private val db = FirebaseFirestore.getInstance()
         private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        private val tvShareCount: TextView = itemView.findViewById(R.id.tvShareCount)
         private var lastClickTime: Long = 0
         fun bind(post: Post) {
             // 1. Hiển thị nội dung Text
@@ -134,7 +132,15 @@ class PostAdapter(
                 onCommentClick(post)
             }
 
-            // [MỚI] 8. Xử lý Share
+            // Hiển thị số share
+            if (post.shareCount > 0) {
+                tvShareCount.visibility = View.VISIBLE
+                tvShareCount.text = "${post.shareCount}"
+            } else {
+                tvShareCount.visibility = View.GONE
+            }
+
+            // 8. Xử lý Share
             btnShare.setOnClickListener {
                 // Kiểm tra thời gian: Nếu lần bấm này cách lần trước dưới 1 giây (1000ms) thì bỏ qua
                 if (android.os.SystemClock.elapsedRealtime() - lastClickTime < 1000) {

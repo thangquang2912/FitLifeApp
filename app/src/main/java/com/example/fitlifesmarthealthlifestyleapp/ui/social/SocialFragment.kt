@@ -7,14 +7,16 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts // [MỚI] Import này
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.fitlifesmarthealthlifestyleapp.DeepLinkViewModel // [MỚI]
+import com.example.fitlifesmarthealthlifestyleapp.DeepLinkViewModel
 import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.Post
+import com.example.fitlifesmarthealthlifestyleapp.utils.NetworkUtils // [MỚI] Import file utils vừa tạo
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -30,9 +32,22 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
     private var allPosts: List<Post> = emptyList()
     private var currentFilterType = FilterType.ALL
 
-    // ViewModel và biến lưu ID lọc
     private lateinit var deepLinkViewModel: DeepLinkViewModel
     private var targetPostId: String? = null
+
+    // [MỚI] Biến lưu ID bài viết đang được Share
+    private var pendingSharePostId: String? = null
+
+    // [MỚI] Launcher để bắt sự kiện quay lại sau khi Share
+    // Lưu ý: Đa số App (Zalo/Messenger) không trả về kết quả "Thành công" chuẩn,
+    // nên cách tốt nhất là đếm khi người dùng quay lại App từ màn hình Share.
+    private val shareLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        // Code trong này chạy khi người dùng tắt hộp thoại Share hoặc quay lại App
+        pendingSharePostId?.let { postId ->
+            incrementShareCount(postId)
+            pendingSharePostId = null // Reset sau khi tăng
+        }
+    }
 
     enum class FilterType { ALL, MY_POSTS, MY_LIKES }
 
@@ -47,11 +62,14 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         adapter = PostAdapter(
             onLikeClick = { post -> toggleLike(post) },
             onCommentClick = { post ->
-                val dialog = CommentsDialogFragment()
-                val bundle = Bundle()
-                bundle.putString("postId", post.postId)
-                dialog.arguments = bundle
-                dialog.show(parentFragmentManager, "CommentsDialog")
+                // [MỚI] Kiểm tra mạng trước khi mở bình luận
+                if (NetworkUtils.checkConnection(requireContext())) {
+                    val dialog = CommentsDialogFragment()
+                    val bundle = Bundle()
+                    bundle.putString("postId", post.postId)
+                    dialog.arguments = bundle
+                    dialog.show(parentFragmentManager, "CommentsDialog")
+                }
             },
             onLikeCountClick = { userIds ->
                 if (userIds.isNotEmpty()) {
@@ -66,15 +84,11 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         rvCommunity.layoutManager = LinearLayoutManager(context)
         rvCommunity.adapter = adapter
 
-        // [MỚI] LẮNG NGHE VIEWMODEL
         deepLinkViewModel = ViewModelProvider(requireActivity())[DeepLinkViewModel::class.java]
-
-        // Quan sát thay đổi (Đề phòng trường hợp tab đã mở sẵn)
         deepLinkViewModel.targetPostId.observe(viewLifecycleOwner) { id ->
             if (id != null) {
                 targetPostId = id
                 Toast.makeText(context, "Đang tìm bài viết...", Toast.LENGTH_SHORT).show()
-                // Gọi lại bộ lọc nếu dữ liệu đã tải xong
                 if (allPosts.isNotEmpty()) {
                     filterPostsWithDeepLink()
                 }
@@ -96,22 +110,57 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         listenToPosts()
 
         fabCreatePost.setOnClickListener {
-            val dialog = CreatePostDialogFragment()
-            dialog.show(parentFragmentManager, "CreatePost")
+            // [MỚI] Kiểm tra mạng trước khi đăng bài
+            if (NetworkUtils.checkConnection(requireContext())) {
+                val dialog = CreatePostDialogFragment()
+                dialog.show(parentFragmentManager, "CreatePost")
+            }
         }
     }
 
     private fun sharePostContent(post: Post) {
-        val deepLink = "https://fit-life-app-dl.vercel.app/post/${post.postId}"
+        // [MỚI] 1. Kiểm tra mạng
+        if (!NetworkUtils.checkConnection(requireContext())) return
 
-        val shareMessage = "${post.userName} vừa đăng tải bài viết trên FitLife!\nXem chi tiết tại: ${deepLink}"
+        // [MỚI] 2. Lưu ID lại để tí nữa quay lại thì tăng số
+        pendingSharePostId = post.postId
+
+        val deepLink = "https://fit-life-app-dl.vercel.app/post/${post.postId}"
+        val shareMessage = "${post.caption}\n$deepLink"
 
         val sendIntent = Intent().apply {
             action = Intent.ACTION_SEND
             putExtra(Intent.EXTRA_TEXT, shareMessage)
             type = "text/plain"
         }
-        startActivity(Intent.createChooser(sendIntent, "Share via"))
+
+        // [MỚI] 3. Dùng Launcher thay vì startActivity thường
+        shareLauncher.launch(Intent.createChooser(sendIntent, "Share via"))
+    }
+
+    private fun incrementShareCount(postId: String) {
+        // Kiểm tra mạng lần nữa cho chắc (dù thường là có mạng mới vào đây được)
+        if (!NetworkUtils.isNetworkAvailable(requireContext())) return
+
+        db.collection("posts").document(postId)
+            .update("shareCount", FieldValue.increment(1))
+            .addOnFailureListener { e ->
+                Log.e("SocialFragment", "Lỗi khi tăng share count", e)
+            }
+    }
+
+    private fun toggleLike(post: Post) {
+        if (currentUid == null) return
+
+        //  Kiểm tra mạng trước khi Like
+        if (!NetworkUtils.checkConnection(requireContext())) return
+
+        val postRef = db.collection("posts").document(post.postId)
+        if (post.likedBy.contains(currentUid)) {
+            postRef.update("likeCount", FieldValue.increment(-1), "likedBy", FieldValue.arrayRemove(currentUid))
+        } else {
+            postRef.update("likeCount", FieldValue.increment(1), "likedBy", FieldValue.arrayUnion(currentUid))
+        }
     }
 
     private fun showFilterMenu(anchor: View, currentQuery: String) {
@@ -148,7 +197,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         adapter.submitList(filteredList)
     }
 
-    // [MỚI] Hàm lọc riêng cho DeepLink
+    // Hàm lọc riêng cho DeepLink
     private fun filterPostsWithDeepLink() {
         val id = targetPostId ?: return
         val targetPost = allPosts.find { it.postId == id }
@@ -185,15 +234,5 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
                     filterPosts(searchView?.query.toString(), currentFilterType)
                 }
             }
-    }
-
-    private fun toggleLike(post: Post) {
-        if (currentUid == null) return
-        val postRef = db.collection("posts").document(post.postId)
-        if (post.likedBy.contains(currentUid)) {
-            postRef.update("likeCount", FieldValue.increment(-1), "likedBy", FieldValue.arrayRemove(currentUid))
-        } else {
-            postRef.update("likeCount", FieldValue.increment(1), "likedBy", FieldValue.arrayUnion(currentUid))
-        }
     }
 }

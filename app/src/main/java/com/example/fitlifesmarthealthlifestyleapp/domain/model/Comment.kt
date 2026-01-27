@@ -10,5 +10,7 @@ data class Comment(
     var userAvatar: String = "",
     var content: String = "",
     var timestamp: Timestamp = Timestamp.now(),
-    var likedBy: MutableList<String> = mutableListOf() // Danh sách UID người like
+    var likedBy: MutableList<String> = mutableListOf(),
+    val mediaUrl: String? = null,
+    val mediaType: String? = null
 )

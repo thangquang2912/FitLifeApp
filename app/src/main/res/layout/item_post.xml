@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="@color/white"
     android:orientation="vertical"
     android:layout_marginBottom="10dp">
@@ -141,6 +142,18 @@
             android:layout_marginStart="16dp"
             android:contentDescription="Share post"
             android:src="@drawable/ic_share" />
+
+        <TextView
+            android:id="@+id/tvShareCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            android:layout_marginStart="4dp"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="12" />
     </LinearLayout>
 
 
