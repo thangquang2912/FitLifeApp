@@ -206,5 +206,8 @@ class ProfileFragment : Fragment() {
         btnWorkoutHistory.setOnClickListener {
             findNavController().navigate(R.id.action_profile_to_workoutHistory)
         }
+        btnWorkoutPrograms.setOnClickListener {
+            findNavController().navigate(R.id.workoutProgramFragment)
+        }
     }
 }

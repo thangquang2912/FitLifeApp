@@ -133,6 +133,14 @@
             android:text="0"
             android:layout_marginStart="4dp"
             android:textSize="14sp"/>
+
+        <ImageView
+            android:id="@+id/btnShare"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:contentDescription="Share post"
+            android:src="@drawable/ic_share" />
     </LinearLayout>
 
 
