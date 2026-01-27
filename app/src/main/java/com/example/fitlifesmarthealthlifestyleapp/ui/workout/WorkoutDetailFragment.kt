@@ -59,6 +59,10 @@ class WorkoutDetailFragment : Fragment() {
         tvTitle.text = program.name
         tvCategory.text = program.category
         tvDifficulty.text = program.difficulty
+        if(program.difficulty == "Beginner") {tvDifficulty.setBackgroundResource(R.drawable.bg_badge_beginner)}
+        else if(program.difficulty == "Intermediate") {tvDifficulty.setBackgroundResource(R.drawable.bg_badge_intermediate)}
+        else if(program.difficulty == "Advanced") {tvDifficulty.setBackgroundResource(R.drawable.bg_badge_advanced)}
+
         tvTime.text = "${program.durationMins} mins"
         tvCal.text = "${program.caloriesBurn} cal"
         tvDesc.text = program.description
@@ -92,8 +96,10 @@ class WorkoutDetailFragment : Fragment() {
             findNavController().navigateUp()
         }
 
-        // Xử lý nút Bắt đầu tập
+        // Xử lý nút Start
         btnStart.setOnClickListener {
+            val action = WorkoutDetailFragmentDirections.actionDetailToPlayer(program)
+            findNavController().navigate(action)
         }
     }
 }

@@ -64,6 +64,17 @@
     </fragment>
 
     <fragment
+        android:id="@+id/workoutPlayerFragment"
+        android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutPlayerFragment"
+        android:label="WorkoutPlayerFragment"
+        tools:layout="@layout/fragment_workout_player">
+
+        <argument
+            android:name="workoutProgram"
+            app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.WorkoutProgram" />
+    </fragment>
+
+    <fragment
         android:id="@+id/workoutDetailFragment"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.workout.WorkoutDetailFragment"
         android:label="WorkoutDetailFragment"
@@ -71,9 +82,12 @@
         <argument
             android:name="workoutProgram"
             app:argType="com.example.fitlifesmarthealthlifestyleapp.domain.model.WorkoutProgram" />
+
+        <action
+            android:id="@+id/action_detail_to_player"
+            app:destination="@id/workoutPlayerFragment" />
     </fragment>
 
-    <!-- NEW: workout history -->
     <fragment
         android:id="@+id/workoutHistoryFragment"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.WorkoutHistoryFragment"
@@ -85,7 +99,6 @@
             app:destination="@id/activityDetailsFragment" />
     </fragment>
 
-    <!-- NEW: activity details -->
     <fragment
         android:id="@+id/activityDetailsFragment"
         android:name="com.example.fitlifesmarthealthlifestyleapp.ui.profile.ActivityDetailsFragment"
