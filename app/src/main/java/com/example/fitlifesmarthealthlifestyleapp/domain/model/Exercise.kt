@@ -8,5 +8,6 @@ data class Exercise(
     val durationSeconds: Int = 0,
     val restSeconds: Int = 0,
     val gifUrl: String = "",
-    val order: Int = 0
+    val order: Int = 0,
+    val sets: Int = 1
 ) : Serializable
