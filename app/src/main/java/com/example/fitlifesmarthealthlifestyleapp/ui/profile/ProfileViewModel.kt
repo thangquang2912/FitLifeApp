@@ -9,6 +9,7 @@ import com.cloudinary.android.MediaManager
 import com.cloudinary.android.callback.ErrorInfo
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.UserRepository
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.StepRepository
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
 import com.google.firebase.auth.FirebaseAuth
@@ -20,6 +21,7 @@ import java.util.*
 class ProfileViewModel : ViewModel() {
     private val userRepository = UserRepository()
     private val waterRepository = WaterRepository()
+    private val stepRepository = StepRepository()
     private val auth = FirebaseAuth.getInstance()
 
     private val _user = MutableLiveData<User?>()
@@ -34,6 +36,13 @@ class ProfileViewModel : ViewModel() {
     private val _weeklyWaterLogs = MutableLiveData<List<Int>>()
     val weeklyWaterLogs: LiveData<List<Int>> = _weeklyWaterLogs
 
+    private val _weeklySteps = MutableLiveData<List<Int>>()
+    val weeklySteps: LiveData<List<Int>> = _weeklySteps
+
+    // LiveData chứa danh sách các thứ trong tuần (Mon, Tue...) cho biểu đồ
+    private val _weeklyLabels = MutableLiveData<List<String>>()
+    val weeklyLabels: LiveData<List<String>> = _weeklyLabels
+
     fun fetchUserProfile() {
         val currentUid = auth.currentUser?.uid
         if (currentUid == null) {
@@ -42,14 +51,19 @@ class ProfileViewModel : ViewModel() {
         }
 
         if (_user.value == null || _user.value?.uid != currentUid) {
-            _isLoading.value = true;
+            _isLoading.value = true
 
             viewModelScope.launch {
                 val result = userRepository.getUserDetails(currentUid)
 
                 if (result.isSuccess) {
                     _user.value = result.getOrNull()
+                    
+                    // Tạo danh sách nhãn ngày (Labels) cho 7 ngày gần nhất
+                    generateWeeklyLabels()
+                    
                     fetchWeeklyWaterData(currentUid)
+                    fetchWeeklyStepsData(currentUid)
                 } else {
                     val error = result.exceptionOrNull()
                     error?.printStackTrace()
@@ -61,32 +75,70 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    // Hàm tạo nhãn cho biểu đồ (7 ngày gần nhất tính từ hôm nay ngược về trước)
+    private fun generateWeeklyLabels() {
+        val calendar = Calendar.getInstance()
+        val dayFormat = SimpleDateFormat("EEE", Locale.getDefault()) // VD: Mon, Tue...
+        val labels = mutableListOf<String>()
+        
+        for (i in 0 until 7) {
+            labels.add(dayFormat.format(calendar.time))
+            calendar.add(Calendar.DAY_OF_YEAR, -1)
+        }
+        
+        // Đảo ngược để có thứ tự từ cũ đến mới (hôm nay nằm cuối cùng bên phải)
+        _weeklyLabels.value = labels.reversed()
+    }
+
     private fun fetchWeeklyWaterData(uid: String) {
         viewModelScope.launch {
             val result = waterRepository.getWeeklyWaterLogs(uid)
             if (result.isSuccess) {
                 val logs = result.getOrNull() ?: emptyList()
-                
-                // Chuẩn bị dữ liệu cho 7 ngày gần nhất (đảm bảo đủ 7 cột kể cả khi thiếu data Firestore)
                 val calendar = Calendar.getInstance()
                 val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val last7DaysData = mutableListOf<Int>()
-                
                 val logMap = logs.associateBy { it.id }
                 
-                // Lấy data ngược từ hôm nay về 6 ngày trước
                 val tempDays = mutableListOf<String>()
                 for (i in 0 until 7) {
                     tempDays.add(sdf.format(calendar.time))
                     calendar.add(Calendar.DAY_OF_YEAR, -1)
                 }
                 
-                // Đảo ngược lại để chart hiện từ cũ -> mới
                 tempDays.reversed().forEach { dateId ->
                     last7DaysData.add(logMap[dateId]?.currentIntake ?: 0)
                 }
                 
                 _weeklyWaterLogs.value = last7DaysData
+            }
+        }
+    }
+
+    private fun fetchWeeklyStepsData(uid: String) {
+        viewModelScope.launch {
+            val result = stepRepository.getWeeklySteps(uid)
+            if (result.isSuccess) {
+                val dataList = result.getOrNull() ?: emptyList()
+                val calendar = Calendar.getInstance()
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val last7DaysSteps = mutableListOf<Int>()
+                
+                val stepsMap = dataList.associate { 
+                    (it["dateId"] as? String ?: "") to (it["steps"] as? Long ?: 0L).toInt()
+                }
+                
+                val tempDays = mutableListOf<String>()
+                for (i in 0 until 7) {
+                    tempDays.add(sdf.format(calendar.time))
+                    calendar.add(Calendar.DAY_OF_YEAR, -1)
+                }
+                
+                tempDays.reversed().forEach { dateId ->
+                    last7DaysSteps.add(stepsMap[dateId] ?: 0)
+                }
+                
+                _weeklySteps.value = last7DaysSteps
             }
         }
     }
@@ -99,55 +151,41 @@ class ProfileViewModel : ViewModel() {
     fun saveUserProfile(user: User, imageUri: Uri?) {
         _isLoading.value = true
 
-        // TH1: Không đổi ảnh -> Chỉ lưu thông tin text
         if (imageUri == null) {
             updateUserProfile(user)
             return
         }
 
-        // TH2: Có ảnh -> Upload lên Cloudinary
         MediaManager.get().upload(imageUri)
             .option("folder", "fitlife_avatars")
             .option("public_id", user.uid)
             .option("overwrite", true)
             .callback(object : UploadCallback {
                 override fun onStart(requestId: String) { }
-
                 override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) { }
-
                 override fun onSuccess(requestId: String, resultData: Map<*, *>) {
-                    // 1. Lấy link ảnh HTTPS
                     val secureUrl = resultData["secure_url"] as String
-
-                    // 2. Cập nhật link vào User
                     user.photoUrl = secureUrl
-
-                    // 3. Lưu User vào Firestore
                     updateUserProfile(user)
                 }
-
                 override fun onError(requestId: String, error: ErrorInfo) {
                     _isLoading.postValue(false)
                     _statusMessage.postValue("Lỗi upload ảnh: ${error.description}")
                 }
-
                 override fun onReschedule(requestId: String, error: ErrorInfo) { }
             })
             .dispatch()
     }
 
     fun updateUserProfile(user: User) {
-
         viewModelScope.launch {
             val result = userRepository.updateUser(user)
-
             if (result.isSuccess) {
                 _user.value = user
-                _statusMessage.value = "Updated profile successfully!" // Báo cho Fragment biết
+                _statusMessage.value = "Updated profile successfully!"
             } else {
                 _statusMessage.value = "Lỗi lưu dữ liệu: ${result.exceptionOrNull()?.message}"
             }
-
             _isLoading.value = false
         }
     }

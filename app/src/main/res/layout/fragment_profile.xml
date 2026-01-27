@@ -24,6 +24,18 @@
             app:layout_constraintTop_toTopOf="parent"
             android:textColor="@color/black"/>
 
+        <ImageButton
+            android:id="@+id/btnTheme"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="24dp"
+            android:background="@drawable/bg_circle_gray"
+            android:src="@drawable/ic_moon"
+            android:backgroundTint="#EEE"
+            app:layout_constraintBottom_toBottomOf="@+id/tvTitle"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/tvTitle" />
+
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivAvatar"
             android:layout_width="100dp"
@@ -238,6 +250,39 @@
                 android:layout_margin="16dp" />
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Biểu đồ số bước chân trong tuần -->
+        <TextView
+            android:id="@+id/tvWeeklyStepsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="24dp"
+            android:text="Weekly Steps History"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/cardWaterChart"
+            android:textColor="@color/black" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardStepsChart"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardBackgroundColor="@color/white"
+            app:strokeWidth="0dp"
+            app:cardElevation="2dp"
+            app:layout_constraintTop_toBottomOf="@+id/tvWeeklyStepsTitle">
+
+            <com.example.fitlifesmarthealthlifestyleapp.ui.profile.StepsWeeklyLineChartView
+                android:id="@+id/stepsWeeklyChart"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="16dp" />
+        </com.google.android.material.card.MaterialCardView>
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -245,7 +290,7 @@
             android:layout_marginTop="24dp"
             app:cardCornerRadius="16dp"
             app:cardBackgroundColor="@color/white"
-            app:layout_constraintTop_toBottomOf="@+id/cardWaterChart"
+            app:layout_constraintTop_toBottomOf="@+id/cardStepsChart"
             app:strokeWidth="0dp"
             app:cardElevation="2dp">
 

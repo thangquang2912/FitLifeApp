@@ -18,7 +18,8 @@ class WaterWeeklyChartView @JvmOverloads constructor(
 
     // Dữ liệu lượng nước uống trong 7 ngày
     private var data: List<Int> = listOf(0, 0, 0, 0, 0, 0, 0)
-    private var labels: List<String> = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    // Danh sách nhãn ngày (Mon, Tue...) sẽ được cập nhật từ ViewModel
+    private var labels: List<String> = listOf("Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Today")
     private var maxGoal = 2000f
     
     // Biến điều khiển animation (0.0 -> 1.0)
@@ -32,7 +33,7 @@ class WaterWeeklyChartView @JvmOverloads constructor(
     // Paint để vẽ chữ (labels)
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = ContextCompat.getColor(context, R.color.text_grey)
-        textSize = 12f * resources.displayMetrics.density
+        textSize = 10f * resources.displayMetrics.density
         textAlign = Paint.Align.CENTER
     }
 
@@ -43,13 +44,20 @@ class WaterWeeklyChartView @JvmOverloads constructor(
     }
 
     /**
+     * Cập nhật danh sách nhãn ngày động từ ViewModel
+     */
+    fun setLabels(newLabels: List<String>) {
+        this.labels = newLabels
+        invalidate()
+    }
+
+    /**
      * Cập nhật dữ liệu cho biểu đồ và chạy animation
-     * @param weeklyIntakes Danh sách lượng nước uống trong 7 ngày
-     * @param goal Mục tiêu uống nước hàng ngày để tính tỷ lệ cột
      */
     fun setWeeklyData(weeklyIntakes: List<Int>, goal: Int) {
         this.data = weeklyIntakes
-        this.maxGoal = goal.toFloat().coerceAtLeast(1000f)
+        // Tính giá trị lớn nhất của trục Y dựa trên dữ liệu thực tế hoặc mục tiêu
+        this.maxGoal = weeklyIntakes.maxOrNull()?.toFloat()?.coerceAtLeast(goal.toFloat()) ?: goal.toFloat()
         startAnimation()
     }
 
@@ -72,33 +80,39 @@ class WaterWeeklyChartView @JvmOverloads constructor(
         super.onDraw(canvas)
         if (data.isEmpty()) return
 
-        // Tính toán các khoảng cách padding
-        val paddingBottom = 30f * resources.displayMetrics.density
-        val paddingTop = 20f * resources.displayMetrics.density
-        val paddingLeft = 16f * resources.displayMetrics.density
-        val paddingRight = 16f * resources.displayMetrics.density
+        // Thiết lập các khoảng đệm cho biểu đồ
+        val paddingBottom = 40f * resources.displayMetrics.density
+        val paddingTop = 30f * resources.displayMetrics.density
+        val paddingLeft = 45f * resources.displayMetrics.density
+        val paddingRight = 20f * resources.displayMetrics.density
         
         val chartWidth = width - paddingLeft - paddingRight
         val chartHeight = height - paddingTop - paddingBottom
         
-        // Độ rộng mỗi cột (chiếm 50% không gian phân bổ)
+        // Tính toán độ rộng cột và khoảng cách
         val barWidth = (chartWidth / data.size) * 0.5f
         val spacing = (chartWidth / data.size)
 
-        // Vẽ các đường kẻ ngang mờ (0%, 50%, 100% mục tiêu)
-        for (i in 0..2) {
-            val y = paddingTop + chartHeight - (chartHeight * i / 2)
+        // Vẽ các vạch định mức trên trục Y và các đường kẻ ngang
+        for (i in 0..4) {
+            val y = paddingTop + chartHeight - (chartHeight * i / 4)
+            val value = (maxGoal * i / 4).toInt()
+            // Vẽ số ml bên trái trục Y
+            canvas.drawText("${value}ml", paddingLeft - 10f * resources.displayMetrics.density, y + 4f * resources.displayMetrics.density, textPaint.apply { textAlign = Paint.Align.RIGHT })
+            // Vẽ đường kẻ ngang mờ
             canvas.drawLine(paddingLeft, y, width - paddingRight, y, gridPaint)
         }
 
         data.forEachIndexed { index, intake ->
             val x = paddingLeft + (index * spacing) + (spacing / 2)
             
-            // Vẽ nhãn ngày (Thứ 2, Thứ 3...) bên dưới cột
-            canvas.drawText(labels[index], x, height - 10f * resources.displayMetrics.density, textPaint)
+            // Vẽ nhãn thứ (Mon, Tue...) bên dưới mỗi cột
+            if (index < labels.size) {
+                canvas.drawText(labels[index], x, height - 15f * resources.displayMetrics.density, textPaint.apply { textAlign = Paint.Align.CENTER })
+            }
 
-            // Tính toán chiều cao cột dựa trên lượng nước và mục tiêu
-            val ratio = (intake / maxGoal).coerceAtMost(1.2f) // Giới hạn cột không quá cao
+            // Tính toán tọa độ vẽ cột dựa trên tỷ lệ dữ liệu và animation
+            val ratio = (intake / maxGoal).coerceAtMost(1f)
             val barHeight = chartHeight * ratio * animProgress
             
             val top = paddingTop + chartHeight - barHeight
@@ -108,12 +122,12 @@ class WaterWeeklyChartView @JvmOverloads constructor(
 
             val rect = RectF(left, top, right, bottom)
             
-            // Đổ màu Gradient cho cột từ đậm (dưới) sang nhạt (trên)
+            // Đổ màu Gradient cho cột (Xanh đậm -> Xanh nhạt)
             val colorStart = ContextCompat.getColor(context, R.color.blue_primary)
             val colorEnd = ContextCompat.getColor(context, R.color.blue_light)
             barPaint.shader = LinearGradient(0f, top, 0f, bottom, colorStart, colorEnd, Shader.TileMode.CLAMP)
             
-            // Vẽ cột với góc bo tròn 8dp
+            // Vẽ cột hình chữ nhật bo tròn
             canvas.drawRoundRect(rect, 8f * resources.displayMetrics.density, 8f * resources.displayMetrics.density, barPaint)
         }
     }
