@@ -8,7 +8,9 @@
     <color name="background">#F9FAFB</color>
     <color name="text_grey">#4A5565</color>
     <color name="border">#99A1AF</color>
-
+    <color name="gray_light">#D3D3D3</color>
+    <color name="orange_block">#FF6D00</color>
+    <color name="gray_dark">#333333</color>
     <color name="purple_primary">#9747FF</color>
     <color name="purple_secondary">#B070FF</color>
     <color name="purple_light_alpha">#4DFFFFFF</color>

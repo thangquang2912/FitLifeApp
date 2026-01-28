@@ -1,0 +1,29 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- User head -->
+    <path
+        android:fillColor="@color/gray_light"
+        android:pathData="M12,12a4,4 0,1 0,0 -8a4,4 0,0 0,0 8z"/>
+
+    <!-- User body -->
+    <path
+        android:fillColor="@color/gray_light"
+        android:pathData="M4,20c0,-4 4,-6 8,-6s8,2 8,6v1H4z"/>
+
+    <!-- Block circle (bên phải đầu) -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/orange_block"
+        android:strokeWidth="2"
+        android:pathData="M17,7m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"/>
+
+    <!-- Block slash -->
+    <path
+        android:strokeColor="@color/orange_block"
+        android:strokeWidth="2"
+        android:pathData="M14.5,4.5L19.5,9.5"/>
+</vector>

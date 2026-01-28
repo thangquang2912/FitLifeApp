@@ -1,5 +1,6 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.social
 
+import android.Manifest
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,6 +10,7 @@ import android.widget.*
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.fitlifesmarthealthlifestyleapp.R
@@ -20,78 +22,145 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.UUID
 
 class CreatePostDialogFragment : BottomSheetDialogFragment() {
 
     private val profileViewModel: ProfileViewModel by activityViewModels()
-    private var selectedUri: Uri? = null
     private val db = FirebaseFirestore.getInstance()
+
+    // Biến lưu Uri ảnh (Dù chọn từ Gallery hay chụp Camera đều gán vào đây)
+    private var selectedUri: Uri? = null
+
+    // Biến lưu Uri tạm thời dành riêng cho Camera (trước khi chụp)
+    private var tempCameraUri: Uri? = null
 
     private lateinit var imgPreview: ImageView
     private lateinit var etCaption: EditText
     private lateinit var btnShare: Button
     private lateinit var progressBar: ProgressBar
-    private lateinit var tvUploadHint: TextView
+
+    // --- CÁC LAUNCHER XỬ LÝ ẢNH ---
+
+    // 1. Launcher Chọn ảnh từ Thư viện
+    private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) {
+            updatePreview(uri)
+        }
+    }
+
+    // 2. Launcher Chụp ảnh từ Camera
+    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { isSuccess ->
+        if (isSuccess && tempCameraUri != null) {
+            // Chụp thành công -> Hiển thị ảnh tạm vừa chụp lên
+            updatePreview(tempCameraUri!!)
+        }
+    }
+
+    // 3. Launcher Xin quyền Camera
+    private val requestCameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            launchCamera()
+        } else {
+            Toast.makeText(context, "Camera permission is required to take photos", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        // Đảm bảo tên layout đúng với file XML mới bạn đã sửa (có 2 nút Gallery/Camera)
         return inflater.inflate(R.layout.dialog_create_post, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Ánh xạ View
         imgPreview = view.findViewById(R.id.imgPreview)
         etCaption = view.findViewById(R.id.etCaption)
         btnShare = view.findViewById(R.id.btnSharePost)
         progressBar = view.findViewById(R.id.progressBarCreatePost)
-        tvUploadHint = view.findViewById(R.id.tvUploadHint)
 
-        // --- BỔ SUNG: Cấu hình chỉ cho nhập số cho Duration và Calories ---
+        val btnOpenGallery = view.findViewById<LinearLayout>(R.id.btnOpenGallery)
+        val btnOpenCamera = view.findViewById<LinearLayout>(R.id.btnOpenCamera)
+
         val etDuration = view.findViewById<TextInputEditText>(R.id.etDuration)
         val etCalories = view.findViewById<TextInputEditText>(R.id.etCalories)
 
-        // TYPE_CLASS_NUMBER: Chỉ hiện bàn phím số
-        etDuration?.inputType = android.text.InputType.TYPE_CLASS_NUMBER
-        etCalories?.inputType = android.text.InputType.TYPE_CLASS_NUMBER
-        // -----------------------------------------------------------------
+        // Cấu hình chỉ nhập số
+        etDuration.inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        etCalories.inputType = android.text.InputType.TYPE_CLASS_NUMBER
 
-        // 1. Sự kiện chọn ảnh
-        view.findViewById<View>(R.id.layoutAddPhoto).setOnClickListener {
+        // --- SỰ KIỆN CLICK ---
+
+        // 1. Click nút Gallery
+        btnOpenGallery.setOnClickListener {
             pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
 
-        // 2. Sự kiện xem ảnh Fullscreen
+        // 2. Click nút Camera
+        btnOpenCamera.setOnClickListener {
+            requestCameraPermission.launch(Manifest.permission.CAMERA)
+        }
+
+        // 3. Click xem ảnh Fullscreen
         imgPreview.setOnClickListener {
             if (selectedUri != null) {
                 val activity = context as? AppCompatActivity
-                if (activity != null) {
-                    FullScreenImageDialogFragment.show(activity.supportFragmentManager, selectedUri.toString())
+                activity?.let {
+                    FullScreenImageDialogFragment.show(it.supportFragmentManager, selectedUri.toString())
                 }
             }
         }
 
-        // 3. Sự kiện đăng bài
+        // 4. Click Đăng bài
         btnShare.setOnClickListener {
             if (selectedUri == null) {
-                Toast.makeText(context, "Please select a photo", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Please select or take a photo", Toast.LENGTH_SHORT).show()
             } else {
                 uploadAndShare()
             }
         }
     }
 
-    private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            selectedUri = uri
-            imgPreview.visibility = View.VISIBLE
-            imgPreview.setImageURI(uri)
-            tvUploadHint.text = "Photo Selected "
+    // --- HÀM HỖ TRỢ CAMERA & PREVIEW ---
+
+    private fun updatePreview(uri: Uri) {
+        selectedUri = uri
+        imgPreview.visibility = View.VISIBLE
+        imgPreview.setImageURI(uri)
+    }
+
+    private fun launchCamera() {
+        try {
+            // Tạo file tạm và lấy Uri
+            tempCameraUri = createTempPictureUri()
+            // Mở camera
+            takePicture.launch(tempCameraUri)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error launching camera: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
+    private fun createTempPictureUri(): Uri {
+        val tempFile = File.createTempFile("camera_img_", ".jpg", requireContext().cacheDir).apply {
+            createNewFile()
+            deleteOnExit() // Tự xóa khi app đóng
+        }
+
+        // Authority phải trùng với AndroidManifest
+        return FileProvider.getUriForFile(
+            requireContext(),
+            "${requireContext().packageName}.provider",
+            tempFile
+        )
+    }
+
+    // --- LOGIC UPLOAD & GEMINI (GIỮ NGUYÊN TỪ CODE CŨ) ---
+
     private fun uploadAndShare() {
-        val caption = etCaption.text.toString().trim()
+        val rawCaption = etCaption.text.toString()
+        val caption = if (rawCaption.trim().isEmpty()) " " else rawCaption
 
         progressBar.visibility = View.VISIBLE
         btnShare.isEnabled = false
@@ -102,34 +171,28 @@ class CreatePostDialogFragment : BottomSheetDialogFragment() {
             profileViewModel.fetchUserProfile()
             profileViewModel.user.observe(viewLifecycleOwner) { loadedUser ->
                 if (loadedUser != null) {
-                    // THAY ĐỔI: Gọi hàm kiểm duyệt trước khi đăng
                     checkContentAndPost(loadedUser, caption)
                     profileViewModel.user.removeObservers(viewLifecycleOwner)
                 }
             }
         } else {
-            // THAY ĐỔI: Gọi hàm kiểm duyệt trước khi đăng
             checkContentAndPost(currentUser, caption)
         }
     }
 
-    // --- HÀM MỚI: KIỂM DUYỆT NỘI DUNG BẰNG GEMINI ---
     private fun checkContentAndPost(user: com.example.fitlifesmarthealthlifestyleapp.domain.model.User, caption: String) {
         lifecycleScope.launch {
-            // 1. Thông báo cho người dùng biết đang kiểm tra
-            Toast.makeText(context, "Checking content...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Checking content safety...", Toast.LENGTH_SHORT).show()
 
-            // 2. Gọi GeminiModerator để kiểm tra (Đảm bảo bạn đã tạo file GeminiModerator.kt như hướng dẫn trước)
+            // Gọi Gemini kiểm tra (selectedUri lúc này có thể là ảnh thư viện HOẶC ảnh camera)
             val isSafe = GeminiModerator.isContentSafe(requireContext(), selectedUri, caption)
 
             if (!isSafe) {
-                // 3. Nếu KHÔNG an toàn -> Chặn và thông báo bằng tiếng anh
                 resetUI()
                 Toast.makeText(context, "Content violates community guidelines!", Toast.LENGTH_LONG).show()
-                return@launch // Dừng lại, không chạy tiếp
+                return@launch
             }
 
-            // 4. Nếu An toàn -> Tiếp tục quy trình Upload cũ
             startPostingProcess(user, caption)
         }
     }
@@ -137,7 +200,7 @@ class CreatePostDialogFragment : BottomSheetDialogFragment() {
     private fun startPostingProcess(user: com.example.fitlifesmarthealthlifestyleapp.domain.model.User, caption: String) {
         lifecycleScope.launch {
             try {
-                // Upload 1 ảnh như cũ
+                // Upload ảnh lên Cloudinary
                 val imageUrl = CloudinaryHelper.uploadImage(selectedUri!!, "community_posts")
 
                 if (imageUrl != null) {
@@ -171,21 +234,21 @@ class CreatePostDialogFragment : BottomSheetDialogFragment() {
                         .set(post)
                         .addOnSuccessListener {
                             if (isAdded) {
-                                Toast.makeText(context, "Share successful! ", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Shared successfully!", Toast.LENGTH_SHORT).show()
                                 dismiss()
                             }
                         }
                         .addOnFailureListener { e ->
                             resetUI()
-                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Firestore Error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                 } else {
                     resetUI()
-                    Toast.makeText(context, "Error when uploading image", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Image upload failed", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 resetUI()
-                Toast.makeText(context, "Server Error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Server Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

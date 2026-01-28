@@ -1,5 +1,6 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.social
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -7,17 +8,17 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts // [MỚI] Import này
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.fitlifesmarthealthlifestyleapp.DeepLinkViewModel
 import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.Post
-import com.example.fitlifesmarthealthlifestyleapp.utils.NetworkUtils // [MỚI] Import file utils vừa tạo
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.example.fitlifesmarthealthlifestyleapp.utils.NetworkUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -32,37 +33,41 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
     private var allPosts: List<Post> = emptyList()
     private var currentFilterType = FilterType.ALL
 
+    // Danh sách ID những người dùng bị chặn
+    private var blockedUserIds: MutableList<String> = mutableListOf()
+
+    // DeepLink & Share
     private lateinit var deepLinkViewModel: DeepLinkViewModel
     private var targetPostId: String? = null
-
-    // [MỚI] Biến lưu ID bài viết đang được Share
     private var pendingSharePostId: String? = null
 
-    // [MỚI] Launcher để bắt sự kiện quay lại sau khi Share
-    // Lưu ý: Đa số App (Zalo/Messenger) không trả về kết quả "Thành công" chuẩn,
-    // nên cách tốt nhất là đếm khi người dùng quay lại App từ màn hình Share.
     private val shareLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        // Code trong này chạy khi người dùng tắt hộp thoại Share hoặc quay lại App
         pendingSharePostId?.let { postId ->
             incrementShareCount(postId)
-            pendingSharePostId = null // Reset sau khi tăng
+            pendingSharePostId = null
         }
     }
-
+    private var hiddenUserIds: MutableSet<String> = mutableSetOf()
     enum class FilterType { ALL, MY_POSTS, MY_LIKES }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 1. Lấy danh sách chặn trước
+        fetchBlockedUsers()
+
+        // Ánh xạ View
         val rvCommunity = view.findViewById<RecyclerView>(R.id.rvCommunity)
-        val fabCreatePost = view.findViewById<FloatingActionButton>(R.id.fabCreatePost)
         val searchView = view.findViewById<SearchView>(R.id.searchViewPost)
         val btnFilter = view.findViewById<ImageView>(R.id.btnFilter)
+        val btnAddPost = view.findViewById<ImageView>(R.id.btnAddPost)
+        val btnUserProfile = view.findViewById<ImageView>(R.id.btnUserProfile) // Đã ánh xạ ở đây
+        // val btnNotification... (các nút khác)
 
+        // 2. Setup Adapter
         adapter = PostAdapter(
             onLikeClick = { post -> toggleLike(post) },
             onCommentClick = { post ->
-                // [MỚI] Kiểm tra mạng trước khi mở bình luận
                 if (NetworkUtils.checkConnection(requireContext())) {
                     val dialog = CommentsDialogFragment()
                     val bundle = Bundle()
@@ -78,23 +83,43 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
                 }
             },
             onUserClick = { userId -> },
-            onShareClick = { post -> sharePostContent(post) }
+            onShareClick = { post -> sharePostContent(post) },
+            onBlockClick = { userId, userName ->
+                showBlockConfirmation(userId, userName)
+            }
         )
 
         rvCommunity.layoutManager = LinearLayoutManager(context)
         rvCommunity.adapter = adapter
 
-        deepLinkViewModel = ViewModelProvider(requireActivity())[DeepLinkViewModel::class.java]
-        deepLinkViewModel.targetPostId.observe(viewLifecycleOwner) { id ->
-            if (id != null) {
-                targetPostId = id
-                Toast.makeText(context, "Đang tìm bài viết...", Toast.LENGTH_SHORT).show()
-                if (allPosts.isNotEmpty()) {
-                    filterPostsWithDeepLink()
-                }
+        // 3. Setup Events
+
+        // Nút Đăng bài
+        btnAddPost.setOnClickListener {
+            if (NetworkUtils.checkConnection(requireContext())) {
+                val dialog = CreatePostDialogFragment()
+                dialog.show(parentFragmentManager, "CreatePost")
             }
         }
 
+        // Nút Filter
+        btnFilter.setOnClickListener { view ->
+            showFilterMenu(view, searchView.query.toString())
+        }
+
+        // --- SỬA LỖI Ở ĐÂY ---
+        // Load avatar
+        loadCurrentUserAvatar(btnUserProfile)
+
+        // Sự kiện Click User Profile
+        btnUserProfile.setOnClickListener {
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.navHostFragmentContainerView, PersonalProfileFragment()) // ID chính xác từ file xml bạn gửi
+                .addToBackStack(null)
+                .commit()
+        }
+
+        // Search
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = false
             override fun onQueryTextChange(newText: String?): Boolean {
@@ -103,58 +128,159 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
             }
         })
 
-        btnFilter.setOnClickListener { view ->
-            showFilterMenu(view, searchView.query.toString())
+        // 4. ViewModel DeepLink
+        deepLinkViewModel = ViewModelProvider(requireActivity())[DeepLinkViewModel::class.java]
+        deepLinkViewModel.targetPostId.observe(viewLifecycleOwner) { id ->
+            if (id != null) {
+                targetPostId = id
+                if (allPosts.isNotEmpty()) {
+                    filterPostsWithDeepLink()
+                }
+            }
         }
 
+        // 5. Lắng nghe bài viết
         listenToPosts()
+    }
 
-        fabCreatePost.setOnClickListener {
-            // [MỚI] Kiểm tra mạng trước khi đăng bài
-            if (NetworkUtils.checkConnection(requireContext())) {
-                val dialog = CreatePostDialogFragment()
-                dialog.show(parentFragmentManager, "CreatePost")
+    private fun loadCurrentUserAvatar(imageView: ImageView) {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user?.photoUrl != null) {
+            Glide.with(this).load(user.photoUrl).circleCrop().into(imageView)
+        }
+    }
+
+    // --- LOGIC BLOCK USER ---
+    private fun fetchBlockedUsers() {
+        if (currentUid == null) return
+
+        db.collection("users").document(currentUid)
+            .addSnapshotListener { document, e ->
+                if (e != null) return@addSnapshotListener
+
+                hiddenUserIds.clear()
+
+                // Lấy danh sách mình chặn
+                val myBlockedList = document?.get("blockedUsers") as? List<String>
+                if (myBlockedList != null) hiddenUserIds.addAll(myBlockedList)
+
+                // [MỚI] Lấy danh sách người chặn mình
+                val blockedMeList = document?.get("blockedBy") as? List<String>
+                if (blockedMeList != null) hiddenUserIds.addAll(blockedMeList)
+
+                // Refresh lại giao diện
+                val searchView = view?.findViewById<SearchView>(R.id.searchViewPost)
+                filterPosts(searchView?.query.toString(), currentFilterType)
+            }
+    }
+
+    private fun showBlockConfirmation(userId: String, userName: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Block User")
+            .setMessage("Block $userName? Their posts will be hidden.")
+            .setPositiveButton("Block") { _, _ -> performBlockUser(userId) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun performBlockUser(targetUserId: String) {
+        if (!NetworkUtils.checkConnection(requireContext()) || currentUid == null) return
+
+        val batch = db.batch()
+
+        // A. Thêm Target vào danh sách 'blockedUsers' của Mình
+        val myRef = db.collection("users").document(currentUid)
+        batch.update(myRef, "blockedUsers", FieldValue.arrayUnion(targetUserId))
+
+        // B. Thêm Mình vào danh sách 'blockedBy' của Target
+        val targetRef = db.collection("users").document(targetUserId)
+        batch.update(targetRef, "blockedBy", FieldValue.arrayUnion(currentUid))
+
+        batch.commit()
+            .addOnSuccessListener {
+                Toast.makeText(context, "Đã chặn người dùng. Họ sẽ không thấy bài viết của bạn nữa.", Toast.LENGTH_LONG).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(context, "Lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    // --- LOGIC POSTS & FILTER ---
+    private fun listenToPosts() {
+        db.collection("posts")
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                allPosts = snapshot?.toObjects(Post::class.java) ?: emptyList()
+
+                if (targetPostId != null) {
+                    filterPostsWithDeepLink()
+                } else {
+                    val searchView = view?.findViewById<SearchView>(R.id.searchViewPost)
+                    filterPosts(searchView?.query.toString(), currentFilterType)
+                }
+            }
+    }
+
+    private fun filterPosts(query: String?, filterType: FilterType) {
+        val searchText = query?.lowercase()?.trim() ?: ""
+
+        val filteredList = allPosts.filter { post ->
+            val matchName = if (searchText.isEmpty()) true else post.userName.lowercase().contains(searchText)
+
+            val matchFilter = when (filterType) {
+                FilterType.ALL -> true
+                FilterType.MY_POSTS -> post.userId == currentUid
+                FilterType.MY_LIKES -> post.likedBy.contains(currentUid)
+            }
+
+            // [QUAN TRỌNG] Kiểm tra xem User có nằm trong danh sách cần ẩn không
+            // hiddenUserIds bao gồm cả: Người mình chặn VÀ Người chặn mình
+            val isNotHidden = !hiddenUserIds.contains(post.userId)
+
+            matchName && matchFilter && isNotHidden
+        }
+        adapter.submitList(filteredList)
+    }
+
+    private fun filterPostsWithDeepLink() {
+        val id = targetPostId ?: return
+        val targetPost = allPosts.find { it.postId == id }
+        if (targetPost != null) {
+            adapter.submitList(listOf(targetPost))
+            deepLinkViewModel.clearPostId()
+            targetPostId = null
+        } else {
+            if (allPosts.isNotEmpty()) {
+                deepLinkViewModel.clearPostId()
+                targetPostId = null
+                filterPosts("", currentFilterType)
             }
         }
     }
 
+    // --- ACTIONS ---
     private fun sharePostContent(post: Post) {
-        // [MỚI] 1. Kiểm tra mạng
         if (!NetworkUtils.checkConnection(requireContext())) return
-
-        // [MỚI] 2. Lưu ID lại để tí nữa quay lại thì tăng số
         pendingSharePostId = post.postId
-
         val deepLink = "https://fit-life-app-dl.vercel.app/post/${post.postId}"
         val shareMessage = "${post.caption}\n$deepLink"
-
         val sendIntent = Intent().apply {
             action = Intent.ACTION_SEND
             putExtra(Intent.EXTRA_TEXT, shareMessage)
             type = "text/plain"
         }
-
-        // [MỚI] 3. Dùng Launcher thay vì startActivity thường
         shareLauncher.launch(Intent.createChooser(sendIntent, "Share via"))
     }
 
     private fun incrementShareCount(postId: String) {
-        // Kiểm tra mạng lần nữa cho chắc (dù thường là có mạng mới vào đây được)
         if (!NetworkUtils.isNetworkAvailable(requireContext())) return
-
         db.collection("posts").document(postId)
             .update("shareCount", FieldValue.increment(1))
-            .addOnFailureListener { e ->
-                Log.e("SocialFragment", "Lỗi khi tăng share count", e)
-            }
     }
 
     private fun toggleLike(post: Post) {
-        if (currentUid == null) return
-
-        //  Kiểm tra mạng trước khi Like
-        if (!NetworkUtils.checkConnection(requireContext())) return
-
+        if (currentUid == null || !NetworkUtils.checkConnection(requireContext())) return
         val postRef = db.collection("posts").document(post.postId)
         if (post.likedBy.contains(currentUid)) {
             postRef.update("likeCount", FieldValue.increment(-1), "likedBy", FieldValue.arrayRemove(currentUid))
@@ -181,58 +307,5 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
             true
         }
         popup.show()
-    }
-
-    private fun filterPosts(query: String?, filterType: FilterType) {
-        val searchText = query?.lowercase()?.trim() ?: ""
-        val filteredList = allPosts.filter { post ->
-            val matchName = if (searchText.isEmpty()) true else post.userName.lowercase().contains(searchText)
-            val matchFilter = when (filterType) {
-                FilterType.ALL -> true
-                FilterType.MY_POSTS -> post.userId == currentUid
-                FilterType.MY_LIKES -> post.likedBy.contains(currentUid)
-            }
-            matchName && matchFilter
-        }
-        adapter.submitList(filteredList)
-    }
-
-    // Hàm lọc riêng cho DeepLink
-    private fun filterPostsWithDeepLink() {
-        val id = targetPostId ?: return
-        val targetPost = allPosts.find { it.postId == id }
-
-        if (targetPost != null) {
-            adapter.submitList(listOf(targetPost))
-            // Xóa ID trong ViewModel để lần sau không bị lọc lại
-            deepLinkViewModel.clearPostId()
-            targetPostId = null
-        } else {
-            // Nếu không tìm thấy (có thể do mạng chậm, cứ để đó chờ update tiếp theo)
-            if (allPosts.isNotEmpty()) {
-                // Nếu đã load hết mà vẫn không thấy -> Báo lỗi
-                Toast.makeText(context, "Bài viết không tồn tại hoặc đã bị xóa", Toast.LENGTH_SHORT).show()
-                deepLinkViewModel.clearPostId()
-                targetPostId = null
-                filterPosts("", currentFilterType)
-            }
-        }
-    }
-
-    private fun listenToPosts() {
-        db.collection("posts")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) return@addSnapshotListener
-                allPosts = snapshot?.toObjects(Post::class.java) ?: emptyList()
-
-                // Logic lọc ưu tiên DeepLink
-                if (targetPostId != null) {
-                    filterPostsWithDeepLink()
-                } else {
-                    val searchView = view?.findViewById<SearchView>(R.id.searchViewPost)
-                    filterPosts(searchView?.query.toString(), currentFilterType)
-                }
-            }
     }
 }

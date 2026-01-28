@@ -85,39 +85,41 @@ class CommentsAdapter(
                 when (comment.mediaType) {
                     "IMAGE" -> {
                         ivMedia.visibility = View.VISIBLE
+                        ivMedia.foreground = null
+
                         Glide.with(itemView.context)
                             .load(comment.mediaUrl)
                             .placeholder(R.drawable.bg_search_rounded)
                             .into(ivMedia)
 
-                        // Bấm vào ảnh -> Xem Fullscreen
+                        // [MỚI] Bấm vào ảnh -> Xem Full Screen
                         ivMedia.setOnClickListener {
-                            val activity = itemView.context as? AppCompatActivity
-                            activity?.let {
-                                FullScreenImageDialogFragment.show(it.supportFragmentManager, comment.mediaUrl)
+                            val activity = itemView.context as? androidx.appcompat.app.AppCompatActivity
+                            activity?.let { act ->
+                                FullScreenImageDialogFragment.show(act.supportFragmentManager, comment.mediaUrl)
                             }
                         }
                     }
-                    "VIDEO" -> {
-                        ivMedia.visibility = View.VISIBLE
-                        // Glide có thể load thumbnail từ video url
-                        Glide.with(itemView.context)
-                            .load(comment.mediaUrl)
-                            .placeholder(R.drawable.bg_search_rounded)
-                            .into(ivMedia)
-
-                        // Xử lý click video (Tạm thời thông báo, hoặc bạn có thể mở VideoPlayerActivity)
-                        ivMedia.setOnClickListener {
-                            Toast.makeText(itemView.context, "Play Video: ${comment.mediaUrl}", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    "AUDIO" -> {
-                        layoutAudio.visibility = View.VISIBLE
-                        layoutAudio.setOnClickListener {
-                            // Xử lý click Audio
-                            Toast.makeText(itemView.context, "Play Audio...", Toast.LENGTH_SHORT).show()
-                        }
-                    }
+//                    "VIDEO" -> {
+//                        ivMedia.visibility = View.VISIBLE
+//                        // Glide có thể load thumbnail từ video url
+//                        Glide.with(itemView.context)
+//                            .load(comment.mediaUrl)
+//                            .placeholder(R.drawable.bg_search_rounded)
+//                            .into(ivMedia)
+//
+//                        // Xử lý click video (Tạm thời thông báo, hoặc bạn có thể mở VideoPlayerActivity)
+//                        ivMedia.setOnClickListener {
+//                            Toast.makeText(itemView.context, "Play Video: ${comment.mediaUrl}", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
+//                    "AUDIO" -> {
+//                        layoutAudio.visibility = View.VISIBLE
+//                        layoutAudio.setOnClickListener {
+//                            // Xử lý click Audio
+//                            Toast.makeText(itemView.context, "Play Audio...", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
                 }
             }
             // -----------------------------------

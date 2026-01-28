@@ -38,24 +38,20 @@ class EditPostDialogFragment : BottomSheetDialogFragment() {
     private lateinit var imgPreview: ImageView
     private lateinit var progressBar: ProgressBar
     private lateinit var btnUpdate: Button
-    private lateinit var tvUploadHint: TextView
 
-    // Bộ chọn ảnh mới
+    // Bộ chọn ảnh mới từ Thư viện
     private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             selectedNewUri = uri
             // Hiển thị ảnh mới chọn lên giao diện
-            Glide.with(this).load(uri).centerCrop().into(imgPreview)
             imgPreview.visibility = View.VISIBLE
-
-            // Cập nhật giao diện
-            tvUploadHint.text = "New photo selected"
-            tvUploadHint.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0)
+            imgPreview.setImageURI(uri)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Nhận dữ liệu truyền qua arguments
         arguments?.let {
             postId = it.getString("postId")
             currentImageUrl = it.getString("imageUrl")
@@ -63,91 +59,102 @@ class EditPostDialogFragment : BottomSheetDialogFragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        // Sử dụng lại layout dialog_create_post
         return inflater.inflate(R.layout.dialog_create_post, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 1. THAY ĐỔI GIAO DIỆN CHO PHÙ HỢP VỚI EDIT
         val tvTitle = view.findViewById<TextView>(R.id.textView2)
         if (tvTitle != null) tvTitle.text = "Edit Post"
 
+        btnUpdate = view.findViewById(R.id.btnSharePost)
+        btnUpdate.text = "Update Post"
+
+        // 2. ÁNH XẠ VIEWS
         val etCaption = view.findViewById<EditText>(R.id.etCaption)
         val etDuration = view.findViewById<TextInputEditText>(R.id.etDuration)
         val etCalories = view.findViewById<TextInputEditText>(R.id.etCalories)
 
         imgPreview = view.findViewById(R.id.imgPreview)
-        btnUpdate = view.findViewById(R.id.btnSharePost)
         progressBar = view.findViewById(R.id.progressBarCreatePost)
-        val layoutAddPhoto = view.findViewById<View>(R.id.layoutAddPhoto)
-        tvUploadHint = view.findViewById(R.id.tvUploadHint)
 
-        // 1. ĐIỀN DỮ LIỆU CŨ
+        // --- SỬA LỖI Ở ĐÂY: Ánh xạ nút Gallery mới ---
+        val btnOpenGallery = view.findViewById<View>(R.id.btnOpenGallery)
+
+        // Ẩn nút Camera trong chế độ Edit (để đơn giản hóa)
+        val btnOpenCamera = view.findViewById<View>(R.id.btnOpenCamera)
+        btnOpenCamera.visibility = View.GONE
+
+        // 3. ĐIỀN DỮ LIỆU CŨ VÀO FORM
         arguments?.let {
             etCaption.setText(it.getString("caption"))
+            // Xóa chữ " mins" và " kcal" để chỉ hiện số cho dễ sửa
             etDuration.setText(it.getString("duration")?.replace(" mins", "")?.trim())
             etCalories.setText(it.getString("calories")?.replace(" kcal", "")?.trim())
         }
 
+        // Hiển thị ảnh cũ
         if (currentImageUrl != null) {
             imgPreview.visibility = View.VISIBLE
             Glide.with(this).load(currentImageUrl).centerCrop().into(imgPreview)
-            tvUploadHint.text = "Tap to change photo"
         }
 
-        btnUpdate.text = "Update Post"
-
-        // 2. SỰ KIỆN CHỌN ẢNH MỚI
-        layoutAddPhoto.setOnClickListener {
+        // 4. SỰ KIỆN CLICK CHỌN ẢNH MỚI (Gallery)
+        btnOpenGallery.setOnClickListener {
             pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
 
-        // 3. SỰ KIỆN ZOOM ẢNH
+        // 5. SỰ KIỆN ZOOM ẢNH
         imgPreview.setOnClickListener {
             val urlToShow = selectedNewUri?.toString() ?: currentImageUrl
             if (urlToShow != null) {
                 val activity = context as? AppCompatActivity
-                if (activity != null) {
-                    FullScreenImageDialogFragment.show(activity.supportFragmentManager, urlToShow)
+                activity?.let {
+                    FullScreenImageDialogFragment.show(it.supportFragmentManager, urlToShow)
                 }
             }
         }
 
-        // 4. SỰ KIỆN UPDATE (CÓ GEMINI CHECK)
+        // 6. SỰ KIỆN UPDATE (LOGIC CHÍNH)
         btnUpdate.setOnClickListener {
             val newCaption = etCaption.text.toString().trim()
             var newDuration = etDuration.text.toString().trim()
             var newCalories = etCalories.text.toString().trim()
 
+            // Format lại đơn vị
             if (newDuration.isNotEmpty() && !newDuration.contains("mins")) newDuration += " mins"
             if (newCalories.isNotEmpty() && !newCalories.contains("kcal")) newCalories += " kcal"
+
+            // Nếu Duration/Calories rỗng thì gán mặc định
+            if (newDuration.isEmpty()) newDuration = "0 mins"
+            if (newCalories.isEmpty()) newCalories = "0 kcal"
 
             if (postId == null) return@setOnClickListener
 
             progressBar.visibility = View.VISIBLE
             btnUpdate.isEnabled = false
 
-            // BẮT ĐẦU COROUTINE ĐỂ CHECK VÀ UPDATE
+            // BẮT ĐẦU COROUTINE
             lifecycleScope.launch {
-                // --- BƯỚC 1: KIỂM DUYỆT GEMINI ---
+                // --- BƯỚC A: KIỂM DUYỆT GEMINI ---
                 Toast.makeText(context, "Checking content...", Toast.LENGTH_SHORT).show()
 
-                // Nếu selectedNewUri là null (không đổi ảnh), Gemini sẽ chỉ check Caption.
-                // Nếu selectedNewUri có ảnh mới, Gemini sẽ check cả Ảnh mới + Caption.
+                // Check caption (và ảnh mới nếu có)
                 val isSafe = GeminiModerator.isContentSafe(requireContext(), selectedNewUri, newCaption)
 
                 if (!isSafe) {
-                    // NẾU KHÔNG AN TOÀN -> DỪNG LẠI
                     progressBar.visibility = View.GONE
                     btnUpdate.isEnabled = true
                     Toast.makeText(context, "Content violates community guidelines!", Toast.LENGTH_LONG).show()
                     return@launch
                 }
 
-                // --- BƯỚC 2: TIẾN HÀNH UPDATE (NẾU AN TOÀN) ---
-                var finalImageUrl = currentImageUrl // Mặc định dùng URL cũ
+                // --- BƯỚC B: UPLOAD ẢNH MỚI (NẾU CÓ) ---
+                var finalImageUrl = currentImageUrl // Mặc định dùng ảnh cũ
 
-                // Nếu có ảnh mới -> Upload lên Cloudinary
                 if (selectedNewUri != null) {
                     try {
                         Toast.makeText(context, "Uploading new image...", Toast.LENGTH_SHORT).show()
@@ -162,14 +169,14 @@ class EditPostDialogFragment : BottomSheetDialogFragment() {
                             return@launch
                         }
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Error upload: ${e.message}", Toast.LENGTH_SHORT).show()
                         progressBar.visibility = View.GONE
                         btnUpdate.isEnabled = true
                         return@launch
                     }
                 }
 
-                // Cập nhật Firestore
+                // --- BƯỚC C: CẬP NHẬT FIRESTORE ---
                 val updates = mapOf(
                     "caption" to newCaption,
                     "duration" to newDuration,

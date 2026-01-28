@@ -209,17 +209,21 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
 
     private fun processSend(user: User, content: String) {
         lifecycleScope.launch {
-            // UI Loading
             btnSend.isEnabled = false
             progressBar.visibility = View.VISIBLE
 
+            // [MỚI] Xử lý Caption: Nếu rỗng và có chọn ảnh/video -> gán bằng dấu cách " "
+            // Nếu không có ảnh mà caption rỗng -> giữ nguyên (để chặn hoặc báo lỗi sau)
+            val finalContent = if (content.trim().isEmpty() && selectedMediaUri != null) " " else content
+
             // 1. Kiểm tra nội dung Text với Gemini
-            if (content.isNotEmpty()) {
-                val isSafe = GeminiModerator.isContentSafe(requireContext(), null, content)
+            // Chỉ kiểm tra nếu nội dung có chữ thực sự (khác rỗng và khác dấu cách)
+            if (finalContent.trim().isNotEmpty()) {
+                val isSafe = GeminiModerator.isContentSafe(requireContext(), null, finalContent)
                 if (!isSafe) {
                     btnSend.isEnabled = true
                     progressBar.visibility = View.GONE
-                    Toast.makeText(context, "Comment contains prohibited material!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Bình luận chứa nội dung không phù hợp!", Toast.LENGTH_LONG).show()
                     return@launch
                 }
             }
@@ -227,20 +231,19 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
             // 2. Upload Media lên Cloudinary (Nếu có)
             var uploadedMediaUrl: String? = null
             if (selectedMediaUri != null) {
-                // Upload
+
                 uploadedMediaUrl = CloudinaryHelper.uploadImage(selectedMediaUri!!, "comments")
 
                 if (uploadedMediaUrl == null) {
-                    // Upload lỗi
                     btnSend.isEnabled = true
                     progressBar.visibility = View.GONE
-                    Toast.makeText(context, "Failed to upload media. Check connection.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Lỗi upload media. Vui lòng kiểm tra mạng.", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
             }
 
-            // 3. Lưu vào Firestore
-            executePostComment(user, content, uploadedMediaUrl, selectedMediaType)
+            // 3. Lưu vào Firestore (Dùng finalContent)
+            executePostComment(user, finalContent, uploadedMediaUrl, selectedMediaType)
         }
     }
 

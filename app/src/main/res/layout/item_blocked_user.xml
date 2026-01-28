@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:gravity="center_vertical"
+    android:background="@color/white">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivBlockedAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_user"
+        android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/tvBlockedName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="User Name"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:layout_marginStart="12dp"/>
+
+    <Button
+        android:id="@+id/btnUnblock"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:text="Unblock"
+        android:textSize="12sp"
+        android:backgroundTint="@color/gray_light"
+        android:textColor="@color/black"/>
+</LinearLayout>
