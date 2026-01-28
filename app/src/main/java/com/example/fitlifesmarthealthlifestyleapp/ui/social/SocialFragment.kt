@@ -3,7 +3,6 @@ package com.example.fitlifesmarthealthlifestyleapp.ui.social
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
@@ -30,11 +29,15 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
     private val db = FirebaseFirestore.getInstance()
     private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
 
+    // Dữ liệu bài viết
     private var allPosts: List<Post> = emptyList()
+
+    // Bộ lọc hiện tại
     private var currentFilterType = FilterType.ALL
 
-    // Danh sách ID những người dùng bị chặn
-    private var blockedUserIds: MutableList<String> = mutableListOf()
+    // Danh sách hỗ trợ lọc (Block & Following)
+    private var hiddenUserIds: MutableSet<String> = mutableSetOf()
+    private var followingUserIds: MutableList<String> = mutableListOf()
 
     // DeepLink & Share
     private lateinit var deepLinkViewModel: DeepLinkViewModel
@@ -47,79 +50,82 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
             pendingSharePostId = null
         }
     }
-    private var hiddenUserIds: MutableSet<String> = mutableSetOf()
-    enum class FilterType { ALL, MY_POSTS, MY_LIKES }
+
+    // Enum các loại lọc
+    enum class FilterType { ALL, MY_POSTS, MY_LIKES, FOLLOWING }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Lấy danh sách chặn trước
-        fetchBlockedUsers()
+        // 1. Lấy dữ liệu User (Danh sách chặn & Danh sách Following)
+        fetchUserData()
 
         // Ánh xạ View
         val rvCommunity = view.findViewById<RecyclerView>(R.id.rvCommunity)
         val searchView = view.findViewById<SearchView>(R.id.searchViewPost)
         val btnFilter = view.findViewById<ImageView>(R.id.btnFilter)
-        val btnAddPost = view.findViewById<ImageView>(R.id.btnAddPost)
-        val btnUserProfile = view.findViewById<ImageView>(R.id.btnUserProfile) // Đã ánh xạ ở đây
-        // val btnNotification... (các nút khác)
+        val btnAddPost = view.findViewById<View>(R.id.btnAddPost)
+        val btnUserProfile = view.findViewById<ImageView>(R.id.btnUserProfile)
+        val btnNotification = view.findViewById<ImageView>(R.id.btnNotification)
+        val btnMessage = view.findViewById<ImageView>(R.id.btnMessage)
 
         // 2. Setup Adapter
         adapter = PostAdapter(
             onLikeClick = { post -> toggleLike(post) },
-            onCommentClick = { post ->
-                if (NetworkUtils.checkConnection(requireContext())) {
-                    val dialog = CommentsDialogFragment()
-                    val bundle = Bundle()
-                    bundle.putString("postId", post.postId)
-                    dialog.arguments = bundle
-                    dialog.show(parentFragmentManager, "CommentsDialog")
+            onCommentClick = { post -> showCommentsDialog(post) },
+            onLikeCountClick = { userIds -> showLikeListDialog(userIds) },
+
+            // [QUAN TRỌNG] Xử lý click User để tránh Crash
+            onUserClick = { userId ->
+                try {
+                    // DÙNG CÁI NÀY ĐỂ TRÁNH CRASH:
+                    val transaction = requireActivity().supportFragmentManager.beginTransaction()
+
+                    if (userId == currentUid) {
+                        transaction.replace(R.id.navHostFragmentContainerView, PersonalProfileFragment())
+                    } else {
+                        // Gọi newInstance để truyền ID an toàn
+                        transaction.replace(R.id.navHostFragmentContainerView, UserProfileFragment.newInstance(userId))
+                    }
+                    transaction.addToBackStack(null)
+                    transaction.commit()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             },
-            onLikeCountClick = { userIds ->
-                if (userIds.isNotEmpty()) {
-                    val dialog = LikeListDialogFragment(userIds)
-                    dialog.show(childFragmentManager, "LikeListDialog")
-                }
-            },
-            onUserClick = { userId -> },
             onShareClick = { post -> sharePostContent(post) },
-            onBlockClick = { userId, userName ->
-                showBlockConfirmation(userId, userName)
-            }
+            onBlockClick = { userId, userName -> showBlockConfirmation(userId, userName) }
         )
 
         rvCommunity.layoutManager = LinearLayoutManager(context)
         rvCommunity.adapter = adapter
 
-        // 3. Setup Events
-
-        // Nút Đăng bài
+        // 3. Setup Events Buttons
         btnAddPost.setOnClickListener {
             if (NetworkUtils.checkConnection(requireContext())) {
-                val dialog = CreatePostDialogFragment()
-                dialog.show(parentFragmentManager, "CreatePost")
+                CreatePostDialogFragment().show(parentFragmentManager, "CreatePost")
             }
         }
 
-        // Nút Filter
-        btnFilter.setOnClickListener { view ->
-            showFilterMenu(view, searchView.query.toString())
+        btnFilter.setOnClickListener { v ->
+            showFilterMenu(v, searchView.query.toString())
         }
 
-        // --- SỬA LỖI Ở ĐÂY ---
-        // Load avatar
+        // Load Avatar Header
         loadCurrentUserAvatar(btnUserProfile)
 
-        // Sự kiện Click User Profile
+        // Click Avatar của mình -> Vào trang cá nhân
         btnUserProfile.setOnClickListener {
-            requireActivity().supportFragmentManager.beginTransaction()
-                .replace(R.id.navHostFragmentContainerView, PersonalProfileFragment()) // ID chính xác từ file xml bạn gửi
-                .addToBackStack(null)
-                .commit()
+            if (currentUid != null) {
+                openUserProfile(currentUid)
+            }
         }
 
-        // Search
+        btnNotification.setOnClickListener { Toast.makeText(context, "Notifications", Toast.LENGTH_SHORT).show() }
+        btnMessage.setOnClickListener { Toast.makeText(context, "Messages", Toast.LENGTH_SHORT).show() }
+
+        // Search Listener
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = false
             override fun onQueryTextChange(newText: String?): Boolean {
@@ -133,14 +139,33 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         deepLinkViewModel.targetPostId.observe(viewLifecycleOwner) { id ->
             if (id != null) {
                 targetPostId = id
-                if (allPosts.isNotEmpty()) {
-                    filterPostsWithDeepLink()
-                }
+                if (allPosts.isNotEmpty()) filterPostsWithDeepLink()
             }
         }
 
-        // 5. Lắng nghe bài viết
+        // 5. Lắng nghe bài viết Realtime
         listenToPosts()
+    }
+
+    // --- HÀM ĐIỀU HƯỚNG AN TOÀN ---
+    private fun openUserProfile(userId: String) {
+        try {
+            // Sử dụng requireActivity().supportFragmentManager để thao tác với container của Activity chính
+            val transaction = requireActivity().supportFragmentManager.beginTransaction()
+
+            if (userId == currentUid) {
+                // Vào trang cá nhân của mình
+                transaction.replace(R.id.navHostFragmentContainerView, PersonalProfileFragment())
+            } else {
+                // Vào trang người khác
+                transaction.replace(R.id.navHostFragmentContainerView, UserProfileFragment.newInstance(userId))
+            }
+            transaction.addToBackStack(null)
+            transaction.commit()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Unable to open profile", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun loadCurrentUserAvatar(imageView: ImageView) {
@@ -150,62 +175,85 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         }
     }
 
-    // --- LOGIC BLOCK USER ---
-    private fun fetchBlockedUsers() {
+    // --- LẤY DỮ LIỆU USER (BLOCK & FOLLOWING) ---
+    private fun fetchUserData() {
         if (currentUid == null) return
 
         db.collection("users").document(currentUid)
             .addSnapshotListener { document, e ->
-                if (e != null) return@addSnapshotListener
+                if (e != null || document == null) return@addSnapshotListener
 
+                // 1. Block List (Người mình chặn + Người chặn mình)
                 hiddenUserIds.clear()
-
-                // Lấy danh sách mình chặn
-                val myBlockedList = document?.get("blockedUsers") as? List<String>
+                val myBlockedList = document.get("blockedUsers") as? List<String>
                 if (myBlockedList != null) hiddenUserIds.addAll(myBlockedList)
 
-                // [MỚI] Lấy danh sách người chặn mình
-                val blockedMeList = document?.get("blockedBy") as? List<String>
+                val blockedMeList = document.get("blockedBy") as? List<String>
                 if (blockedMeList != null) hiddenUserIds.addAll(blockedMeList)
 
-                // Refresh lại giao diện
+                // 2. Following List (Người mình đang theo dõi)
+                followingUserIds.clear()
+                val myFollowing = document.get("following") as? List<String>
+                if (myFollowing != null) followingUserIds.addAll(myFollowing)
+
+                // Refresh lại list bài viết sau khi có dữ liệu mới
                 val searchView = view?.findViewById<SearchView>(R.id.searchViewPost)
                 filterPosts(searchView?.query.toString(), currentFilterType)
             }
     }
 
-    private fun showBlockConfirmation(userId: String, userName: String) {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Block User")
-            .setMessage("Block $userName? Their posts will be hidden.")
-            .setPositiveButton("Block") { _, _ -> performBlockUser(userId) }
-            .setNegativeButton("Cancel", null)
-            .show()
+    // --- LOGIC LỌC BÀI VIẾT ---
+    private fun filterPosts(query: String?, filterType: FilterType) {
+        val searchText = query?.lowercase()?.trim() ?: ""
+
+        val filteredList = allPosts.filter { post ->
+            // 1. Lọc theo tên người đăng hoặc caption
+            val matchText = if (searchText.isEmpty()) true else
+                (post.userName.lowercase().contains(searchText) || post.caption.lowercase().contains(searchText))
+
+            // 2. Lọc theo Loại
+            val matchFilter = when (filterType) {
+                FilterType.ALL -> true
+                FilterType.MY_POSTS -> post.userId == currentUid
+                FilterType.MY_LIKES -> post.likedBy.contains(currentUid)
+                FilterType.FOLLOWING -> followingUserIds.contains(post.userId) // [MỚI]
+            }
+
+            // 3. Ẩn bài của người bị chặn
+            val isNotHidden = !hiddenUserIds.contains(post.userId)
+
+            matchText && matchFilter && isNotHidden
+        }
+        adapter.submitList(filteredList)
     }
 
-    private fun performBlockUser(targetUserId: String) {
-        if (!NetworkUtils.checkConnection(requireContext()) || currentUid == null) return
+    private fun showFilterMenu(anchor: View, currentQuery: String) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, 1, 0, "All Posts")
+        popup.menu.add(0, 2, 0, "My Posts")
+        popup.menu.add(0, 3, 0, "Liked by Me")
+        popup.menu.add(0, 4, 0, "Following") // [MỚI] Option Following
 
-        val batch = db.batch()
-
-        // A. Thêm Target vào danh sách 'blockedUsers' của Mình
-        val myRef = db.collection("users").document(currentUid)
-        batch.update(myRef, "blockedUsers", FieldValue.arrayUnion(targetUserId))
-
-        // B. Thêm Mình vào danh sách 'blockedBy' của Target
-        val targetRef = db.collection("users").document(targetUserId)
-        batch.update(targetRef, "blockedBy", FieldValue.arrayUnion(currentUid))
-
-        batch.commit()
-            .addOnSuccessListener {
-                Toast.makeText(context, "Đã chặn người dùng. Họ sẽ không thấy bài viết của bạn nữa.", Toast.LENGTH_LONG).show()
+        popup.setOnMenuItemClickListener { item ->
+            currentFilterType = when (item.itemId) {
+                2 -> FilterType.MY_POSTS
+                3 -> FilterType.MY_LIKES
+                4 -> FilterType.FOLLOWING
+                else -> FilterType.ALL
             }
-            .addOnFailureListener {
-                Toast.makeText(context, "Lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
+            filterPosts(currentQuery, currentFilterType)
+
+            // Đổi màu icon Filter để biết đang lọc
+            val iconColor = if (currentFilterType == FilterType.ALL) R.color.black else R.color.orange_primary
+            if (anchor is ImageView) {
+                anchor.setColorFilter(resources.getColor(iconColor, null))
             }
+            true
+        }
+        popup.show()
     }
 
-    // --- LOGIC POSTS & FILTER ---
+    // --- CÁC HÀM KHÁC (LOAD BÀI, LIKE, SHARE...) ---
     private fun listenToPosts() {
         db.collection("posts")
             .orderBy("createdAt", Query.Direction.DESCENDING)
@@ -220,27 +268,6 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
                     filterPosts(searchView?.query.toString(), currentFilterType)
                 }
             }
-    }
-
-    private fun filterPosts(query: String?, filterType: FilterType) {
-        val searchText = query?.lowercase()?.trim() ?: ""
-
-        val filteredList = allPosts.filter { post ->
-            val matchName = if (searchText.isEmpty()) true else post.userName.lowercase().contains(searchText)
-
-            val matchFilter = when (filterType) {
-                FilterType.ALL -> true
-                FilterType.MY_POSTS -> post.userId == currentUid
-                FilterType.MY_LIKES -> post.likedBy.contains(currentUid)
-            }
-
-            // [QUAN TRỌNG] Kiểm tra xem User có nằm trong danh sách cần ẩn không
-            // hiddenUserIds bao gồm cả: Người mình chặn VÀ Người chặn mình
-            val isNotHidden = !hiddenUserIds.contains(post.userId)
-
-            matchName && matchFilter && isNotHidden
-        }
-        adapter.submitList(filteredList)
     }
 
     private fun filterPostsWithDeepLink() {
@@ -259,7 +286,6 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         }
     }
 
-    // --- ACTIONS ---
     private fun sharePostContent(post: Post) {
         if (!NetworkUtils.checkConnection(requireContext())) return
         pendingSharePostId = post.postId
@@ -275,8 +301,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 
     private fun incrementShareCount(postId: String) {
         if (!NetworkUtils.isNetworkAvailable(requireContext())) return
-        db.collection("posts").document(postId)
-            .update("shareCount", FieldValue.increment(1))
+        db.collection("posts").document(postId).update("shareCount", FieldValue.increment(1))
     }
 
     private fun toggleLike(post: Post) {
@@ -289,23 +314,41 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         }
     }
 
-    private fun showFilterMenu(anchor: View, currentQuery: String) {
-        val popup = PopupMenu(requireContext(), anchor)
-        popup.menu.add(0, 1, 0, "All Posts")
-        popup.menu.add(0, 2, 0, "My Posts")
-        popup.menu.add(0, 3, 0, "Liked by Me")
-
-        popup.setOnMenuItemClickListener { item ->
-            currentFilterType = when (item.itemId) {
-                2 -> FilterType.MY_POSTS
-                3 -> FilterType.MY_LIKES
-                else -> FilterType.ALL
-            }
-            filterPosts(currentQuery, currentFilterType)
-            val iconColor = if (currentFilterType == FilterType.ALL) R.color.black else R.color.orange_primary
-            (anchor as ImageView).setColorFilter(resources.getColor(iconColor, null))
-            true
+    private fun showCommentsDialog(post: Post) {
+        if (NetworkUtils.checkConnection(requireContext())) {
+            val dialog = CommentsDialogFragment()
+            val bundle = Bundle()
+            bundle.putString("postId", post.postId)
+            dialog.arguments = bundle
+            dialog.show(parentFragmentManager, "CommentsDialog")
         }
-        popup.show()
+    }
+
+    private fun showLikeListDialog(userIds: List<String>) {
+        if (userIds.isNotEmpty()) {
+            val dialog = LikeListDialogFragment(userIds)
+            dialog.show(childFragmentManager, "LikeListDialog")
+        }
+    }
+
+    private fun showBlockConfirmation(userId: String, userName: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Block User")
+            .setMessage("Block $userName? Their posts will be hidden.")
+            .setPositiveButton("Block") { _, _ -> performBlockUser(userId) }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun performBlockUser(targetUserId: String) {
+        if (!NetworkUtils.checkConnection(requireContext()) || currentUid == null) return
+        val batch = db.batch()
+        val myRef = db.collection("users").document(currentUid)
+        batch.update(myRef, "blockedUsers", FieldValue.arrayUnion(targetUserId))
+        val targetRef = db.collection("users").document(targetUserId)
+        batch.update(targetRef, "blockedBy", FieldValue.arrayUnion(currentUid))
+        batch.commit()
+            .addOnSuccessListener { Toast.makeText(context, "Blocked user", Toast.LENGTH_SHORT).show() }
+            .addOnFailureListener { Toast.makeText(context, "Error blocking", Toast.LENGTH_SHORT).show() }
     }
 }

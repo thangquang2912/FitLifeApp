@@ -33,11 +33,10 @@ class PostAdapter(
     private val onLikeCountClick: (List<String>) -> Unit,
     private val onUserClick: (String) -> Unit,
     private val onShareClick: (Post) -> Unit,
-    // [QUAN TRỌNG] Callback xử lý Block User (UserId, UserName)
-    private val onBlockClick: (String, String) -> Unit
+    private val onBlockClick: (String, String) -> Unit // Callback chặn người dùng
 ) : ListAdapter<Post, PostAdapter.PostViewHolder>(PostDiffCallback()) {
 
-    // Cache để tránh load lại thông tin user quá nhiều lần
+    // Cache để tránh load lại thông tin user liên tục
     private val userCache = mutableMapOf<String, User>()
     private val userRepository = UserRepository()
 
@@ -51,7 +50,7 @@ class PostAdapter(
     }
 
     inner class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // Ánh xạ View
+        // --- ÁNH XẠ VIEW ---
         private val ivAvatar: ImageView = itemView.findViewById(R.id.ivUserAvatar)
         private val tvUserName: TextView = itemView.findViewById(R.id.tvUserName)
         private val tvTime: TextView = itemView.findViewById(R.id.tvPostTime)
@@ -59,29 +58,33 @@ class PostAdapter(
         private val tvCaption: TextView = itemView.findViewById(R.id.tvCaption)
         private val tvStats: TextView = itemView.findViewById(R.id.tvPostStats)
 
+        // Like
         private val tvLikes: TextView = itemView.findViewById(R.id.tvLikeCount)
         private val btnLike: ImageView = itemView.findViewById(R.id.btnLike)
 
+        // Comment
         private val btnComment: ImageView = itemView.findViewById(R.id.btnComment)
         private val tvCommentCount: TextView = itemView.findViewById(R.id.tvCommentCount)
 
+        // Share
         private val btnShare: ImageView = itemView.findViewById(R.id.btnShare)
         private val tvShareCount: TextView = itemView.findViewById(R.id.tvShareCount)
 
+        // Menu More
         private val ivMore: ImageView = itemView.findViewById(R.id.ivMore)
 
-        // Firebase & User
+        // Firebase & Logic
         private val db = FirebaseFirestore.getInstance()
         private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
         private var lastClickTime: Long = 0
 
         fun bind(post: Post) {
-            // 1. Hiển thị nội dung Text
+            // 1. TEXT DATA
             tvCaption.text = post.caption
             tvLikes.text = if (post.likeCount > 0) "${post.likeCount}" else ""
             tvCommentCount.text = if (post.commentCount > 0) "${post.commentCount}" else ""
 
-            // 2. Hiển thị thông số tập luyện (nếu có)
+            // 2. STATS (Calo & Time)
             if (post.duration.isNotEmpty() && post.duration != "0 mins") {
                 tvStats.visibility = View.VISIBLE
                 val calStr = if (post.calories.isNotEmpty() && post.calories != "0 kcal") " • 🔥 ${post.calories}" else ""
@@ -93,53 +96,55 @@ class PostAdapter(
                 tvStats.visibility = View.GONE
             }
 
-            // 3. Hiển thị ngày giờ
-            val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-            tvTime.text = sdf.format(post.createdAt.toDate())
+            // 3. THỜI GIAN ĐĂNG
+            // Kiểm tra null safety cho timestamp
+            if (post.createdAt != null) {
+                val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+                tvTime.text = sdf.format(post.createdAt.toDate())
+            } else {
+                tvTime.text = "Just now"
+            }
 
-            // 4. Load ảnh bài viết
+            // 4. ẢNH BÀI VIẾT & FULLSCREEN
             Glide.with(itemView.context)
                 .load(post.postImageUrl)
                 .centerCrop()
                 .placeholder(R.drawable.bg_search_rounded)
                 .into(ivPostImage)
 
-            // Sự kiện xem ảnh Fullscreen
             ivPostImage.setOnClickListener {
-                val activity = itemView.context as? AppCompatActivity
-                activity?.let {
-                    FullScreenImageDialogFragment.show(it.supportFragmentManager, post.postImageUrl)
+                // Mở ảnh Fullscreen
+                val context = itemView.context
+                if (context is AppCompatActivity) {
+                    FullScreenImageDialogFragment.show(context.supportFragmentManager, post.postImageUrl)
                 }
             }
 
-            // 5. Load thông tin người dùng (Avatar + Tên)
+            // 5. USER INFO (REALTIME)
             loadUserRealtime(post)
 
-            // Sự kiện bấm vào Avatar -> Sang trang cá nhân
-            ivAvatar.setOnClickListener { onUserClick(post.userId) }
-            tvUserName.setOnClickListener { onUserClick(post.userId) }
+            // Click Avatar/Tên -> Vào trang cá nhân
+            val openProfile = View.OnClickListener { onUserClick(post.userId) }
+            ivAvatar.setOnClickListener(openProfile)
+            tvUserName.setOnClickListener(openProfile)
 
-            // 6. Xử lý Like UI & Sự kiện
+            // 6. XỬ LÝ LIKE
             val isLiked = post.likedBy.contains(currentUid)
             updateLikeUI(isLiked)
 
-            btnLike.setOnClickListener {
-                onLikeClick(post)
-            }
+            btnLike.setOnClickListener { onLikeClick(post) }
 
-            // Sự kiện bấm vào số Like -> Xem danh sách
+            // Click vào số Like -> Xem danh sách người like
             tvLikes.setOnClickListener {
                 if (post.likedBy.isNotEmpty()) {
                     onLikeCountClick(post.likedBy)
                 }
             }
 
-            // 7. Xử lý Comment
-            btnComment.setOnClickListener {
-                onCommentClick(post)
-            }
+            // 7. XỬ LÝ COMMENT
+            btnComment.setOnClickListener { onCommentClick(post) }
 
-            // 8. Xử lý Share & Share Count
+            // 8. XỬ LÝ SHARE (Có Debounce chống spam click)
             if (post.shareCount > 0) {
                 tvShareCount.visibility = View.VISIBLE
                 tvShareCount.text = "${post.shareCount}"
@@ -148,17 +153,14 @@ class PostAdapter(
             }
 
             btnShare.setOnClickListener {
-                // Debounce: Chống click share liên tục (dưới 1 giây)
                 if (android.os.SystemClock.elapsedRealtime() - lastClickTime < 1000) {
                     return@setOnClickListener
                 }
                 lastClickTime = android.os.SystemClock.elapsedRealtime()
-
                 onShareClick(post)
             }
 
-            // 9. Menu 3 chấm (Xử lý Edit/Delete/Block)
-            // Luôn hiện nút này, nhưng logic bên trong sẽ khác nhau tùy người
+            // 9. MENU MORE (Edit/Delete/Block)
             ivMore.visibility = View.VISIBLE
             ivMore.setOnClickListener { showOptionsMenu(it, post) }
         }
@@ -168,10 +170,11 @@ class PostAdapter(
             if (cachedUser != null) {
                 applyUserToUI(cachedUser)
             } else {
-                // Tạm thời hiện info cũ trong Post trước khi load mới
+                // Hiển thị tạm thông tin cũ trong Post object
                 tvUserName.text = post.userName
                 loadAvatar(post.userAvatar)
 
+                // Fetch mới nhất từ Firestore
                 CoroutineScope(Dispatchers.Main).launch {
                     val result = withContext(Dispatchers.IO) { userRepository.getUserDetails(post.userId) }
                     result.getOrNull()?.let { user ->
@@ -209,22 +212,20 @@ class PostAdapter(
         private fun showOptionsMenu(view: View, post: Post) {
             val popup = PopupMenu(view.context, view)
 
-            // Logic hiển thị menu
             if (post.userId == currentUid) {
-                // Bài của mình: Edit, Delete
-                popup.menu.add(0, 1, 0, "Edit")
-                popup.menu.add(0, 2, 0, "Delete")
+                // --- Bài của mình: Edit & Delete ---
+                popup.menu.add(0, 1, 0, "Edit Post")
+                popup.menu.add(0, 2, 0, "Delete Post")
             } else {
-                // Bài người khác: Block User
-                // Lưu ý: ID=3 tương ứng với Block
+                // --- Bài người khác: Block ---
                 popup.menu.add(0, 3, 0, "Block ${post.userName}")
             }
 
             popup.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
-                    1 -> { // Edit
-                        val activity = itemView.context as? AppCompatActivity
-                        if (activity != null) {
+                    1 -> { // EDIT
+                        val context = itemView.context
+                        if (context is AppCompatActivity) {
                             val editDialog = EditPostDialogFragment()
                             val bundle = Bundle().apply {
                                 putString("postId", post.postId)
@@ -234,21 +235,21 @@ class PostAdapter(
                                 putString("imageUrl", post.postImageUrl)
                             }
                             editDialog.arguments = bundle
-                            editDialog.show(activity.supportFragmentManager, "EditPostDialog")
+                            editDialog.show(context.supportFragmentManager, "EditPostDialog")
                         }
                         true
                     }
-                    2 -> { // Delete
+                    2 -> { // DELETE
                         db.collection("posts").document(post.postId).delete()
                             .addOnSuccessListener {
-                                Toast.makeText(view.context, "Post deleted", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(view.context, "Post deleted successfully", Toast.LENGTH_SHORT).show()
                             }
                             .addOnFailureListener {
-                                Toast.makeText(view.context, "Error deleting post", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(view.context, "Failed to delete post", Toast.LENGTH_SHORT).show()
                             }
                         true
                     }
-                    3 -> { // Block User
+                    3 -> { // BLOCK
                         onBlockClick(post.userId, post.userName)
                         true
                     }

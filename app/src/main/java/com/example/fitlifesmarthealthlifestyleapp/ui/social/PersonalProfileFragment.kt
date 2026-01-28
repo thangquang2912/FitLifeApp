@@ -89,6 +89,27 @@ class PersonalProfileFragment : Fragment(R.layout.fragment_personal_profile) {
                 dialog.show(childFragmentManager, "BlockedUsersDialog")
             }
         }
+        db.collection("users").document(currentUid!!).addSnapshotListener { doc, _ ->
+            if (doc != null) {
+                val followers = doc.get("followers") as? List<String> ?: emptyList()
+                val following = doc.get("following") as? List<String> ?: emptyList()
+                val email = doc.getString("email") ?: ""
+
+                view.findViewById<TextView>(R.id.tvStatFollowers).text = followers.size.toString()
+                view.findViewById<TextView>(R.id.tvStatFollowing).text = following.size.toString()
+                view.findViewById<TextView>(R.id.tvUserEmail).text = email
+
+                // Click Followers
+                view.findViewById<View>(R.id.layoutFollowers).setOnClickListener {
+                    UserListDialogFragment("Followers", followers).show(childFragmentManager, "Followers")
+                }
+
+                // Click Following
+                view.findViewById<View>(R.id.layoutFollowing).setOnClickListener {
+                    UserListDialogFragment("Following", following).show(childFragmentManager, "Following")
+                }
+            }
+        }
     }
 
     // --- PHẦN 1: LOAD INFO ---

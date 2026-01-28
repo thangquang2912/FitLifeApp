@@ -31,7 +31,9 @@ data class User(
     var dailyCaloriesConsume: Int = 0,
     var weeklyRunning: Int = 0,
     var blockedUsers: List<String> = emptyList(),
-    var blockedBy: List<String> = emptyList()
+    var blockedBy: List<String> = emptyList(),
+    var followers: List<String> = emptyList(),
+    var following: List<String> = emptyList()
 ): Parcelable {
     // Tính tuổi
     @get:Exclude
