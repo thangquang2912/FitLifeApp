@@ -1,7 +1,10 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.workout
 
+import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.provider.CalendarContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -70,7 +73,13 @@ class WorkoutPlayerFragment : Fragment() {
 
         // 3. Xử lý sự kiện Click
         btnClose.setOnClickListener {
-            findNavController().navigateUp()
+            // Xác nhận trước khi thoát nếu đang tập dở
+            AlertDialog.Builder(requireContext())
+                .setTitle("Quit Workout?")
+                .setMessage("Are you sure you want to quit?")
+                .setPositiveButton("Quit") { _, _ -> findNavController().navigateUp() }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
 
         btnPause.setOnClickListener {
@@ -82,22 +91,17 @@ class WorkoutPlayerFragment : Fragment() {
             nextExercise()
         }
 
-
         btnPrev.setOnClickListener {
-            // 1. Dừng đồng hồ hiện tại lại ngay
             countDownTimer?.cancel()
-
             if (isResting) {
-                // Đang trong giờ nghỉ
                 startWorkoutPhase()
             } else {
-                // Đang trong giờ tập
                 if (currentExerciseIndex > 0) {
                     currentExerciseIndex--
                     startWorkoutPhase()
                 } else {
                     startWorkoutPhase()
-                    Toast.makeText(context, "Bắt đầu lại bài tập!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Restarting exercise!", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -111,88 +115,61 @@ class WorkoutPlayerFragment : Fragment() {
 
                 val expandedList = mutableListOf<Exercise>()
                 for (exercise in rawList) {
-                    // Nếu trên Firebase để sets = 0 hoặc null -> Coi như là 1 set
                     val totalSets = if (exercise.sets <= 0) 1 else exercise.sets
-
                     for (i in 1..totalSets) {
-                        // Tạo bản sao của bài tập
-                        val newName = if (totalSets > 1) {
-                            "${exercise.name} (Set $i/$totalSets)"
-                        } else {
-                            exercise.name
-                        }
-
-                        // Copy data và sửa lại tên để hiển thị Set
+                        val newName = if (totalSets > 1) "${exercise.name} (Set $i/$totalSets)" else exercise.name
                         expandedList.add(exercise.copy(name = newName))
                     }
                 }
-
                 exerciseList = expandedList
 
                 if (exerciseList.isNotEmpty()) {
-                    startWorkoutPhase() // BẮT ĐẦU
+                    startWorkoutPhase()
                 } else {
-                    Toast.makeText(context, "Bài tập này chưa có dữ liệu!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "No exercises found!", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
-    // 1. Bắt đầu giai đoạn TẬP (WORK)
     private fun startWorkoutPhase() {
         isResting = false
         val exercise = exerciseList[currentExerciseIndex]
 
-        // Cập nhật giao diện
         tvStatus.text = "WORK"
         tvStatus.background = resources.getDrawable(R.drawable.bg_badge_beginner, null)
         tvExerciseName.text = exercise.name
         tvProgress.text = "${currentExerciseIndex + 1} / ${exerciseList.size}"
 
-        // Hiện ảnh GIF
         cardGif.visibility = View.VISIBLE
         Glide.with(this).asGif().load(exercise.gifUrl).into(ivGif)
 
-        // Bắt đầu đếm ngược
         startTimer(exercise.durationSeconds.toLong())
     }
 
-    // 2. Bắt đầu giai đoạn NGHỈ (REST)
     private fun startRestPhase() {
         val exercise = exerciseList[currentExerciseIndex]
-
-        // Nếu bài này không có thời gian nghỉ -> Chuyển luôn bài tiếp
         if (exercise.restSeconds <= 0) {
             nextExercise()
             return
         }
 
         isResting = true
-
-        // Cập nhật giao diện nghỉ
         tvStatus.text = "REST"
         tvStatus.background = resources.getDrawable(R.drawable.bg_badge_intermediate, null)
-
         tvExerciseName.text = "Next: ${exerciseList.getOrNull(currentExerciseIndex + 1)?.name ?: "Finish"}"
-
-
-        // Ẩn GIF đi
         cardGif.visibility = View.INVISIBLE
 
-        // Bắt đầu đếm ngược nghỉ
         startTimer(exercise.restSeconds.toLong())
     }
 
-    // --- LOGIC TIMER ---
-
     private fun startTimer(durationSeconds: Long) {
-        countDownTimer?.cancel() // Hủy timer cũ nếu có
+        countDownTimer?.cancel()
         timeRemaining = durationSeconds
         isPaused = false
         btnPause.text = "Pause"
-        btnPause.icon = resources.getDrawable(android.R.drawable.ic_media_pause, null)
+        btnPause.setIconResource(android.R.drawable.ic_media_pause)
 
-        // Tạo Timer mới (nhảy mỗi 1 giây)
         countDownTimer = object : CountDownTimer(timeRemaining * 1000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 timeRemaining = millisUntilFinished / 1000
@@ -202,19 +179,17 @@ class WorkoutPlayerFragment : Fragment() {
             override fun onFinish() {
                 timeRemaining = 0
                 updateTimerUI()
-                nextStep() // Hết giờ -> Chuyển bước
+                nextStep()
             }
         }.start()
     }
 
     private fun updateTimerUI() {
-        // Định dạng 00:30
         val minutes = timeRemaining / 60
         val seconds = timeRemaining % 60
         tvTimer.text = String.format("%02d:%02d", minutes, seconds)
     }
 
-    // Chuyển bước: Work -> Rest -> Next Work
     private fun nextStep() {
         if (isResting) {
             nextExercise()
@@ -230,29 +205,71 @@ class WorkoutPlayerFragment : Fragment() {
     private fun nextExercise() {
         currentExerciseIndex++
         if (currentExerciseIndex < exerciseList.size) {
-            startWorkoutPhase() // Còn bài -> Tập tiếp
+            startWorkoutPhase()
         } else {
-            finishWorkout() // Hết bài -> Kết thúc
+            finishWorkout()
         }
     }
 
     private fun finishWorkout() {
-        Toast.makeText(context, "Chúc mừng! Bạn đã hoàn thành bài tập!", Toast.LENGTH_LONG).show()
-        findNavController().navigateUp() // Quay về (Sau này sẽ chuyển sang màn hình Success)
+        // Hủy timer để tránh chạy ngầm
+        countDownTimer?.cancel()
+
+        // Hiển thị hộp thoại Chúc mừng + Hỏi ghi lịch
+        AlertDialog.Builder(requireContext())
+            .setTitle("Workout Completed!")
+            .setMessage("Congratulations! Do you want to log this achievement to your Calendar?")
+            .setPositiveButton("Log to Calendar") { _, _ ->
+                // Gọi hàm ghi lịch
+                logCompletionToCalendar()
+                // Thoát màn hình
+                findNavController().navigateUp()
+            }
+            .setNegativeButton("Skip") { _, _ ->
+                // Chỉ thoát màn hình
+                findNavController().navigateUp()
+            }
+            .setCancelable(false) // Bắt buộc chọn
+            .show()
     }
 
-    // --- LOGIC PAUSE / RESUME ---
+    // Hàm tạo sự kiện "Đã xong" vào Calendar
+    private fun logCompletionToCalendar() {
+        val program = args.workoutProgram
+        val durationMillis = (program.durationMins * 60 * 1000).toLong()
+
+        val intent = Intent(Intent.ACTION_INSERT).apply {
+            data = CalendarContract.Events.CONTENT_URI
+
+            // Dấu tích xanh để đánh dấu hoàn thành
+            putExtra(CalendarContract.Events.TITLE, "✅ DONE: ${program.name}")
+
+            putExtra(CalendarContract.Events.DESCRIPTION, "Finished workout ${program.name} on FitLife App!")
+            putExtra(CalendarContract.Events.EVENT_LOCATION, "Home / Gym")
+
+            // Thời gian: Ghi nhận NGAY LÚC NÀY
+            val currentTime = System.currentTimeMillis()
+            putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, currentTime)
+            putExtra(CalendarContract.EXTRA_EVENT_END_TIME, currentTime + durationMillis)
+        }
+
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Calendar app not found!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ----------------------------
 
     private fun togglePause() {
         if (isPaused) {
-            // Resume: Chạy lại timer với thời gian còn lại
             startTimer(timeRemaining)
         } else {
-            // Pause: Hủy timer, giữ nguyên thời gian còn lại
             countDownTimer?.cancel()
             isPaused = true
             btnPause.text = "Resume"
-            btnPause.icon = resources.getDrawable(android.R.drawable.ic_media_play, null)
+            btnPause.setIconResource(android.R.drawable.ic_media_play)
         }
     }
 

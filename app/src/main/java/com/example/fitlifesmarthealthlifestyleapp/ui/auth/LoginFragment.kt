@@ -165,7 +165,7 @@ class LoginFragment : Fragment() {
 
     private fun showForgotPasswordDialog() {
         val builder = AlertDialog.Builder(requireContext())
-        val view = layoutInflater.inflate(R.layout.dialog_forgot_password, null) // Bạn cần tạo layout này
+        val view = layoutInflater.inflate(R.layout.dialog_forgot_password, null)
         val etEmail = view.findViewById<EditText>(R.id.etResetEmail)
 
         builder.setView(view)
