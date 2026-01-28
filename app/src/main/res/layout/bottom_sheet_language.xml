@@ -27,20 +27,23 @@
             android:id="@+id/radio_vietnamese"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🇻🇳 Tiếng Việt"
+            android:text="@string/vn"
             android:textSize="16sp"
             android:padding="12dp"
-            android:textColor="@color/black"/>
+            android:textColor="@color/black"
+            android:buttonTint="@color/orange_primary"/>
 
         <RadioButton
             android:id="@+id/radio_english"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🇺🇸 English"
+            android:text="@string/en"
             android:textSize="16sp"
             android:padding="12dp"
             android:layout_marginTop="8dp"
-            android:textColor="@color/black"/>
+            android:textColor="@color/black"
+            android:buttonTint="@color/orange_primary"
+            />
 
     </RadioGroup>
 
@@ -69,7 +72,10 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="@string/confirm" />
+            android:text="@string/confirm"
+            android:textColor="@color/black"
+            app:backgroundTint="@color/orange_primary"
+            style="@style/Widget.Material3.Button.OutlinedButton"/>
 
     </LinearLayout>
 

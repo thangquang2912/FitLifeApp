@@ -50,7 +50,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Time"
+                    android:text="@string/time"
                     android:textColor="#999999"
                     android:textSize="12sp" />
 
@@ -76,7 +76,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Distance"
+                    android:text="@string/distance"
                     android:textColor="#999999"
                     android:textSize="12sp" />
 
@@ -102,7 +102,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Pace"
+                    android:text="@string/pace"
                     android:textColor="#999999"
                     android:textSize="12sp" />
 
@@ -166,7 +166,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="Avg Speed"
+                        android:text="@string/avg_speed"
                         android:textColor="#999999"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -216,7 +216,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="6dp"
-                        android:text="Calories"
+                        android:text="@string/calories"
                         android:textColor="#999999"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -243,7 +243,7 @@
         android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
         android:layout_marginEnd="24dp"
-        android:text="Start Activity"
+        android:text="@string/start_activity"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="16sp"
@@ -266,7 +266,7 @@
         android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
         android:layout_marginEnd="24dp"
-        android:text="Complete Activity"
+        android:text="@string/complete_activity"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="16sp"

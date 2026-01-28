@@ -69,6 +69,7 @@
     <string name="meal_time">Thời gian ăn</string>
     <string name="quick_macros">Thông tin nhanh</string>
     <string name="save_meal">Lưu bữa ăn</string>
+    <string name="analyzing">Đang phân tích...</string>
 
     <!-- Profile Screen -->
     <string name="height">Chiều cao</string>
@@ -90,4 +91,7 @@
     <string name="activity">Hoạt động</string>
     <string name="home">Trang chủ</string>
     <string name="nutrition">Dinh dưỡng</string>
+    <string name="social">Xã hội</string>
+    <string name="profile">Hồ sơ</string>
+
 </resources>

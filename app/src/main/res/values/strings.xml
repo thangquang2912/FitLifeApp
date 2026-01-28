@@ -52,7 +52,7 @@
         Stuck on what to eat next? Let AI suggest a perfect meal for your goals.
     </string>
     <string name="get_suggestion">Get Suggestion</string>
-    <string name="todays_macros">Today</string>
+    <string name="todays_macros">Today Macros</string>
     <string name="total">Total</string>
     <string name="carbs">Carbs</string>
     <string name="protein">Protein</string>
@@ -67,7 +67,7 @@
     <string name="meal_time">Time of Meal</string>
     <string name="quick_macros">Quick Macros</string>
     <string name="save_meal">Save Meal</string>
-
+    <string name="analyzing">Analyzing macros...</string>
     <!-- Profile Screen -->
     <string name="height">Height</string>
     <string name="weight">Weight</string>
@@ -88,6 +88,7 @@
     <string name="activity">Activity</string>
     <string name="home">Home</string>
     <string name="nutrition">Nutrition</string>
-
+    <string name="social">Social</string>
+    <string name="profile">Profile</string>
 
 </resources>
