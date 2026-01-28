@@ -279,6 +279,8 @@
             app:cardCornerRadius="16dp"
             app:cardBackgroundColor="@color/white"
             app:layout_constraintTop_toBottomOf="@+id/cardStepsChart"
+            android:layout_marginBottom="24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:strokeWidth="0dp"
             app:cardElevation="2dp">
 
