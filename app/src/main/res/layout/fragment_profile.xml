@@ -270,6 +270,17 @@
 
                 <View style="@style/Divider"/>
 
+                <View style="@style/Divider"/>
+
+                <TextView
+                    android:id="@+id/btnLanguage"
+                    android:text="@string/language"
+                    android:drawableStart="@drawable/icon_language"
+                    android:drawableEnd="@drawable/ic_arrow_right"
+                    style="@style/ProfileMenuItem"/>
+
+                <View style="@style/Divider"/>
+
                 <TextView
                     android:id="@+id/btnLogout"
                     android:text="Logout"
