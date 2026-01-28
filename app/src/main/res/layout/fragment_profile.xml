@@ -24,18 +24,6 @@
             app:layout_constraintTop_toTopOf="parent"
             android:textColor="@color/black"/>
 
-        <ImageButton
-            android:id="@+id/btnTheme"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="24dp"
-            android:background="@drawable/bg_circle_gray"
-            android:src="@drawable/ic_moon"
-            android:backgroundTint="#EEE"
-            app:layout_constraintBottom_toBottomOf="@+id/tvTitle"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/tvTitle" />
-
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivAvatar"
             android:layout_width="100dp"
@@ -217,6 +205,38 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
+        <!-- Biểu đồ nước uống trong tuần -->
+        <TextView
+            android:id="@+id/tvWeeklyWaterTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginStart="24dp"
+            android:text="Weekly Water Intake"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/layoutMetrics"
+            android:textColor="@color/black" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardWaterChart"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="16dp"
+            app:cardBackgroundColor="@color/white"
+            app:strokeWidth="0dp"
+            app:cardElevation="2dp"
+            app:layout_constraintTop_toBottomOf="@+id/tvWeeklyWaterTitle">
+
+            <com.example.fitlifesmarthealthlifestyleapp.ui.profile.WaterWeeklyChartView
+                android:id="@+id/waterWeeklyChart"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="16dp" />
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
@@ -225,9 +245,7 @@
             android:layout_marginTop="24dp"
             app:cardCornerRadius="16dp"
             app:cardBackgroundColor="@color/white"
-            app:layout_constraintTop_toBottomOf="@+id/layoutMetrics"
-            android:layout_marginBottom="24dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/cardWaterChart"
             app:strokeWidth="0dp"
             app:cardElevation="2dp">
 
@@ -256,7 +274,7 @@
 
                 <TextView
                     android:id="@+id/btnLeaderboardChallenges"
-                    android:text="Leaderboard"
+                    android:text="Leaderboard - Challenges"
                     android:drawableStart="@drawable/icon_leaderboard"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>
