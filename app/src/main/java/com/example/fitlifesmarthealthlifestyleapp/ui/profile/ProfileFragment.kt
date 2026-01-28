@@ -17,9 +17,10 @@ import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
 import com.example.fitlifesmarthealthlifestyleapp.domain.usecase.calculateBMR
 import com.example.fitlifesmarthealthlifestyleapp.domain.usecase.classifyBMI
+import com.example.fitlifesmarthealthlifestyleapp.domain.utils.LanguageHelper
 import com.google.android.material.imageview.ShapeableImageView
 
-class ProfileFragment : Fragment() {
+class   ProfileFragment : Fragment() {
 
     private lateinit var btnTheme : ImageButton
     private lateinit var ivAvatar: ShapeableImageView
@@ -35,6 +36,7 @@ class ProfileFragment : Fragment() {
     private lateinit var btnWorkoutPrograms : TextView
     private lateinit var btnLeaderboardChallenges : TextView
     private lateinit var btnWorkoutHistory : TextView
+    private lateinit var btnLanguage : TextView
     private lateinit var btnLogout : TextView
     private lateinit var tvHeightLabel : TextView
     private lateinit var tvHeightValue : TextView
@@ -86,6 +88,7 @@ class ProfileFragment : Fragment() {
         btnWorkoutPrograms = view.findViewById<TextView>(R.id.btnWorkoutPrograms)
         btnLeaderboardChallenges = view.findViewById<TextView>(R.id.btnLeaderboardChallenges)
         btnWorkoutHistory = view.findViewById<TextView>(R.id.btnWorkoutHistory)
+        btnLanguage = view.findViewById<TextView>(R.id.btnLanguage)
         btnLogout = view.findViewById<TextView>(R.id.btnLogout)
 
         setupStaticLabels()
@@ -112,6 +115,17 @@ class ProfileFragment : Fragment() {
         tvHeightLabel.text = "Height"
         tvWeightLabel.text = "Weight"
         tvAgeLabel.text = "Age"
+    }
+
+    private fun showLanguageBottomSheet() {
+        val bottomSheet = LanguageBottomSheet { selectedLanguage ->
+            // Apply new language
+            LanguageHelper.updateResources(requireContext(), selectedLanguage)
+
+            // Restart activity to apply language changes
+            requireActivity().recreate()
+        }
+        bottomSheet.show(childFragmentManager, "LanguageBottomSheet")
     }
 
     private fun updateUI(user: User) {
@@ -193,6 +207,9 @@ class ProfileFragment : Fragment() {
         // Workout History -> mở màn hình danh sách lịch sử
         btnWorkoutHistory.setOnClickListener {
             findNavController().navigate(R.id.workoutHistoryFragment)
+        }
+        btnLanguage.setOnClickListener {
+            showLanguageBottomSheet()
         }
     }
 }

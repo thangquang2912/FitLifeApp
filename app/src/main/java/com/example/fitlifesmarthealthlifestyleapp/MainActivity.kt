@@ -1,5 +1,6 @@
     package com.example.fitlifesmarthealthlifestyleapp
 
+    import android.content.Context
     import android.os.Bundle
     import androidx.activity.enableEdgeToEdge
     import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +13,8 @@
     import androidx.work.PeriodicWorkRequestBuilder
     import androidx.work.WorkManager
     import com.example.fitlifesmarthealthlifestyleapp.workers.WaterReminderWorker
+    import com.example.fitlifesmarthealthlifestyleapp.domain.utils.LanguagePreference
+    import com.example.fitlifesmarthealthlifestyleapp.domain.utils.LanguageHelper
     import com.google.firebase.auth.FirebaseAuth
     import java.util.Calendar
     import java.util.concurrent.TimeUnit
@@ -19,6 +22,17 @@
 
     class MainActivity : AppCompatActivity() {
         private lateinit var navController : NavController
+
+        override fun attachBaseContext(newBase: Context?) {
+            if (newBase != null) {
+                val languagePreference = LanguagePreference(newBase)
+                val savedLanguage = languagePreference.getLanguage()
+                val localeContext = LanguageHelper.setLocale(newBase, savedLanguage)
+                super.attachBaseContext(localeContext)
+            } else {
+                super.attachBaseContext(newBase)
+            }
+        }
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
