@@ -1,6 +1,7 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.nutrition
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.example.fitlifesmarthealthlifestyleapp.BuildConfig
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
@@ -68,7 +69,7 @@ class GeminiNutritionHelper {
         }
     }
 
-    // --- MỚI THÊM: Hàm gợi ý món ăn thông minh ---
+    // --- Hàm gợi ý món ăn thông minh ---
     suspend fun suggestNextMeal(
         remainingCarbs: Int,
         remainingProtein: Int,
@@ -77,45 +78,59 @@ class GeminiNutritionHelper {
     ): MealSuggestion? {
         return withContext(Dispatchers.IO) {
             try {
+                // Xử lý logic nếu ăn lố (macro bị âm)
+                val constraint = if (remainingCarbs < 0 || remainingProtein < 0 || remainingFat < 0) {
+                    "User exceeded macros. Suggest a very light, low-calorie dish."
+                } else {
+                    "Remaining: ${remainingCarbs}g Carbs, ${remainingProtein}g Protein, ${remainingFat}g Fat."
+                }
                 val prompt = """
-                    I have these macros remaining for today: 
-                    - Carbs: ${remainingCarbs}g
-                    - Protein: ${remainingProtein}g
-                    - Fat: ${remainingFat}g
-                    
-                    It is currently $timeOfDay.
-                    Suggest ONE specific Vietnamese or common healthy dish that fits these remaining macros well.
-                    
-                    Return ONLY a raw JSON object with this structure (no markdown):
+                    Context: It is $timeOfDay in Vietnam. $constraint
+                    Task: Suggest ONE common Vietnamese healthy dish fitting these stats.
+                    Response format: JSON ONLY.
                     {
-                      "dishName": "Dish Name (Vietnamese)",
-                      "reason": "Short explanation why (max 15 words) in Vietnamese",
-                      "protein": 30,
-                      "calories": 250,
-                      "icon": "🍗" 
+                      "dishName": "Vietnamese Dish Name",
+                      "reason": "Why (max 10 words in Vietnamese)",
+                      "protein": 0,
+                      "calories": 0,
+                      "icon": "Emoji"
                     }
                 """.trimIndent()
 
                 val response = generativeModel.generateContent(prompt)
                 val text = response.text ?: return@withContext null
-
-                // Parse JSON
-                val cleanJson = text.replace("```json", "").replace("```", "").trim()
-                val json = JSONObject(cleanJson)
-
-                MealSuggestion(
-                    dishName = json.optString("dishName", "Món ăn nhẹ"),
-                    reason = json.optString("reason", "Phù hợp mục tiêu dinh dưỡng"),
-                    protein = json.optInt("protein", 0),
-                    calories = json.optInt("calories", 0),
-                    icon = json.optString("icon", "🍲")
-                )
+                parseJsonToMealSuggestion(text)
             } catch (e: Exception) {
+                Log.e("GeminiHelper", "AI Suggestion Error: ${e.message}")
                 e.printStackTrace()
                 null
             }
         }
     }
+    private fun parseJsonToMealSuggestion(rawText: String): MealSuggestion? {
+        return try {
+            val startIndex = rawText.indexOf('{')
+            val endIndex = rawText.lastIndexOf('}')
+
+            if (startIndex == -1 || endIndex == -1) return null
+
+            val jsonString = rawText.substring(startIndex, endIndex + 1)
+            val json = JSONObject(jsonString)
+
+            MealSuggestion(
+                dishName = json.optString("dishName", "Gợi ý món ăn"),
+                reason = json.optString("reason", "Phù hợp dinh dưỡng"),
+                protein = json.optInt("protein", 0),
+                calories = json.optInt("calories", 0),
+                icon = json.optString("icon", "🍽️")
+            )
+        } catch (e: Exception) {
+            Log.e("GeminiHelper", "JSON Parse Error: ${e.message}")
+            null
+        }
+    }
+
+
 
     private fun parseJsonToResult(jsonString: String): NutritionResult? {
         return try {

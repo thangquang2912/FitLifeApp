@@ -309,7 +309,7 @@
 
                 <TextView
                     android:id="@+id/btnLeaderboardChallenges"
-                    android:text="Leaderboard - Challenges"
+                    android:text="Leaderboard"
                     android:drawableStart="@drawable/icon_leaderboard"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>
@@ -318,7 +318,7 @@
 
                 <TextView
                     android:id="@+id/btnWorkoutHistory"
-                    android:text="Workout History"
+                    android:text="Activity History"
                     android:drawableStart="@drawable/icon_history"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>

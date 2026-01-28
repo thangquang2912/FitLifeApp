@@ -132,7 +132,7 @@ class NutritionFragment : Fragment() {
         layoutAiContent.visibility = View.GONE
         layoutAiLoading.visibility = View.VISIBLE
 
-        // 2. Gọi ViewModel (Hàm này sẽ tự động ghi đè cache cũ)
+        // 2. Gọi ViewModel
         nutritionViewModel.generateAiSuggestion()
     }
 
