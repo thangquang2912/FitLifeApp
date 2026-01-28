@@ -4,8 +4,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFFFFF"
     android:fillViewport="true"
-    android:background="#FFFFFF">
+    android:clipToPadding="false"
+    android:paddingTop="4dp"
+    android:paddingBottom="16dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -59,6 +62,7 @@
             android:layout_marginTop="14dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
+            app:cardUseCompatPadding="true"
             app:layout_constraintTop_toBottomOf="@id/tvSubtitle"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
@@ -89,6 +93,7 @@
                 android:layout_marginEnd="6dp"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
+                app:cardUseCompatPadding="true"
                 app:strokeWidth="0dp"
                 app:cardBackgroundColor="@android:color/white">
 
@@ -99,21 +104,21 @@
                     android:padding="14dp">
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:text="Distance"
                         android:textSize="12sp"
-                        android:textColor="@color/gray_text" />
+                        android:textColor="@color/gray_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
 
                     <TextView
                         android:id="@+id/tvDistanceValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
                         android:text="0.00 km"
                         android:textSize="22sp"
                         android:textStyle="bold"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:layout_marginTop="6dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -125,6 +130,7 @@
                 android:layout_marginStart="6dp"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
+                app:cardUseCompatPadding="true"
                 app:strokeWidth="0dp"
                 app:cardBackgroundColor="@android:color/white">
 
@@ -135,21 +141,21 @@
                     android:padding="14dp">
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:text="Avg Pace"
                         android:textSize="12sp"
-                        android:textColor="@color/gray_text" />
+                        android:textColor="@color/gray_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
 
                     <TextView
                         android:id="@+id/tvPaceValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
                         android:text="0:00 /km"
                         android:textSize="22sp"
                         android:textStyle="bold"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:layout_marginTop="6dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
@@ -174,6 +180,7 @@
                 android:layout_marginEnd="6dp"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
+                app:cardUseCompatPadding="true"
                 app:strokeWidth="0dp"
                 app:cardBackgroundColor="@android:color/white">
 
@@ -184,21 +191,21 @@
                     android:padding="14dp">
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:text="Calories"
                         android:textSize="12sp"
-                        android:textColor="@color/gray_text" />
+                        android:textColor="@color/gray_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
 
                     <TextView
                         android:id="@+id/tvCaloriesValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
                         android:text="0 kcal"
                         android:textSize="22sp"
                         android:textStyle="bold"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:layout_marginTop="6dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -210,6 +217,7 @@
                 android:layout_marginStart="6dp"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp"
+                app:cardUseCompatPadding="true"
                 app:strokeWidth="0dp"
                 app:cardBackgroundColor="@android:color/white">
 
@@ -220,21 +228,21 @@
                     android:padding="14dp">
 
                     <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
                         android:text="Duration"
                         android:textSize="12sp"
-                        android:textColor="@color/gray_text" />
+                        android:textColor="@color/gray_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
 
                     <TextView
                         android:id="@+id/tvDurationValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
                         android:text="00:00"
                         android:textSize="22sp"
                         android:textStyle="bold"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:layout_marginTop="6dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>

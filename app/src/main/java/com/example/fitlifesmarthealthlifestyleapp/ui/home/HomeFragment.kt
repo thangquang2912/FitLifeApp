@@ -218,7 +218,7 @@ class HomeFragment : Fragment() {
         // 2. Calories
         caloriesIcon.setImageResource(R.drawable.ic_calories)
         caloriesValue.text = "0"
-        caloriesLabel.text = "Calories"
+        caloriesLabel.text = "Active Kcal"
 
         // 3. Water
         waterIcon.setImageResource(R.drawable.ic_stat_water)

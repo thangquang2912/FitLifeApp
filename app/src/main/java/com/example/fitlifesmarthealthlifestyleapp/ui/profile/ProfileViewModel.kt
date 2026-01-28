@@ -9,17 +9,21 @@ import com.cloudinary.android.MediaManager
 import com.cloudinary.android.callback.ErrorInfo
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.UserRepository
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.StepRepository
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import com.cloudinary.android.callback.UploadCallback
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 import java.text.SimpleDateFormat
 import java.util.*
 
 class ProfileViewModel : ViewModel() {
     private val userRepository = UserRepository()
     private val waterRepository = WaterRepository()
+    private val stepRepository = StepRepository()
     private val auth = FirebaseAuth.getInstance()
 
     private val _user = MutableLiveData<User?>()
@@ -34,59 +38,84 @@ class ProfileViewModel : ViewModel() {
     private val _weeklyWaterLogs = MutableLiveData<List<Int>>()
     val weeklyWaterLogs: LiveData<List<Int>> = _weeklyWaterLogs
 
+    private val _weeklySteps = MutableLiveData<List<Int>>()
+    val weeklySteps: LiveData<List<Int>> = _weeklySteps
+
+    private val _weeklyLabels = MutableLiveData<List<String>>()
+    val weeklyLabels: LiveData<List<String>> = _weeklyLabels
+
+    private var waterStreamJob: Job? = null
+    private var stepsStreamJob: Job? = null
+    private var userStreamJob: Job? = null
+
     fun fetchUserProfile() {
-        val currentUid = auth.currentUser?.uid
-        if (currentUid == null) {
-            _user.value = null
-            return
-        }
+        val currentUid = auth.currentUser?.uid ?: return
 
-        if (_user.value == null || _user.value?.uid != currentUid) {
-            _isLoading.value = true;
-
-            viewModelScope.launch {
-                val result = userRepository.getUserDetails(currentUid)
-
-                if (result.isSuccess) {
-                    _user.value = result.getOrNull()
+        // --- CHỈNH SỬA: Lắng nghe User Real-time để cập nhật Goal ngay lập tức ---
+        userStreamJob?.cancel()
+        userStreamJob = viewModelScope.launch {
+            userRepository.getUserDetailsStream(currentUid).collect { user ->
+                _user.value = user
+                if (user != null) {
+                    generateWeeklyLabels()
                     fetchWeeklyWaterData(currentUid)
-                } else {
-                    val error = result.exceptionOrNull()
-                    error?.printStackTrace()
-                    _statusMessage.value = "Lỗi tải dữ liệu: ${result.exceptionOrNull()?.message}"
+                    fetchWeeklyStepsData(currentUid)
                 }
-
-                _isLoading.value = false
             }
         }
     }
 
+    private fun generateWeeklyLabels() {
+        val calendar = Calendar.getInstance()
+        val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
+        val labels = mutableListOf<String>()
+        for (i in 0 until 7) {
+            labels.add(dayFormat.format(calendar.time))
+            calendar.add(Calendar.DAY_OF_YEAR, -1)
+        }
+        _weeklyLabels.value = labels.reversed()
+    }
+
     private fun fetchWeeklyWaterData(uid: String) {
-        viewModelScope.launch {
-            val result = waterRepository.getWeeklyWaterLogs(uid)
-            if (result.isSuccess) {
-                val logs = result.getOrNull() ?: emptyList()
-                
-                // Chuẩn bị dữ liệu cho 7 ngày gần nhất (đảm bảo đủ 7 cột kể cả khi thiếu data Firestore)
+        waterStreamJob?.cancel()
+        waterStreamJob = viewModelScope.launch {
+            waterRepository.getWeeklyWaterLogsStream(uid).collect { logs ->
                 val calendar = Calendar.getInstance()
                 val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val last7DaysData = mutableListOf<Int>()
-                
                 val logMap = logs.associateBy { it.id }
-                
-                // Lấy data ngược từ hôm nay về 6 ngày trước
                 val tempDays = mutableListOf<String>()
                 for (i in 0 until 7) {
                     tempDays.add(sdf.format(calendar.time))
                     calendar.add(Calendar.DAY_OF_YEAR, -1)
                 }
-                
-                // Đảo ngược lại để chart hiện từ cũ -> mới
                 tempDays.reversed().forEach { dateId ->
                     last7DaysData.add(logMap[dateId]?.currentIntake ?: 0)
                 }
-                
-                _weeklyWaterLogs.value = last7DaysData
+                _weeklyWaterLogs.postValue(last7DaysData)
+            }
+        }
+    }
+
+    private fun fetchWeeklyStepsData(uid: String) {
+        stepsStreamJob?.cancel()
+        stepsStreamJob = viewModelScope.launch {
+            stepRepository.getWeeklyStepsStream(uid).collect { dataList ->
+                val calendar = Calendar.getInstance()
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val last7DaysSteps = mutableListOf<Int>()
+                val stepsMap = dataList.associate { 
+                    (it["dateId"] as? String ?: "") to (it["steps"] as? Long ?: 0L).toInt()
+                }
+                val tempDays = mutableListOf<String>()
+                for (i in 0 until 7) {
+                    tempDays.add(sdf.format(calendar.time))
+                    calendar.add(Calendar.DAY_OF_YEAR, -1)
+                }
+                tempDays.reversed().forEach { dateId ->
+                    last7DaysSteps.add(stepsMap[dateId] ?: 0)
+                }
+                _weeklySteps.postValue(last7DaysSteps)
             }
         }
     }
@@ -94,60 +123,47 @@ class ProfileViewModel : ViewModel() {
     fun signOut() {
         auth.signOut()
         _user.value = null
+        waterStreamJob?.cancel()
+        stepsStreamJob?.cancel()
+        userStreamJob?.cancel()
     }
 
     fun saveUserProfile(user: User, imageUri: Uri?) {
         _isLoading.value = true
-
-        // TH1: Không đổi ảnh -> Chỉ lưu thông tin text
         if (imageUri == null) {
             updateUserProfile(user)
             return
         }
-
-        // TH2: Có ảnh -> Upload lên Cloudinary
         MediaManager.get().upload(imageUri)
             .option("folder", "fitlife_avatars")
             .option("public_id", user.uid)
             .option("overwrite", true)
             .callback(object : UploadCallback {
-                override fun onStart(requestId: String) { }
-
-                override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) { }
-
                 override fun onSuccess(requestId: String, resultData: Map<*, *>) {
-                    // 1. Lấy link ảnh HTTPS
                     val secureUrl = resultData["secure_url"] as String
-
-                    // 2. Cập nhật link vào User
                     user.photoUrl = secureUrl
-
-                    // 3. Lưu User vào Firestore
                     updateUserProfile(user)
                 }
-
                 override fun onError(requestId: String, error: ErrorInfo) {
                     _isLoading.postValue(false)
                     _statusMessage.postValue("Lỗi upload ảnh: ${error.description}")
                 }
-
-                override fun onReschedule(requestId: String, error: ErrorInfo) { }
+                override fun onStart(requestId: String) {}
+                override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {}
+                override fun onReschedule(requestId: String, error: ErrorInfo) {}
             })
             .dispatch()
     }
 
     fun updateUserProfile(user: User) {
-
         viewModelScope.launch {
             val result = userRepository.updateUser(user)
-
             if (result.isSuccess) {
                 _user.value = user
-                _statusMessage.value = "Updated profile successfully!" // Báo cho Fragment biết
+                _statusMessage.value = "Updated profile successfully!"
             } else {
                 _statusMessage.value = "Lỗi lưu dữ liệu: ${result.exceptionOrNull()?.message}"
             }
-
             _isLoading.value = false
         }
     }
