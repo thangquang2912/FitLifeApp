@@ -22,12 +22,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.Comment
-import com.example.fitlifesmarthealthlifestyleapp.domain.model.Notification
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
 import com.example.fitlifesmarthealthlifestyleapp.ui.nutrition.CloudinaryHelper
 import com.example.fitlifesmarthealthlifestyleapp.ui.profile.ProfileViewModel
-import com.example.fitlifesmarthealthlifestyleapp.utils.NetworkUtils // Đảm bảo đã tạo file này
+import com.example.fitlifesmarthealthlifestyleapp.utils.NetworkUtils
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -43,7 +43,7 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
     private lateinit var btnAddMedia: ImageView
     private lateinit var progressBar: ProgressBar
 
-    // Preview Media Views (Cần thêm vào XML nếu chưa có)
+    // Preview Media Views
     private lateinit var layoutPreview: RelativeLayout
     private lateinit var ivPreview: ImageView
     private lateinit var btnRemovePreview: ImageView
@@ -59,15 +59,11 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
     private var selectedMediaUri: Uri? = null
     private var selectedMediaType: String? = null // "IMAGE" hoặc "VIDEO"
 
-    // Launcher chọn ảnh/video
     private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             selectedMediaUri = uri
-
-            // Xác định loại file đơn giản
             val mimeType = requireContext().contentResolver.getType(uri)
             selectedMediaType = if (mimeType?.startsWith("video") == true) "VIDEO" else "IMAGE"
-
             showPreview(uri)
         }
     }
@@ -100,32 +96,25 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
             profileViewModel.fetchUserProfile()
         }
 
-        // Setup Toolbar
         view.findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbarComments).apply {
             setNavigationIcon(R.drawable.ic_arrow_back_ios_new_24)
             setNavigationOnClickListener { dismiss() }
         }
 
-        // Sự kiện nút Thêm Ảnh/Video
         btnAddMedia.setOnClickListener {
             if (NetworkUtils.checkConnection(requireContext())) {
                 pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
             }
         }
 
-        // Sự kiện nút Xóa Preview
         btnRemovePreview.setOnClickListener {
             clearPreview()
         }
 
-        // Sự kiện nút Gửi
         btnSend.setOnClickListener {
             val content = etInput.text.toString().trim()
-
-            // 1. Kiểm tra mạng
             if (!NetworkUtils.checkConnection(requireContext())) return@setOnClickListener
 
-            // 2. Kiểm tra dữ liệu (Phải có chữ HOẶC có ảnh)
             if (content.isNotEmpty() || selectedMediaUri != null) {
                 handleSendComment(content)
             } else {
@@ -138,10 +127,9 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
         rvComments = view.findViewById(R.id.rvComments)
         etInput = view.findViewById(R.id.etCommentInput)
         btnSend = view.findViewById(R.id.btnSendComment)
-        btnAddMedia = view.findViewById(R.id.btnAddMedia) // Nút kẹp giấy/ảnh
+        btnAddMedia = view.findViewById(R.id.btnAddMedia)
         progressBar = view.findViewById(R.id.progressBarComments)
 
-        // Các view cho Preview (Nếu XML chưa có, bạn cần thêm vào layout fragment_comments.xml)
         layoutPreview = view.findViewById(R.id.layoutMediaPreview)
         ivPreview = view.findViewById(R.id.ivMediaPreview)
         btnRemovePreview = view.findViewById(R.id.btnRemoveMedia)
@@ -169,14 +157,30 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
                 imm?.showSoftInput(etInput, InputMethodManager.SHOW_IMPLICIT)
             },
             onCommentLongClick = { comment ->
-                // Chỉ chủ sở hữu mới được sửa/xóa
                 val currentUser = profileViewModel.user.value
                 if (currentUser != null && currentUser.uid == comment.userId) {
-                    // Kiểm tra mạng trước khi hiện menu
                     if (NetworkUtils.checkConnection(requireContext())) {
                         showEditDeleteMenu(comment)
                     }
                 }
+            },
+            // [MỚI] Xử lý click User Profile
+            onUserClick = { userId ->
+                // Đóng Dialog bình luận trước
+                dismiss()
+
+                val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+                val transaction = requireActivity().supportFragmentManager.beginTransaction()
+
+                if (userId == currentUid) {
+                    // Chuyển đến trang cá nhân của mình
+                    transaction.replace(R.id.navHostFragmentContainerView, PersonalProfileFragment())
+                } else {
+                    // Chuyển đến trang người khác
+                    transaction.replace(R.id.navHostFragmentContainerView, UserProfileFragment.newInstance(userId))
+                }
+                transaction.addToBackStack(null)
+                transaction.commit()
             }
         )
 
@@ -184,14 +188,11 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
         rvComments.adapter = adapter
     }
 
-    // --- LOGIC GỬI COMMENT (QUAN TRỌNG) ---
     private fun handleSendComment(content: String) {
         val currentUser = profileViewModel.user.value
-
         if (currentUser != null) {
             processSend(currentUser, content)
         } else {
-            // Load user nếu chưa có
             progressBar.visibility = View.VISIBLE
             btnSend.isEnabled = false
             profileViewModel.fetchUserProfile()
@@ -212,12 +213,8 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
             btnSend.isEnabled = false
             progressBar.visibility = View.VISIBLE
 
-            // [MỚI] Xử lý Caption: Nếu rỗng và có chọn ảnh/video -> gán bằng dấu cách " "
-            // Nếu không có ảnh mà caption rỗng -> giữ nguyên (để chặn hoặc báo lỗi sau)
             val finalContent = if (content.trim().isEmpty() && selectedMediaUri != null) " " else content
 
-            // 1. Kiểm tra nội dung Text với Gemini
-            // Chỉ kiểm tra nếu nội dung có chữ thực sự (khác rỗng và khác dấu cách)
             if (finalContent.trim().isNotEmpty()) {
                 val isSafe = GeminiModerator.isContentSafe(requireContext(), null, finalContent)
                 if (!isSafe) {
@@ -228,12 +225,9 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
                 }
             }
 
-            // 2. Upload Media lên Cloudinary (Nếu có)
             var uploadedMediaUrl: String? = null
             if (selectedMediaUri != null) {
-
                 uploadedMediaUrl = CloudinaryHelper.uploadImage(selectedMediaUri!!, "comments")
-
                 if (uploadedMediaUrl == null) {
                     btnSend.isEnabled = true
                     progressBar.visibility = View.GONE
@@ -242,7 +236,6 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
                 }
             }
 
-            // 3. Lưu vào Firestore (Dùng finalContent)
             executePostComment(user, finalContent, uploadedMediaUrl, selectedMediaType)
         }
     }
@@ -258,8 +251,8 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
             userAvatar = user.photoUrl,
             content = content,
             timestamp = Timestamp.now(),
-            mediaUrl = mediaUrl,     // [MỚI]
-            mediaType = mediaType    // [MỚI]
+            mediaUrl = mediaUrl,
+            mediaType = mediaType
         )
 
         val batch = db.batch()
@@ -272,12 +265,10 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
 
         batch.commit()
             .addOnSuccessListener {
-                // Reset UI sau khi thành công
                 btnSend.isEnabled = true
                 progressBar.visibility = View.GONE
                 etInput.setText("")
-                clearPreview() // Xóa ảnh đã chọn
-
+                clearPreview()
                 sendNotificationToPostOwner(postId!!, user.uid, user.displayName, user.photoUrl, "commented on your post")
             }
             .addOnFailureListener {
@@ -287,14 +278,11 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
             }
     }
 
-    // --- MENU EDIT / DELETE ---
     private fun showEditDeleteMenu(comment: Comment) {
         val options = arrayOf("Edit Comment", "Delete Comment")
         AlertDialog.Builder(requireContext())
             .setItems(options) { _, which ->
-                // Kiểm tra mạng lại lần nữa cho chắc
                 if (!NetworkUtils.checkConnection(requireContext())) return@setItems
-
                 when (which) {
                     0 -> showEditDialog(comment)
                     1 -> showDeleteConfirmation(comment)
@@ -370,7 +358,6 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
         }
     }
 
-    // --- LISTENERS & NOTIFICATIONS ---
     private fun listenToComments() {
         db.collection("posts").document(postId!!).collection("comments")
             .orderBy("timestamp", Query.Direction.ASCENDING)
@@ -389,21 +376,15 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
     private fun sendNotificationToPostOwner(postId: String, senderId: String, senderName: String, senderAvatar: String, message: String) {
         db.collection("posts").document(postId).get().addOnSuccessListener { document ->
             val ownerId = document.getString("userId") ?: return@addOnSuccessListener
-            if (ownerId != senderId) {
-                val notifId = UUID.randomUUID().toString()
-                val notification = Notification(
-                    id = notifId,
-                    userId = ownerId,
-                    senderId = senderId,
-                    senderName = senderName,
-                    senderAvatar = senderAvatar,
-                    type = "COMMENT",
-                    postId = postId,
-                    message = "$senderName $message",
-                    createdAt = Timestamp.now()
-                )
-                db.collection("users").document(ownerId).collection("notifications").document(notifId).set(notification)
-            }
+            NotificationHelper.sendNotification(
+                recipientId = ownerId,
+                senderId = senderId,
+                senderName = senderName,
+                senderAvatar = senderAvatar,
+                postId = postId,
+                type = "COMMENT",
+                content = message
+            )
         }
     }
 

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp"
+    android:background="@color/white"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivNotifAvatar"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:src="@drawable/ic_user"
+        android:scaleType="centerCrop"
+        android:layout_centerVertical="true"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent"/>
+
+    <ImageView
+        android:id="@+id/ivNotifType"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_alignBottom="@id/ivNotifAvatar"
+        android:layout_alignEnd="@id/ivNotifAvatar"
+        android:src="@drawable/ic_notifications"
+        android:layout_marginBottom="0dp"
+        android:layout_marginEnd="0dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/ivNotifAvatar"
+        android:layout_toStartOf="@+id/ivUnreadDot"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvNotifContent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="User liked your post."
+            android:textColor="@color/black"
+            android:textSize="15sp"
+            android:maxLines="2"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/tvNotifTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2 mins ago"
+            android:textSize="13sp"
+            android:textColor="@color/gray_text"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/ivUnreadDot"
+        android:layout_width="12dp"
+        android:layout_height="12dp"
+        android:src="@drawable/bg_circle_red"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:visibility="gone"/>
+
+</RelativeLayout>

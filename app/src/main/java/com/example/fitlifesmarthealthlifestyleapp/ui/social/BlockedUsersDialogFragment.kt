@@ -73,28 +73,26 @@ class BlockedUsersDialogFragment : DialogFragment() {
         if (currentUid == null) return
 
         val batch = db.batch()
-
-        // 1. Xóa Target khỏi danh sách 'blockedUsers' của Mình
         val myRef = db.collection("users").document(currentUid)
         batch.update(myRef, "blockedUsers", FieldValue.arrayRemove(user.uid))
-
-        // 2. Xóa Mình khỏi danh sách 'blockedBy' của Target
         val targetRef = db.collection("users").document(user.uid)
         batch.update(targetRef, "blockedBy", FieldValue.arrayRemove(currentUid))
 
         batch.commit()
             .addOnSuccessListener {
+                // [FIX] Check an toàn trước khi dùng context/adapter
+                if (!isAdded || context == null) return@addOnSuccessListener
+
                 Toast.makeText(context, "Đã bỏ chặn ${user.displayName}", Toast.LENGTH_SHORT).show()
                 blockedUsersList.remove(user)
                 adapter.notifyDataSetChanged()
 
-                // Nếu danh sách rỗng thì báo
                 if (blockedUsersList.isEmpty()) {
                     Toast.makeText(context, "No blocked users", Toast.LENGTH_SHORT).show()
                 }
             }
             .addOnFailureListener {
-                Toast.makeText(context, "Lỗi khi bỏ chặn", Toast.LENGTH_SHORT).show()
+                if (isAdded) Toast.makeText(context, "Lỗi khi bỏ chặn", Toast.LENGTH_SHORT).show()
             }
     }
 }

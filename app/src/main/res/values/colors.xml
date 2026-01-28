@@ -14,7 +14,7 @@
     <color name="purple_primary">#9747FF</color>
     <color name="purple_secondary">#B070FF</color>
     <color name="purple_light_alpha">#4DFFFFFF</color>
-
+    <color name="orange_light_transparent">#33FF9800</color>
     <color name="chart_protein">#40E0D0</color>
     <color name="chart_fat">#FFD33C</color>
     <color name="orange_light_bg">#FFF5E5</color>

@@ -2,11 +2,11 @@ package com.example.fitlifesmarthealthlifestyleapp.ui.social
 
 import android.app.AlertDialog
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,277 +32,249 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
     private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
     private var targetUserId: String? = null
 
-    private var btnFollow: Button? = null
-    private lateinit var adapter: PostAdapter
+    private lateinit var btnFollow: Button
+    private lateinit var tvName: TextView
+    private lateinit var tvEmail: TextView
+    private lateinit var tvDob: TextView
+    private lateinit var ivAvatar: ImageView
+    private lateinit var tvPostCount: TextView
+    private lateinit var tvFollowersCount: TextView
+    private lateinit var tvFollowingCount: TextView
+    private lateinit var rvPosts: RecyclerView
 
-    // Biến cờ trạng thái Follow (để xử lý Logic)
-    private var isFollowingUser: Boolean = false
+    private lateinit var postAdapter: PostAdapter
+    private var isFollowing = false
 
-    // Views stats
-    private var tvStatPostCount: TextView? = null
-    private var tvStatFollowersCount: TextView? = null
-    private var tvStatFollowingCount: TextView? = null
-
-    // [QUAN TRỌNG] Quản lý 3 Listeners để cập nhật Realtime
-    private var currentUserListener: ListenerRegistration? = null // Lắng nghe mình (để đổi màu nút Follow)
-    private var targetUserListener: ListenerRegistration? = null  // Lắng nghe người kia (để nhảy số Follower)
-    private var postsListener: ListenerRegistration? = null       // Lắng nghe bài viết (để nhảy số Post)
+    private var userListener: ListenerRegistration? = null
+    private var postsListener: ListenerRegistration? = null
 
     private var pendingSharePostId: String? = null
     private val shareLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         pendingSharePostId?.let { postId ->
-            db.collection("posts").document(postId).update("shareCount", FieldValue.increment(1))
+            incrementShareCount(postId)
             pendingSharePostId = null
-        }
-    }
-
-    companion object {
-        private const val ARG_USER_ID = "targetUserId"
-        fun newInstance(userId: String): UserProfileFragment {
-            val fragment = UserProfileFragment()
-            val args = Bundle()
-            args.putString(ARG_USER_ID, userId)
-            fragment.arguments = args
-            return fragment
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let { targetUserId = it.getString(ARG_USER_ID) }
-    }
-
-    // [QUAN TRỌNG] Hủy lắng nghe khi thoát để tránh Crash và tốn pin
-    override fun onDestroyView() {
-        super.onDestroyView()
-        currentUserListener?.remove()
-        targetUserListener?.remove()
-        postsListener?.remove()
+        targetUserId = arguments?.getString(ARG_USER_ID)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        if (targetUserId.isNullOrEmpty()) {
+        if (targetUserId == null) {
+            Toast.makeText(context, "User not found", Toast.LENGTH_SHORT).show()
             parentFragmentManager.popBackStack()
             return
         }
 
-        try {
-            // 1. Ánh xạ View
-            val ivAvatar = view.findViewById<ImageView>(R.id.ivOtherAvatar)
-            val tvName = view.findViewById<TextView>(R.id.tvOtherName)
-            val tvEmail = view.findViewById<TextView>(R.id.tvOtherEmail)
-            val tvDob = view.findViewById<TextView>(R.id.tvOtherDob)
+        // Ánh xạ View
+        val btnBack = view.findViewById<ImageView>(R.id.btnBack)
+        val btnMore = view.findViewById<ImageView>(R.id.btnMore)
+        btnFollow = view.findViewById(R.id.btnFollow)
+        tvName = view.findViewById(R.id.tvOtherName)
+        tvEmail = view.findViewById(R.id.tvOtherEmail)
+        tvDob = view.findViewById(R.id.tvOtherDob)
+        ivAvatar = view.findViewById(R.id.ivOtherAvatar)
+        tvPostCount = view.findViewById(R.id.tvStatPostCount)
+        tvFollowersCount = view.findViewById(R.id.tvStatFollowersCount)
+        tvFollowingCount = view.findViewById(R.id.tvStatFollowingCount)
+        rvPosts = view.findViewById(R.id.rvOtherPosts)
 
-            tvStatPostCount = view.findViewById(R.id.tvStatPostCount)
-            tvStatFollowersCount = view.findViewById(R.id.tvStatFollowersCount)
-            tvStatFollowingCount = view.findViewById(R.id.tvStatFollowingCount)
+        btnBack.setOnClickListener { parentFragmentManager.popBackStack() }
+        btnMore.setOnClickListener { showOptionsMenu(it) }
 
-            btnFollow = view.findViewById(R.id.btnFollow)
-            val btnMessage = view.findViewById<View>(R.id.btnMessage)
-            val btnBack = view.findViewById<ImageView>(R.id.btnBack)
-            val rvPosts = view.findViewById<RecyclerView>(R.id.rvOtherPosts)
+        setupRecyclerView()
+        loadUserInfo()
+        checkFollowStatus()
+        loadUserPosts()
 
-            // 2. Events
-            btnBack.setOnClickListener {
-                if (isAdded) parentFragmentManager.popBackStack()
-            }
-
-            btnMessage.setOnClickListener {
-                Toast.makeText(context, "Chat feature coming soon!", Toast.LENGTH_SHORT).show()
-            }
-
-            btnFollow?.setOnClickListener { toggleFollow() }
-
-            // 3. Setup RecyclerView
-            setupRecyclerView(rvPosts)
-
-            // 4. Load Data (Tất cả đều là Realtime)
-            listenToTargetUserInfo(ivAvatar, tvName, tvEmail, tvDob) // <-- Hàm mới
-            listenToCurrentUserFollowStatus()                        // <-- Hàm check follow
-            listenToTargetUserPosts()                                // <-- Hàm load bài viết
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        btnFollow.setOnClickListener { toggleFollow() }
     }
 
-    private fun setupRecyclerView(rv: RecyclerView) {
-        adapter = PostAdapter(
+    private fun setupRecyclerView() {
+        postAdapter = PostAdapter(
             onLikeClick = { post -> toggleLike(post) },
             onCommentClick = { post -> showCommentsDialog(post) },
-            onLikeCountClick = { userIds ->
-                if (userIds.isNotEmpty()) LikeListDialogFragment(userIds).show(childFragmentManager, "Likes")
-            },
-            onUserClick = { },
             onShareClick = { post -> sharePost(post) },
-            onBlockClick = { userId, userName -> showBlockConfirmation(userId, userName) }
+            onLikeCountClick = { userIds -> showLikeListDialog(userIds) },
+            onUserClick = { /* Hiện tại đã ở trang cá nhân này rồi */ },
+            onBlockClick = { userId, userName -> /* Logic block đã có trong Menu More */ },
+            onImageClick = { imageUrl -> FullScreenImageDialogFragment.show(parentFragmentManager, imageUrl) }
         )
-        rv.layoutManager = LinearLayoutManager(context)
-        rv.adapter = adapter
+        rvPosts.layoutManager = LinearLayoutManager(context)
+        rvPosts.adapter = postAdapter
+        rvPosts.isNestedScrollingEnabled = false
     }
 
-    // --- 1. LẮNG NGHE THÔNG TIN NGƯỜI KHÁC (REALTIME) ---
-    // Hàm này giúp số Followers/Following nhảy ngay lập tức
-    private fun listenToTargetUserInfo(iv: ImageView, tvName: TextView, tvEmail: TextView, tvDob: TextView) {
-        if (targetUserId == null) return
-
-        targetUserListener = db.collection("users").document(targetUserId!!)
-            .addSnapshotListener { doc, e ->
-                if (e != null || doc == null || !isAdded) return@addSnapshotListener
-
-                // Cập nhật thông tin cơ bản
-                tvName.text = doc.getString("displayName") ?: "User"
-                tvEmail.text = doc.getString("email") ?: ""
-                val photoUrl = doc.getString("photoUrl")
-                try {
-                    Glide.with(this).load(photoUrl).placeholder(R.drawable.ic_user).circleCrop().into(iv)
-                } catch (e: Exception) { }
-
-                val timestamp = doc.getTimestamp("birthday")
-                if (timestamp != null) {
-                    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                    tvDob.text = "Born: ${sdf.format(timestamp.toDate())}"
-                }
-
-                // [QUAN TRỌNG] Cập nhật số liệu thống kê Realtime
-                val followers = doc.get("followers") as? List<String> ?: emptyList()
-                val following = doc.get("following") as? List<String> ?: emptyList()
-
-                tvStatFollowersCount?.text = followers.size.toString()
-                tvStatFollowingCount?.text = following.size.toString()
-            }
-    }
-
-    // --- 2. LẮNG NGHE TRẠNG THÁI FOLLOW CỦA MÌNH ---
-    private fun listenToCurrentUserFollowStatus() {
-        if (currentUid == null || targetUserId == null) return
-
-        currentUserListener = db.collection("users").document(currentUid)
-            .addSnapshotListener { doc, e ->
-                if (e != null || doc == null || !isAdded || context == null) return@addSnapshotListener
-
-                val following = doc.get("following") as? List<String> ?: emptyList()
-                isFollowingUser = following.contains(targetUserId)
-
-                // Cập nhật giao diện nút Follow
-                if (isFollowingUser) {
-                    btnFollow?.text = "Following"
-                    btnFollow?.setBackgroundColor(Color.parseColor("#E0E0E0"))
-                    btnFollow?.setTextColor(Color.BLACK)
-                } else {
-                    btnFollow?.text = "Follow"
-                    btnFollow?.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.orange_primary))
-                    btnFollow?.setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
-                }
-            }
-    }
-
-    // --- 3. LẮNG NGHE BÀI VIẾT (REALTIME) ---
-    private fun listenToTargetUserPosts() {
-        if (targetUserId == null) return
-        postsListener = db.collection("posts")
-            .whereEqualTo("userId", targetUserId)
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null || !isAdded) return@addSnapshotListener
-                val posts = snapshot?.toObjects(Post::class.java) ?: emptyList()
-
-                tvStatPostCount?.text = posts.size.toString()
-                adapter.submitList(posts)
-            }
-    }
-
-    // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
-    private fun toggleFollow() {
-        val ctx = context ?: return
-        if (currentUid == null || targetUserId == null) return
-        if (!NetworkUtils.checkConnection(ctx)) return
-
-        btnFollow?.isEnabled = false // Khóa nút tạm thời
-
-        val myRef = db.collection("users").document(currentUid)
-        val targetRef = db.collection("users").document(targetUserId!!)
-        val batch = db.batch()
-
-        if (!isFollowingUser) {
-            // Chưa follow -> Follow
-            // Khi lệnh này chạy xong, Firestore thay đổi -> listenToTargetUserInfo tự động cập nhật số Follower lên +1
-            batch.update(myRef, "following", FieldValue.arrayUnion(targetUserId))
-            batch.update(targetRef, "followers", FieldValue.arrayUnion(currentUid))
-        } else {
-            // Đang follow -> Unfollow
-            batch.update(myRef, "following", FieldValue.arrayRemove(targetUserId))
-            batch.update(targetRef, "followers", FieldValue.arrayRemove(currentUid))
+    private fun showOptionsMenu(view: View) {
+        val popup = PopupMenu(requireContext(), view)
+        popup.menu.add("Block User")
+        popup.setOnMenuItemClickListener {
+            if (it.title == "Block User") showBlockConfirmation()
+            true
         }
-
-        batch.commit().addOnCompleteListener {
-            btnFollow?.isEnabled = true
-        }
+        popup.show()
     }
 
-    private fun showBlockConfirmation(userId: String, userName: String) {
+    private fun showBlockConfirmation() {
+        val name = tvName.text.toString()
         AlertDialog.Builder(requireContext())
             .setTitle("Block User")
-            .setMessage("Block $userName? This will also unfollow them.")
-            .setPositiveButton("Block") { _, _ -> performBlockUserSafe() }
+            .setMessage("Are you sure you want to block $name? Their posts will be hidden from your feed.")
+            .setPositiveButton("Block") { _, _ -> performBlockUser() }
             .setNegativeButton("Cancel", null)
             .show()
     }
 
-    private fun performBlockUserSafe() {
-        if (!isAdded || currentUid == null || targetUserId == null) return
-
-        // Hủy listener trước khi Block để tránh xung đột
-        currentUserListener?.remove()
-        targetUserListener?.remove()
-        postsListener?.remove()
+    private fun performBlockUser() {
+        if (!NetworkUtils.checkConnection(requireContext()) || currentUid == null || targetUserId == null) return
 
         val batch = db.batch()
-        val myRef = db.collection("users").document(currentUid)
+        val myRef = db.collection("users").document(currentUid!!)
         val targetRef = db.collection("users").document(targetUserId!!)
 
-        batch.update(myRef, "following", FieldValue.arrayRemove(targetUserId))
-        batch.update(targetRef, "followers", FieldValue.arrayRemove(currentUid))
         batch.update(myRef, "blockedUsers", FieldValue.arrayUnion(targetUserId))
         batch.update(targetRef, "blockedBy", FieldValue.arrayUnion(currentUid))
 
-        batch.commit()
-            .addOnSuccessListener {
+        // Unfollow lẫn nhau khi block
+        batch.update(myRef, "following", FieldValue.arrayRemove(targetUserId))
+        batch.update(targetRef, "followers", FieldValue.arrayRemove(currentUid))
+
+        batch.commit().addOnSuccessListener {
+            if (isAdded) {
                 Toast.makeText(context, "User blocked", Toast.LENGTH_SHORT).show()
-                if (isAdded) parentFragmentManager.popBackStack()
+                parentFragmentManager.popBackStack()
             }
-            .addOnFailureListener {
-                Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun loadUserInfo() {
+        userListener = db.collection("users").document(targetUserId!!)
+            .addSnapshotListener { document, _ ->
+                if (document == null) return@addSnapshotListener
+                tvName.text = document.getString("displayName") ?: "User"
+                tvEmail.text = document.getString("email") ?: ""
+
+                val followers = document.get("followers") as? List<*> ?: emptyList<Any>()
+                val following = document.get("following") as? List<*> ?: emptyList<Any>()
+                tvFollowersCount.text = followers.size.toString()
+                tvFollowingCount.text = following.size.toString()
+
+                val dob = document.getTimestamp("dateOfBirth")
+                if (dob != null) {
+                    val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    tvDob.text = "Born: ${sdf.format(dob.toDate())}"
+                }
+
+                if (isAdded) {
+                    Glide.with(this).load(document.getString("photoUrl")).placeholder(R.drawable.ic_user).circleCrop().into(ivAvatar)
+                }
+            }
+    }
+
+    private fun checkFollowStatus() {
+        if (currentUid == null) return
+        db.collection("users").document(targetUserId!!).addSnapshotListener { snapshot, _ ->
+            val followers = snapshot?.get("followers") as? List<String> ?: emptyList()
+            isFollowing = followers.contains(currentUid)
+            if (isAdded) updateFollowButtonUI()
+        }
+    }
+
+    private fun updateFollowButtonUI() {
+        if (isFollowing) {
+            btnFollow.text = "Following"
+            btnFollow.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.gray_text)
+        } else {
+            btnFollow.text = "Follow"
+            btnFollow.backgroundTintList = ContextCompat.getColorStateList(requireContext(), R.color.orange_primary)
+        }
+    }
+
+    private fun toggleFollow() {
+        if (currentUid == null || targetUserId == null) return
+        val batch = db.batch()
+        val myRef = db.collection("users").document(currentUid!!)
+        val targetRef = db.collection("users").document(targetUserId!!)
+
+        if (isFollowing) {
+            batch.update(myRef, "following", FieldValue.arrayRemove(targetUserId))
+            batch.update(targetRef, "followers", FieldValue.arrayRemove(currentUid))
+        } else {
+            batch.update(myRef, "following", FieldValue.arrayUnion(targetUserId))
+            batch.update(targetRef, "followers", FieldValue.arrayUnion(currentUid))
+
+            db.collection("users").document(currentUid!!).get().addOnSuccessListener { myDoc ->
+                NotificationHelper.sendNotification(
+                    recipientId = targetUserId!!,
+                    senderId = currentUid!!,
+                    senderName = myDoc.getString("displayName") ?: "User",
+                    senderAvatar = myDoc.getString("photoUrl") ?: "",
+                    postId = "",
+                    type = "FOLLOW"
+                )
+            }
+        }
+        batch.commit()
+    }
+
+    private fun loadUserPosts() {
+        postsListener = db.collection("posts")
+            .whereEqualTo("userId", targetUserId)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, _ ->
+                val posts = snapshot?.toObjects(Post::class.java) ?: emptyList()
+                tvPostCount.text = posts.size.toString()
+                postAdapter.submitList(posts)
             }
     }
 
     private fun toggleLike(post: Post) {
         if (currentUid == null) return
-        val ref = db.collection("posts").document(post.postId)
+        val postRef = db.collection("posts").document(post.postId)
         if (post.likedBy.contains(currentUid)) {
-            ref.update("likeCount", FieldValue.increment(-1), "likedBy", FieldValue.arrayRemove(currentUid))
+            postRef.update("likeCount", FieldValue.increment(-1), "likedBy", FieldValue.arrayRemove(currentUid))
         } else {
-            ref.update("likeCount", FieldValue.increment(1), "likedBy", FieldValue.arrayUnion(currentUid))
+            postRef.update("likeCount", FieldValue.increment(1), "likedBy", FieldValue.arrayUnion(currentUid))
         }
+    }
+
+    private fun sharePost(post: Post) {
+        val deepLink = "https://fit-life-app-dl.vercel.app/post/${post.postId}"
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            putExtra(Intent.EXTRA_TEXT, "Xem bài tập này trên FitLife: ${post.caption}\n$deepLink")
+            type = "text/plain"
+        }
+        shareLauncher.launch(Intent.createChooser(intent, "Share"))
+    }
+
+    private fun incrementShareCount(postId: String) {
+        db.collection("posts").document(postId).update("shareCount", FieldValue.increment(1))
     }
 
     private fun showCommentsDialog(post: Post) {
         val dialog = CommentsDialogFragment()
-        val bundle = Bundle()
-        bundle.putString("postId", post.postId)
-        dialog.arguments = bundle
+        dialog.arguments = Bundle().apply { putString("postId", post.postId) }
         dialog.show(parentFragmentManager, "CommentsDialog")
     }
 
-    private fun sharePost(post: Post) {
-        pendingSharePostId = post.postId
-        val deepLink = "https://fit-life-app-dl.vercel.app/post/${post.postId}"
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            putExtra(Intent.EXTRA_TEXT, "${post.caption}\n$deepLink")
-            type = "text/plain"
+    private fun showLikeListDialog(userIds: List<String>) {
+        if (userIds.isNotEmpty()) LikeListDialogFragment(userIds).show(childFragmentManager, "LikeListDialog")
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        userListener?.remove()
+        postsListener?.remove()
+    }
+
+    companion object {
+        private const val ARG_USER_ID = "user_id"
+        fun newInstance(userId: String) = UserProfileFragment().apply {
+            arguments = Bundle().apply { putString(ARG_USER_ID, userId) }
         }
-        shareLauncher.launch(Intent.createChooser(intent, "Share"))
     }
 }

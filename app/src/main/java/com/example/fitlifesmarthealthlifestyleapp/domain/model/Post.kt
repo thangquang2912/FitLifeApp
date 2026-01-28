@@ -7,6 +7,7 @@ data class Post(
     var userId: String = "",
     var userName: String = "",
     var userAvatar: String = "",
+    val userEmail: String = "",
     var postImageUrl: String = "",
     var caption: String = "",
     var duration: String = "",

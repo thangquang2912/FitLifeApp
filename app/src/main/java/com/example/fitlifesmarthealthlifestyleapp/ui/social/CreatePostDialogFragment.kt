@@ -20,6 +20,7 @@ import com.example.fitlifesmarthealthlifestyleapp.ui.profile.ProfileViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import java.io.File
@@ -221,6 +222,7 @@ class CreatePostDialogFragment : BottomSheetDialogFragment() {
                         userId = user.uid,
                         userName = user.displayName,
                         userAvatar = user.photoUrl,
+                        userEmail = user.email,
                         postImageUrl = imageUrl,
                         caption = caption,
                         createdAt = Timestamp.now(),
@@ -235,6 +237,18 @@ class CreatePostDialogFragment : BottomSheetDialogFragment() {
                         .addOnSuccessListener {
                             if (isAdded) {
                                 Toast.makeText(context, "Shared successfully!", Toast.LENGTH_SHORT).show()
+
+                                // [MỚI] Gửi thông báo cho tất cả người theo dõi
+                                val currentUser = FirebaseAuth.getInstance().currentUser
+                                if (currentUser != null) {
+                                    NotificationHelper.sendToAllFollowers(
+                                        senderId = currentUser.uid,
+                                        senderName = currentUser.displayName ?: "User",
+                                        senderAvatar = currentUser.photoUrl?.toString() ?: "",
+                                        postId = post.postId
+                                    )
+                                }
+
                                 dismiss()
                             }
                         }

@@ -36,14 +36,28 @@
                     android:textSize="26sp"
                     android:textStyle="bold" />
 
-                <ImageView
-                    android:id="@+id/btnNotification"
-                    android:layout_width="54dp"
-                    android:layout_height="54dp"
-                    android:padding="6dp"
-                    android:src="@drawable/ic_notifications"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    />
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/btnNotification"
+                        android:layout_width="54dp"
+                        android:layout_height="54dp"
+                        android:padding="6dp"
+                        android:src="@drawable/ic_notifications"
+                        android:background="?attr/selectableItemBackgroundBorderless" />
+
+                    <ImageView
+                        android:id="@+id/ivUnreadBadge"
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginEnd="10dp"
+                        android:src="@drawable/bg_circle_red"
+                        android:visibility="gone" />
+                </FrameLayout>
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/btnUserProfile"
@@ -63,8 +77,7 @@
                     android:layout_marginStart="4dp"
                     android:padding="6dp"
                     android:src="@drawable/ic_chat"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    />
+                    android:background="?attr/selectableItemBackgroundBorderless" />
 
             </LinearLayout>
 
@@ -119,14 +132,16 @@
         android:layout_alignParentEnd="true"
         android:layout_margin="24dp"
         app:cardCornerRadius="30dp"
-        app:cardElevation="6dp"> <ImageView
-        android:id="@+id/btnAddPost"
-        android:layout_width="58dp"
-        android:layout_height="58dp"
-        android:src="@drawable/ic_add_circle"
-        android:scaleType="fitCenter"
-        android:layout_gravity="center"
-        />
+        app:cardElevation="6dp">
+
+        <ImageView
+            android:id="@+id/btnAddPost"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:src="@drawable/ic_add_circle"
+            android:scaleType="fitCenter"
+            android:layout_gravity="center" />
+
     </androidx.cardview.widget.CardView>
 
 </RelativeLayout>

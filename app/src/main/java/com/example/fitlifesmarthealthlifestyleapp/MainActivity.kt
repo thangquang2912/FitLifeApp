@@ -1,9 +1,11 @@
     package com.example.fitlifesmarthealthlifestyleapp
 
+    import android.content.Intent
     import android.os.Bundle
     import androidx.activity.enableEdgeToEdge
     import androidx.appcompat.app.AppCompatActivity
     import androidx.core.view.ViewCompat
+    import androidx.lifecycle.ViewModelProvider
     import androidx.core.view.WindowInsetsCompat
     import androidx.navigation.NavController
     import androidx.navigation.findNavController
@@ -21,7 +23,7 @@
 
     class MainActivity : AppCompatActivity() {
         private lateinit var navController : NavController
-
+        private lateinit var deepLinkViewModel: DeepLinkViewModel
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             enableEdgeToEdge()
@@ -32,7 +34,13 @@
                 v.setPadding(systemBars.left, systemBars.top, systemBars.right, ime.bottom)
                 insets
             }
-
+            // 1. Khởi tạo ViewModel
+            deepLinkViewModel = ViewModelProvider(this)[DeepLinkViewModel::class.java]
+            // 2. Lấy ID từ Link (nếu mở app lần đầu) và nạp vào ViewModel
+            val linkId = getPostIdFromIntent(intent)
+            if (linkId != null) {
+                deepLinkViewModel.setPostId(linkId)
+            }
             setupDailyReminder()
 
             val navHostFragment = supportFragmentManager
@@ -68,6 +76,29 @@
                     )
                 }
             }
+        }
+
+        override fun onNewIntent(intent: Intent) {
+            super.onNewIntent(intent)
+            setIntent(intent)
+            val newId = getPostIdFromIntent(intent)
+            if (newId != null) {
+                // Cập nhật ID mới vào ViewModel
+                deepLinkViewModel.setPostId(newId)
+                // Nếu user đã login, đảm bảo quay về màn hình chính để MainFragment xử lý
+                if (FirebaseAuth.getInstance().currentUser != null) {
+                    // Pop về MainFragment nếu đang ở các trang con
+                    navController.popBackStack(R.id.mainFragment, false)
+                }
+            }
+        }
+
+        private fun getPostIdFromIntent(intent: Intent?): String? {
+            val data = intent?.data
+            if (data != null && data.pathSegments.contains("post")) {
+                return data.lastPathSegment
+            }
+            return null
         }
 
         override fun onSupportNavigateUp() : Boolean {

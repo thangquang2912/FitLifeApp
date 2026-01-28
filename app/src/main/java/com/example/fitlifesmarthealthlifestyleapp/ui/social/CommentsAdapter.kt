@@ -26,7 +26,8 @@ import java.util.Locale
 
 class CommentsAdapter(
     private val onReplyClick: (Comment) -> Unit,
-    private val onCommentLongClick: (Comment) -> Unit
+    private val onCommentLongClick: (Comment) -> Unit,
+    private val onUserClick: (String) -> Unit // [MỚI] Callback khi bấm vào user
 ) : ListAdapter<Comment, CommentsAdapter.CommentViewHolder>(CommentDiffCallback()) {
 
     private val userRepository = UserRepository()
@@ -67,6 +68,11 @@ class CommentsAdapter(
         fun bind(comment: Comment) {
             tvContent.text = comment.content
 
+            // [MỚI] Sự kiện Click Avatar & Tên -> Mở Profile
+            val openProfile = View.OnClickListener { onUserClick(comment.userId) }
+            ivAvatar.setOnClickListener(openProfile)
+            tvName.setOnClickListener(openProfile)
+
             // Format time
             val timestamp = comment.timestamp
             if (timestamp != null) {
@@ -79,7 +85,7 @@ class CommentsAdapter(
             // Hiển thị số like
             tvLikes.text = if (comment.likedBy.isNotEmpty()) comment.likedBy.size.toString() else ""
 
-            // --- [SỬA LỖI] XỬ LÝ HIỂN THỊ MEDIA ---
+            // Xử lý hiển thị Media (Ảnh)
             ivMedia.visibility = View.GONE
             layoutAudio.visibility = View.GONE
 
@@ -87,7 +93,6 @@ class CommentsAdapter(
                 when (comment.mediaType) {
                     "IMAGE" -> {
                         ivMedia.visibility = View.VISIBLE
-
                         Glide.with(itemView.context)
                             .load(comment.mediaUrl)
                             .placeholder(R.drawable.bg_search_rounded)
@@ -95,28 +100,19 @@ class CommentsAdapter(
 
                         // Sự kiện Click xem ảnh Full Screen
                         ivMedia.setOnClickListener {
-                            // 1. Kiểm tra xem có URL không
                             if (comment.mediaUrl == null) return@setOnClickListener
-
-                            // 2. Thuật toán tìm Activity cha từ ContextWrapper
                             var context = itemView.context
                             while (context is android.content.ContextWrapper) {
                                 if (context is androidx.appcompat.app.AppCompatActivity) {
-                                    // Đã tìm thấy Activity -> Mở Dialog
                                     FullScreenImageDialogFragment.show(context.supportFragmentManager, comment.mediaUrl)
                                     return@setOnClickListener
                                 }
                                 context = context.baseContext
                             }
-
-                            // Nếu chạy đến đây mà vẫn không mở được -> Thử Log hoặc Toast để debug
-                            // Toast.makeText(itemView.context, "Không tìm thấy Activity!", Toast.LENGTH_SHORT).show()
                         }
                     }
-                    // Nếu sau này có VIDEO hay AUDIO thì thêm case vào đây
                 }
             }
-            // ---------------------------------------
 
             // Logic Avatar Realtime
             val cachedUser = userCache[comment.userId]
@@ -156,8 +152,6 @@ class CommentsAdapter(
 
             btnLike.setOnClickListener {
                 if (currentUid == null) return@setOnClickListener
-
-                // Lưu ý: comment.postId phải tồn tại trong model Comment
                 val commentRef = db.collection("posts")
                     .document(comment.postId)
                     .collection("comments")
