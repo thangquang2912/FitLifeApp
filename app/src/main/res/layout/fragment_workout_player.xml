@@ -101,15 +101,16 @@
         android:id="@+id/btnPauseResume"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
+        android:layout_marginBottom="64dp"
         android:text="Pause"
         android:textColor="@color/white"
-        app:iconTint="@color/white"
-        app:cornerRadius="24dp"
         app:backgroundTint="@color/orange_primary"
+        app:cornerRadius="24dp"
         app:icon="@drawable/ic_pause"
+        app:iconTint="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintStart_toStartOf="parent" />
 
     <ImageButton

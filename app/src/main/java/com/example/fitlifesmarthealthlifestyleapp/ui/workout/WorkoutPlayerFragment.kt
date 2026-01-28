@@ -23,11 +23,15 @@ import com.example.fitlifesmarthealthlifestyleapp.domain.model.Exercise
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.launch
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 
 class WorkoutPlayerFragment : Fragment() {
 
     private val args: WorkoutPlayerFragmentArgs by navArgs()
     private val repository = WorkoutRepository()
+    private val userRepository = UserRepository()
+    private val auth = FirebaseAuth.getInstance()
 
     // Dữ liệu
     private var exerciseList = emptyList<Exercise>()
@@ -214,6 +218,19 @@ class WorkoutPlayerFragment : Fragment() {
     private fun finishWorkout() {
         // Hủy timer để tránh chạy ngầm
         countDownTimer?.cancel()
+
+        // Lưu calo vào Firebase
+        val uid = auth.currentUser?.uid
+        if (uid != null) {
+            // Tính toán calo (Lấy từ workout program)
+            val caloriesBurned = args.workoutProgram.caloriesBurn
+            val workoutName = args.workoutProgram.name
+
+            // Gọi coroutine để lưu
+            lifecycleScope.launch {
+                userRepository.logCalorieBurn(uid, caloriesBurned)
+            }
+        }
 
         // Hiển thị hộp thoại Chúc mừng + Hỏi ghi lịch
         AlertDialog.Builder(requireContext())

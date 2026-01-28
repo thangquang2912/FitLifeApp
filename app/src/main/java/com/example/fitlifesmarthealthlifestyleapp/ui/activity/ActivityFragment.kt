@@ -34,6 +34,9 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import kotlin.math.max
+import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.UserRepository
 
 class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
 
@@ -41,6 +44,8 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
     private lateinit var mapView: MapView
     private var currentMarker: Marker? = null
     private var routePolyline: Polyline? = null
+    private val userRepository = UserRepository()
+    private val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
 
     private lateinit var tvTime: TextView
     private lateinit var tvDistance: TextView
@@ -254,6 +259,19 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
 
     private fun completeTracking() {
         handler.removeCallbacks(timeRunnable)
+
+        // Lấy giá trị calo hiện tại từ ViewModel
+        val burnedCalories = viewModel.calories.value ?: 0
+
+        // LƯU CALO VÀO FIREBASE
+        val uid = auth.currentUser?.uid
+        if (uid != null && burnedCalories > 0) {
+            lifecycleScope.launch {
+                // Lưu với source là "Running" hoặc "Cycling" tùy mode
+                userRepository.logCalorieBurn(uid, burnedCalories)
+                Toast.makeText(context, "Calories saved to history!", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         trackingService?.stopTracking()
         viewModel.stopTracking()

@@ -49,9 +49,15 @@ class HomeViewModel : ViewModel() {
     fun loadTodayCalories() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
-            val summary = nutritionRepository.getDailySummary(uid, Date())
-            val calories = summary?.get("totalCalories") as? Long ?: 0L
-            _totalCalories.value = calories.toInt()
+            val result = userRepository.getTodayActiveCalories(uid)
+
+            if (result.isSuccess) {
+                val activeCals = result.getOrDefault(0)
+                _totalCalories.value = activeCals
+            } else {
+                // Xử lý lỗi
+                _totalCalories.value = 0
+            }
         }
     }
 
