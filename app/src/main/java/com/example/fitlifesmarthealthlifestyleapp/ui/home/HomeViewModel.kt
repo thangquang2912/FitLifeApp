@@ -70,7 +70,7 @@ class HomeViewModel : ViewModel() {
         _todaySteps.value = newTotalSteps
         
         viewModelScope.launch {
-            stepRepository.updateSteps(uid, newTotalSteps)
+            stepRepository.incrementSteps(uid, steps)
         }
     }
 
@@ -227,8 +227,6 @@ class HomeViewModel : ViewModel() {
             viewModelScope.launch {
                 waterRepository.saveWaterLog(currentLog)
             }
-        } else {
-            _toastMessage.value = "Lượng nước đã về 0 rồi!"
         }
     }
 

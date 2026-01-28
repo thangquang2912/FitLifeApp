@@ -18,11 +18,10 @@ data class User(
     // 2. Chỉ số cơ thể
     var gender: String = "Male",
     var birthday: Timestamp = Timestamp.now(),
-    var height: Int = 170, // Đơn vị: cm
+    var height: Int = 170, // Đơn vị: cm (Mặc định 170 để tránh chia cho 0)
     var weight: Float = 60f, // Đơn vị: kg
 
-    // Mức độ vận động: "Sedentary", "Lightly Active", "Moderately Active", "Very Active"
-    // Dùng để tính BMR (Feature 16)
+    // Mức độ vận động
     var activityLevel: String = "Sedentary",
 
     var dailyWaterGoal: Int = 0,
@@ -32,31 +31,36 @@ data class User(
     var weeklyRunning: Int = 0,
     var totalDistanceKm: Double = 0.0
 ): Parcelable {
-    // Tính tuổi
+    // Tính tuổi - Kiểm tra an toàn
     @get:Exclude
     val age: Int
         get() {
-            val today = Calendar.getInstance()
-            val dob = Calendar.getInstance()
-            dob.time = birthday.toDate()
+            try {
+                val today = Calendar.getInstance()
+                val dob = Calendar.getInstance()
+                dob.time = birthday.toDate()
 
-            if (dob.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
-                dob.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
+                // Nếu ngày sinh là hôm nay (người dùng mới chưa set)
+                if (dob.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+                    dob.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
+                    return 0
+                }
+
+                var calculatedAge = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR)
+                if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
+                    calculatedAge--
+                }
+                return calculatedAge
+            } catch (e: Exception) {
                 return 0
             }
-
-            var calculatedAge = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR)
-            if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
-                calculatedAge--
-            }
-            return calculatedAge
         }
 
-    // 2. Tính BMI
+    // Tính BMI - Chống lỗi chia cho 0
     @get:Exclude
     val bmi: Float
         get() {
-            if (height <= 0) return 0f
+            if (height <= 0 || weight <= 0f) return 0f
             val heightInMeter = height / 100f
             return weight / (heightInMeter * heightInMeter)
         }
