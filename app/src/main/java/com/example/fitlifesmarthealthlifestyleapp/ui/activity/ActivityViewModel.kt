@@ -8,6 +8,7 @@ import com.example.fitlifesmarthealthlifestyleapp.data.repository.ActivityReposi
 import com.example.fitlifesmarthealthlifestyleapp.data.repository.UserRepository
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.ActivityLog
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.LatLngPoint
+import com.example.fitlifesmarthealthlifestyleapp.domain.utils.Event
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
@@ -38,8 +39,8 @@ class ActivityViewModel : ViewModel() {
     private val _calories = MutableLiveData(0)
     val calories: LiveData<Int> = _calories
 
-    private val _toastMessage = MutableLiveData<String>()
-    val toastMessage: LiveData<String> = _toastMessage
+    private val _toastMessage = MutableLiveData<Event<String>>()
+    val toastMessage: LiveData<Event<String>> = _toastMessage
 
     private val _routePoints = MutableLiveData<List<LatLngPoint>>(emptyList())
     val routePoints: LiveData<List<LatLngPoint>> = _routePoints
@@ -141,7 +142,7 @@ class ActivityViewModel : ViewModel() {
 
     fun completeActivity() {
         val uid = auth.currentUser?.uid ?: run {
-            _toastMessage.value = "Please login first"
+            _toastMessage.value = Event("Please login first")
             return
         }
 
@@ -155,7 +156,7 @@ class ActivityViewModel : ViewModel() {
         val route = _routePoints.value ?: emptyList()
 
         if (durationSec < 10 || route.size < 2) {
-            _toastMessage.value = "Activity too short to save"
+            _toastMessage.value = Event("Activity too short to save")
             return
         }
 
@@ -183,10 +184,10 @@ class ActivityViewModel : ViewModel() {
         viewModelScope.launch {
             val result = activityRepository.saveActivityLog(log)
             if (result.isSuccess) {
-                _toastMessage.value = "Activity saved!"
+                _toastMessage.value = Event("Activity saved!")
                 resetStats()
             } else {
-                _toastMessage.value = "Failed to save: ${result.exceptionOrNull()?.message}"
+                _toastMessage.value = Event("Failed to save: ${result.exceptionOrNull()?.message}")
             }
         }
     }

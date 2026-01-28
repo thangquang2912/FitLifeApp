@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fitlifesmarthealthlifestyleapp.data. repository.UserRepository
 import com. example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
+import com.example.fitlifesmarthealthlifestyleapp.domain.utils.Event
 import com.example.fitlifesmarthealthlifestyleapp.domain. model.User
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
 import com.example. fitlifesmarthealthlifestyleapp.domain.utils.DateUtils
@@ -24,8 +25,8 @@ class HomeViewModel : ViewModel() {
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _toastMessage = MutableLiveData<String>()
-    val toastMessage: LiveData<String> = _toastMessage
+    private val _toastMessage = MutableLiveData<Event<String>>()
+    val toastMessage: LiveData<Event<String>> = _toastMessage
 
     private val _user = MutableLiveData<User?>()
     val user: LiveData<User?> = _user
@@ -54,7 +55,7 @@ class HomeViewModel : ViewModel() {
                     createNewLogForToday(uid, todayId)
                 }
             } else {
-                _toastMessage.value = "Lỗi tải dữ liệu:  ${result.exceptionOrNull()?.message}"
+                _toastMessage.value = Event("Lỗi tải dữ liệu:  ${result.exceptionOrNull()?.message}")
             }
             _isLoading.value = false
         }
@@ -72,7 +73,7 @@ class HomeViewModel : ViewModel() {
                 val user = result.getOrNull()
                 _user.value = user
             } else {
-                _toastMessage.value = "Failed to load goals: ${result.exceptionOrNull()?.message}"
+                _toastMessage.value = Event("Failed to load goals: ${result.exceptionOrNull()?.message}")
             }
             _isLoading.value = false
         }
@@ -104,9 +105,9 @@ class HomeViewModel : ViewModel() {
 
                 // Reload user data
                 loadUserGoals()
-                _toastMessage.value = "Goals saved successfully! "
+                _toastMessage.value = Event("Goals saved successfully! ")
             } else {
-                _toastMessage.value = "Failed to save goals: ${result. exceptionOrNull()?.message}"
+                _toastMessage.value = Event("Failed to save goals: ${result. exceptionOrNull()?.message}")
             }
 
             _isLoading.value = false
@@ -190,7 +191,6 @@ class HomeViewModel : ViewModel() {
             // Update 2: Cập nhật vào User Profile
             userRepository.updateUserWaterGoal(uid, newGoal)
 
-            _toastMessage.value = "Daily goal updated!"
         }
     }
 

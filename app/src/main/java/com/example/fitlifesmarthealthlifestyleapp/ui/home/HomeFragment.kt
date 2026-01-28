@@ -407,8 +407,10 @@ class HomeFragment : Fragment() {
         }
 
         // Khi có thông báo lỗi hoặc thành công (Toast)
-        homeViewModel.toastMessage.observe(viewLifecycleOwner) { message ->
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        homeViewModel.toastMessage.observe(viewLifecycleOwner) {  event ->
+            event.getContentIfNotHandled()?.let { message ->
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Khi đang loading (có thể hiện ProgressBar xoay xoay nếu muốn)

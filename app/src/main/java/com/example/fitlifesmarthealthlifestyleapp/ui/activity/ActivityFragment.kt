@@ -214,8 +214,10 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
         viewModel.speed.observe(viewLifecycleOwner) { tvAvgSpeed.text = String.format("%.1f km/h", it) }
         viewModel.calories.observe(viewLifecycleOwner) { tvCalories.text = "$it kcal" }
 
-        viewModel.toastMessage.observe(viewLifecycleOwner) {
-            Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
+        viewModel.toastMessage.observe(viewLifecycleOwner) { event ->
+            event.getContentIfNotHandled()?.let { message ->
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+            }
         }
 
         viewModel.isTracking.observe(viewLifecycleOwner) { isTracking ->
