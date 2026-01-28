@@ -227,8 +227,6 @@ class HomeViewModel : ViewModel() {
             viewModelScope.launch {
                 waterRepository.saveWaterLog(currentLog)
             }
-        } else {
-            _toastMessage.value = "Lượng nước đã về 0 rồi!"
         }
     }
 

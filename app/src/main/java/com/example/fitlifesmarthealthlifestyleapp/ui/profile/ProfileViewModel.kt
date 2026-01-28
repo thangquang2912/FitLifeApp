@@ -15,6 +15,8 @@ import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import com.cloudinary.android.callback.UploadCallback
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,106 +41,81 @@ class ProfileViewModel : ViewModel() {
     private val _weeklySteps = MutableLiveData<List<Int>>()
     val weeklySteps: LiveData<List<Int>> = _weeklySteps
 
-    // LiveData chứa danh sách các thứ trong tuần (Mon, Tue...) cho biểu đồ
     private val _weeklyLabels = MutableLiveData<List<String>>()
     val weeklyLabels: LiveData<List<String>> = _weeklyLabels
 
+    private var waterStreamJob: Job? = null
+    private var stepsStreamJob: Job? = null
+    private var userStreamJob: Job? = null
+
     fun fetchUserProfile() {
-        val currentUid = auth.currentUser?.uid
-        if (currentUid == null) {
-            _user.value = null
-            return
-        }
+        val currentUid = auth.currentUser?.uid ?: return
 
-        if (_user.value == null || _user.value?.uid != currentUid) {
-            _isLoading.value = true
-
-            viewModelScope.launch {
-                val result = userRepository.getUserDetails(currentUid)
-
-                if (result.isSuccess) {
-                    _user.value = result.getOrNull()
-                    
-                    // Tạo danh sách nhãn ngày (Labels) cho 7 ngày gần nhất
+        // --- CHỈNH SỬA: Lắng nghe User Real-time để cập nhật Goal ngay lập tức ---
+        userStreamJob?.cancel()
+        userStreamJob = viewModelScope.launch {
+            userRepository.getUserDetailsStream(currentUid).collect { user ->
+                _user.value = user
+                if (user != null) {
                     generateWeeklyLabels()
-                    
                     fetchWeeklyWaterData(currentUid)
                     fetchWeeklyStepsData(currentUid)
-                } else {
-                    val error = result.exceptionOrNull()
-                    error?.printStackTrace()
-                    _statusMessage.value = "Lỗi tải dữ liệu: ${result.exceptionOrNull()?.message}"
                 }
-
-                _isLoading.value = false
             }
         }
     }
 
-    // Hàm tạo nhãn cho biểu đồ (7 ngày gần nhất tính từ hôm nay ngược về trước)
     private fun generateWeeklyLabels() {
         val calendar = Calendar.getInstance()
-        val dayFormat = SimpleDateFormat("EEE", Locale.getDefault()) // VD: Mon, Tue...
+        val dayFormat = SimpleDateFormat("EEE", Locale.getDefault())
         val labels = mutableListOf<String>()
-        
         for (i in 0 until 7) {
             labels.add(dayFormat.format(calendar.time))
             calendar.add(Calendar.DAY_OF_YEAR, -1)
         }
-        
-        // Đảo ngược để có thứ tự từ cũ đến mới (hôm nay nằm cuối cùng bên phải)
         _weeklyLabels.value = labels.reversed()
     }
 
     private fun fetchWeeklyWaterData(uid: String) {
-        viewModelScope.launch {
-            val result = waterRepository.getWeeklyWaterLogs(uid)
-            if (result.isSuccess) {
-                val logs = result.getOrNull() ?: emptyList()
+        waterStreamJob?.cancel()
+        waterStreamJob = viewModelScope.launch {
+            waterRepository.getWeeklyWaterLogsStream(uid).collect { logs ->
                 val calendar = Calendar.getInstance()
                 val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val last7DaysData = mutableListOf<Int>()
                 val logMap = logs.associateBy { it.id }
-                
                 val tempDays = mutableListOf<String>()
                 for (i in 0 until 7) {
                     tempDays.add(sdf.format(calendar.time))
                     calendar.add(Calendar.DAY_OF_YEAR, -1)
                 }
-                
                 tempDays.reversed().forEach { dateId ->
                     last7DaysData.add(logMap[dateId]?.currentIntake ?: 0)
                 }
-                
-                _weeklyWaterLogs.value = last7DaysData
+                _weeklyWaterLogs.postValue(last7DaysData)
             }
         }
     }
 
     private fun fetchWeeklyStepsData(uid: String) {
-        viewModelScope.launch {
-            val result = stepRepository.getWeeklySteps(uid)
-            if (result.isSuccess) {
-                val dataList = result.getOrNull() ?: emptyList()
+        stepsStreamJob?.cancel()
+        stepsStreamJob = viewModelScope.launch {
+            stepRepository.getWeeklyStepsStream(uid).collect { dataList ->
                 val calendar = Calendar.getInstance()
                 val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val last7DaysSteps = mutableListOf<Int>()
-                
                 val stepsMap = dataList.associate { 
                     (it["dateId"] as? String ?: "") to (it["steps"] as? Long ?: 0L).toInt()
                 }
-                
                 val tempDays = mutableListOf<String>()
                 for (i in 0 until 7) {
                     tempDays.add(sdf.format(calendar.time))
                     calendar.add(Calendar.DAY_OF_YEAR, -1)
                 }
-                
                 tempDays.reversed().forEach { dateId ->
                     last7DaysSteps.add(stepsMap[dateId] ?: 0)
                 }
-                
-                _weeklySteps.value = last7DaysSteps
+                _weeklySteps.postValue(last7DaysSteps)
             }
         }
     }
@@ -146,23 +123,22 @@ class ProfileViewModel : ViewModel() {
     fun signOut() {
         auth.signOut()
         _user.value = null
+        waterStreamJob?.cancel()
+        stepsStreamJob?.cancel()
+        userStreamJob?.cancel()
     }
 
     fun saveUserProfile(user: User, imageUri: Uri?) {
         _isLoading.value = true
-
         if (imageUri == null) {
             updateUserProfile(user)
             return
         }
-
         MediaManager.get().upload(imageUri)
             .option("folder", "fitlife_avatars")
             .option("public_id", user.uid)
             .option("overwrite", true)
             .callback(object : UploadCallback {
-                override fun onStart(requestId: String) { }
-                override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) { }
                 override fun onSuccess(requestId: String, resultData: Map<*, *>) {
                     val secureUrl = resultData["secure_url"] as String
                     user.photoUrl = secureUrl
@@ -172,7 +148,9 @@ class ProfileViewModel : ViewModel() {
                     _isLoading.postValue(false)
                     _statusMessage.postValue("Lỗi upload ảnh: ${error.description}")
                 }
-                override fun onReschedule(requestId: String, error: ErrorInfo) { }
+                override fun onStart(requestId: String) {}
+                override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {}
+                override fun onReschedule(requestId: String, error: ErrorInfo) {}
             })
             .dispatch()
     }
