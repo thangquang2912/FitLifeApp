@@ -5,8 +5,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -59,8 +57,7 @@ class CommentsAdapter(
         private val tvLikes: TextView = itemView.findViewById(R.id.tvCommentLikes)
         private val tvReply: TextView = itemView.findViewById(R.id.tvReply)
 
-        // [MỚI] View Media (Ảnh/Video/Audio)
-        // Đảm bảo bạn đã thêm các ID này vào item_comment.xml như hướng dẫn trước
+        // View Media
         private val ivMedia: ImageView = itemView.findViewById(R.id.ivCommentMedia)
         private val layoutAudio: View = itemView.findViewById(R.id.layoutCommentAudio)
 
@@ -71,13 +68,18 @@ class CommentsAdapter(
             tvContent.text = comment.content
 
             // Format time
-            val sdf = SimpleDateFormat("HH:mm, dd/MM/yyyy", Locale.getDefault())
-            tvTime.text = sdf.format(comment.timestamp.toDate())
+            val timestamp = comment.timestamp
+            if (timestamp != null) {
+                val sdf = SimpleDateFormat("HH:mm, dd/MM/yyyy", Locale.getDefault())
+                tvTime.text = sdf.format(timestamp.toDate())
+            } else {
+                tvTime.text = ""
+            }
 
             // Hiển thị số like
             tvLikes.text = if (comment.likedBy.isNotEmpty()) comment.likedBy.size.toString() else ""
 
-            // --- [MỚI] XỬ LÝ HIỂN THỊ MEDIA ---
+            // --- [SỬA LỖI] XỬ LÝ HIỂN THỊ MEDIA ---
             ivMedia.visibility = View.GONE
             layoutAudio.visibility = View.GONE
 
@@ -85,44 +87,36 @@ class CommentsAdapter(
                 when (comment.mediaType) {
                     "IMAGE" -> {
                         ivMedia.visibility = View.VISIBLE
-                        ivMedia.foreground = null
 
                         Glide.with(itemView.context)
                             .load(comment.mediaUrl)
                             .placeholder(R.drawable.bg_search_rounded)
                             .into(ivMedia)
 
-                        // [MỚI] Bấm vào ảnh -> Xem Full Screen
+                        // Sự kiện Click xem ảnh Full Screen
                         ivMedia.setOnClickListener {
-                            val activity = itemView.context as? androidx.appcompat.app.AppCompatActivity
-                            activity?.let { act ->
-                                FullScreenImageDialogFragment.show(act.supportFragmentManager, comment.mediaUrl)
+                            // 1. Kiểm tra xem có URL không
+                            if (comment.mediaUrl == null) return@setOnClickListener
+
+                            // 2. Thuật toán tìm Activity cha từ ContextWrapper
+                            var context = itemView.context
+                            while (context is android.content.ContextWrapper) {
+                                if (context is androidx.appcompat.app.AppCompatActivity) {
+                                    // Đã tìm thấy Activity -> Mở Dialog
+                                    FullScreenImageDialogFragment.show(context.supportFragmentManager, comment.mediaUrl)
+                                    return@setOnClickListener
+                                }
+                                context = context.baseContext
                             }
+
+                            // Nếu chạy đến đây mà vẫn không mở được -> Thử Log hoặc Toast để debug
+                            // Toast.makeText(itemView.context, "Không tìm thấy Activity!", Toast.LENGTH_SHORT).show()
                         }
                     }
-//                    "VIDEO" -> {
-//                        ivMedia.visibility = View.VISIBLE
-//                        // Glide có thể load thumbnail từ video url
-//                        Glide.with(itemView.context)
-//                            .load(comment.mediaUrl)
-//                            .placeholder(R.drawable.bg_search_rounded)
-//                            .into(ivMedia)
-//
-//                        // Xử lý click video (Tạm thời thông báo, hoặc bạn có thể mở VideoPlayerActivity)
-//                        ivMedia.setOnClickListener {
-//                            Toast.makeText(itemView.context, "Play Video: ${comment.mediaUrl}", Toast.LENGTH_SHORT).show()
-//                        }
-//                    }
-//                    "AUDIO" -> {
-//                        layoutAudio.visibility = View.VISIBLE
-//                        layoutAudio.setOnClickListener {
-//                            // Xử lý click Audio
-//                            Toast.makeText(itemView.context, "Play Audio...", Toast.LENGTH_SHORT).show()
-//                        }
-//                    }
+                    // Nếu sau này có VIDEO hay AUDIO thì thêm case vào đây
                 }
             }
-            // -----------------------------------
+            // ---------------------------------------
 
             // Logic Avatar Realtime
             val cachedUser = userCache[comment.userId]
@@ -162,6 +156,8 @@ class CommentsAdapter(
 
             btnLike.setOnClickListener {
                 if (currentUid == null) return@setOnClickListener
+
+                // Lưu ý: comment.postId phải tồn tại trong model Comment
                 val commentRef = db.collection("posts")
                     .document(comment.postId)
                     .collection("comments")

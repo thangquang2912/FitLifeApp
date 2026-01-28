@@ -51,6 +51,8 @@
             android:layout_width="match_parent"
             android:layout_height="180dp"
             android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
             android:scaleType="centerCrop"
             android:visibility="gone"
             android:src="@drawable/bg_search_rounded" />
