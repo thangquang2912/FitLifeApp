@@ -1,7 +1,93 @@
 <resources>
+    <string name="vn">Vietnamese</string>
+    <string name="en">English</string>
     <string name="app_name">FitLife – Smart Health &amp; Lifestyle App</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <!-- Days of the week -->
+    <string name="monday">Monday</string>
+    <string name="tuesday">Tuesday</string>
+    <string name="wednesday">Wednesday</string>
+    <string name="thursday">Thursday</string>
+    <string name="friday">Friday</string>
+    <string name="saturday">Saturday</string>
+    <string name="sunday">Sunday</string>
+
+    <!-- Months -->
+    <string name="month_january">January</string>
+    <string name="month_february">February</string>
+    <string name="month_march">March</string>
+    <string name="month_april">April</string>
+    <string name="month_may">May</string>
+    <string name="month_june">June</string>
+    <string name="month_july">July</string>
+    <string name="month_august">August</string>
+    <string name="month_september">September</string>
+    <string name="month_october">October</string>
+    <string name="month_november">November</string>
+    <string name="month_december">December</string>
+
+    <!-- Home -->
+    <string name="morning">Good Morning</string>
+    <string name="afternoon">Good Afternoon</string>
+    <string name="evening">Good Evening</string>
+    <string name="night">Good Night</string>
+    <string name="steps">Steps</string>
+    <string name="calories">Calories</string>
+    <string name="water">Water</string>
+    <string name="water_intake">Water Intake</string>
+    <string name="ready_for_workout">Ready for your workout?</string>
+    <string name="try_activity_or_goals">Try with Activity or Setting Goals!</string>
+    <string name="start_activity">Start Activity</string>
+    <string name="set_goals">Set Goals</string>
+
+    <!-- Activity-->
+    <string name="time">Time</string>
+    <string name="distance">Distance</string>
+    <string name="pace">Pace</string>
+    <string name="avg_speed">Avg Speed</string>
+    <string name="complete_activity">Complete Activity</string>
+
+    <!-- Nutrition-->
+    <string name="ai_nutrition">AI Nutrition</string>
+    <string name="ai_nutrition_desc">
+        Stuck on what to eat next? Let AI suggest a perfect meal for your goals.
+    </string>
+    <string name="get_suggestion">Get Suggestion</string>
+    <string name="todays_macros">Today</string>
+    <string name="total">Total</string>
+    <string name="carbs">Carbs</string>
+    <string name="protein">Protein</string>
+    <string name="fat">Fat</string>
+    <string name="meals">Meals</string>
+    <string name="remaining">Remaining</string>
+    <string name="add_meal">Add Meal</string>
+    <string name="food_photo">Food Photo</string>
+    <string name="tap_to_add_photo">Tap to add photo</string>
+    <string name="dish_name">Dish Name</string>
+    <string name="portion_size">Portion Size</string>
+    <string name="meal_time">Time of Meal</string>
+    <string name="quick_macros">Quick Macros</string>
+    <string name="save_meal">Save Meal</string>
+
+    <!-- Profile Screen -->
+    <string name="height">Height</string>
+    <string name="weight">Weight</string>
+    <string name="age">Age</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="workout_programs">Workout Programs</string>
+    <string name="leaderboard_challenges">Leaderboard - Challenges</string>
+    <string name="workout_history">Workout History</string>
+    <string name="language">Language</string>
+    <string name="logout">Logout</string>
+
+    <!-- Language Dialog -->
+    <string name="select_language">Select Language</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Navigation -->
+    <string name="activity">Activity</string>
+    <string name="home">Home</string>
+    <string name="nutrition">Nutrition</string>
+
+
 </resources>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vn">Tiếng Việt</string>
+    <string name="en">Tiếng Anh</string>
+    <string name="app_name">FitLife – Ứng dụng Sức khỏe &amp; Phong cách sống</string>
+    <!-- Days of the week -->
+    <string name="monday">Thứ Hai</string>
+    <string name="tuesday">Thứ Ba</string>
+    <string name="wednesday">Thứ Tư</string>
+    <string name="thursday">Thứ Năm</string>
+    <string name="friday">Thứ Sáu</string>
+    <string name="saturday">Thứ Bảy</string>
+    <string name="sunday">Chủ Nhật</string>
+
+    <!-- Months -->
+    <string name="month_january">Tháng 1</string>
+    <string name="month_february">Tháng 2</string>
+    <string name="month_march">Tháng 3</string>
+    <string name="month_april">Tháng 4</string>
+    <string name="month_may">Tháng 5</string>
+    <string name="month_june">Tháng 6</string>
+    <string name="month_july">Tháng 7</string>
+    <string name="month_august">Tháng 8</string>
+    <string name="month_september">Tháng 9</string>
+    <string name="month_october">Tháng 10</string>
+    <string name="month_november">Tháng 11</string>
+    <string name="month_december">Tháng 12</string>
+
+    <!-- Home -->
+
+    <string name="morning">Chào buổi sáng</string>
+    <string name="afternoon">Chào buổi chiều</string>
+    <string name="evening">Chào buổi tối</string>
+    <string name="night">Chúc bạn ngủ ngon</string>
+    <string name="steps">Số bước</string>
+    <string name="calories">Calo</string>
+    <string name="water">Nước</string>
+    <string name="water_intake">Lượng nước uống</string>
+    <string name="ready_for_workout">Sẵn sàng cho buổi tập chưa?</string>
+    <string name="try_activity_or_goals">Hãy thử bắt đầu hoạt động hoặc đặt mục tiêu!</string>
+    <string name="start_activity">Bắt đầu</string>
+    <string name="set_goals">Đặt mục tiêu</string>
+
+    <!-- Activity-->
+    <string name="time">Thời gian</string>
+    <string name="distance">Quãng đường</string>
+    <string name="pace">Nhịp độ</string>
+    <string name="avg_speed">Tốc độ trung bình</string>
+    <string name="complete_activity">Hoàn thành hoạt động</string>
+
+    <!-- Nutrition-->
+    <string name="ai_nutrition">Dinh dưỡng với AI</string>
+    <string name="ai_nutrition_desc">
+        Không biết nên ăn gì tiếp theo? Hãy để AI gợi ý bữa ăn phù hợp với mục tiêu của bạn.
+    </string>
+    <string name="get_suggestion">Nhận gợi ý</string>
+    <string name="todays_macros">Dinh dưỡng hôm nay</string>
+    <string name="total">Tổng</string>
+    <string name="carbs">Tinh bột</string>
+    <string name="protein">Chất đạm</string>
+    <string name="fat">Chất béo</string>
+    <string name="meals">Bữa ăn</string>
+    <string name="remaining">Còn lại</string>
+    <string name="add_meal">Thêm bữa ăn</string>
+    <string name="food_photo">Ảnh món ăn</string>
+    <string name="tap_to_add_photo">Nhấn để thêm ảnh</string>
+    <string name="dish_name">Tên món ăn</string>
+    <string name="portion_size">Khẩu phần</string>
+    <string name="meal_time">Thời gian ăn</string>
+    <string name="quick_macros">Thông tin nhanh</string>
+    <string name="save_meal">Lưu bữa ăn</string>
+
+    <!-- Profile Screen -->
+    <string name="height">Chiều cao</string>
+    <string name="weight">Cân nặng</string>
+    <string name="age">Tuổi</string>
+    <string name="edit_profile">Chỉnh sửa hồ sơ</string>
+    <string name="workout_programs">Chương trình tập luyện</string>
+    <string name="leaderboard_challenges">Bảng xếp hạng - Thử thách</string>
+    <string name="workout_history">Lịch sử tập luyện</string>
+    <string name="language">Ngôn ngữ</string>
+    <string name="logout">Đăng xuất</string>
+
+    <!-- Language Dialog -->
+    <string name="select_language">Chọn ngôn ngữ</string>
+    <string name="confirm">Xác nhận</string>
+    <string name="cancel">Hủy</string>
+
+    <!-- Navigation -->
+    <string name="activity">Hoạt động</string>
+    <string name="home">Trang chủ</string>
+    <string name="nutrition">Dinh dưỡng</string>
+</resources>
