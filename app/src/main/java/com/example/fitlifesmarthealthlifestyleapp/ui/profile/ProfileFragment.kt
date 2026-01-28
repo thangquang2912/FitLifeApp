@@ -209,5 +209,9 @@ class ProfileFragment : Fragment() {
         btnWorkoutPrograms.setOnClickListener {
             findNavController().navigate(R.id.workoutProgramFragment)
         }
+
+        btnLeaderboardChallenges.setOnClickListener {
+            findNavController().navigate(R.id.leaderboardFragment)
+        }
     }
 }
