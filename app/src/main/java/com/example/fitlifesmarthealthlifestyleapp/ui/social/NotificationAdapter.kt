@@ -1,5 +1,6 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.social
 
+import android.graphics.Color
 import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
@@ -33,41 +34,50 @@ class NotificationAdapter(
         val item = notifications[position]
         val context = holder.itemView.context
 
-        // 1. Hiển thị thông tin
+        // 1. HIỂN THỊ THÔNG TIN NỘI DUNG
         holder.tvContent.text = "${item.senderName} ${item.message}"
+
         val sdf = SimpleDateFormat("HH:mm dd/MM", Locale.getDefault())
         holder.tvTime.text = sdf.format(item.timestamp.toDate())
-        Glide.with(context).load(item.senderAvatar).placeholder(R.drawable.ic_user).circleCrop().into(holder.ivAvatar)
 
-        // Icon loại thông báo
-        val iconRes = if (item.type == "MESSAGE") R.drawable.ic_chat else R.drawable.ic_notifications
-        holder.ivType.setImageResource(iconRes)
+        // 2. HIỂN THỊ AVATAR (Quan trọng: Load đúng ảnh người gửi)
+        Glide.with(context)
+            .load(item.senderAvatar)
+            .placeholder(R.drawable.ic_user)
+            .error(R.drawable.ic_user)
+            .circleCrop() // Đảm bảo ảnh bo tròn theo layout
+            .into(holder.ivAvatar)
 
-        // 2. LOGIC MÀU NỀN (Quan trọng)
+        // Hiển thị Icon loại thông báo (Like/Comment/Message...)
+        val iconTypeRes = when(item.type) {
+            "MESSAGE" -> R.drawable.ic_chat
+            else -> R.drawable.ic_notifications
+        }
+        holder.ivType.setImageResource(iconTypeRes)
+
+        // 3. LOGIC MÀU NỀN (Chưa đọc: CAM, Đã đọc: TRẮNG)
         if (!item.isRead) {
-            // Chưa đọc (false) -> Màu Cam
-            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.orange_light_bg))
-            holder.tvContent.setTypeface(null, Typeface.BOLD) // Chữ đậm
+            // TRẠNG THÁI CHƯA ĐỌC
+            holder.itemView.setBackgroundColor(Color.parseColor("#FFF3E0")) // Màu cam nhạt
+            holder.tvContent.setTypeface(null, Typeface.BOLD)
             holder.ivUnreadDot.visibility = View.VISIBLE
         } else {
-            // Đã đọc (true) -> Màu Trắng
+            // TRẠNG THÁI ĐÃ ĐỌC
             holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.white))
             holder.tvContent.setTypeface(null, Typeface.NORMAL)
             holder.ivUnreadDot.visibility = View.GONE
         }
 
-        // 3. SỰ KIỆN CLICK
+        // 4. SỰ KIỆN CLICK
         holder.itemView.setOnClickListener {
-            // Nếu chưa đọc -> Đổi sang đã đọc NGAY LẬP TỨC tại client
             if (!item.isRead) {
-                item.isRead = true // Update Model
-
-                // Update UI ngay lập tức (không đợi Firebase)
+                // Cập nhật giao diện ngay lập tức sang màu trắng
+                item.isRead = true
                 holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.white))
                 holder.tvContent.setTypeface(null, Typeface.NORMAL)
                 holder.ivUnreadDot.visibility = View.GONE
             }
-            // Gọi callback để Fragment xử lý tiếp (Update Firebase & Chuyển trang)
+            // Gọi callback xử lý Firebase và điều hướng
             onItemClick(item)
         }
     }

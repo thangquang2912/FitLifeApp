@@ -373,16 +373,19 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
             }
     }
 
+    // Trong CommentsDialogFragment.kt
     private fun sendNotificationToPostOwner(postId: String, senderId: String, senderName: String, senderAvatar: String, message: String) {
         db.collection("posts").document(postId).get().addOnSuccessListener { document ->
             val ownerId = document.getString("userId") ?: return@addOnSuccessListener
+
+            // Gọi Helper để gửi thông báo
             NotificationHelper.sendNotification(
                 recipientId = ownerId,
                 senderId = senderId,
                 senderName = senderName,
                 senderAvatar = senderAvatar,
                 postId = postId,
-                type = "COMMENT",
+                type = "MESSAGE",
                 content = message
             )
         }

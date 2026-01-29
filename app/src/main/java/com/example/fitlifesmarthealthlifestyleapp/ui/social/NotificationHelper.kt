@@ -24,7 +24,7 @@ object NotificationHelper {
             "COMMENT" -> "commented: \"$content\""
             "SHARE" -> "shared your post."
             "POST" -> "posted a new update."
-            "MESSAGE" -> "sent you a message."
+            "MESSAGE" -> "sent a message to community group."
             "FOLLOW" -> "started following you."
             else -> "interacted with you."
         }
@@ -48,11 +48,19 @@ object NotificationHelper {
             .set(notification)
     }
 
-    fun sendToAllFollowers(senderId: String, senderName: String, senderAvatar: String, postId: String) {
+    fun sendToAllFollowers(senderId: String, senderName: String, senderAvatar: String, postId: String = "", type: String = "POST") {
         db.collection("users").document(senderId).get().addOnSuccessListener { doc ->
+            // Lấy danh sách những người đang follow mình ( followers )
             val followers = doc.get("followers") as? List<String> ?: emptyList()
             for (followerId in followers) {
-                sendNotification(followerId, senderId, senderName, senderAvatar, postId, "POST")
+                sendNotification(
+                    recipientId = followerId,
+                    senderId = senderId,
+                    senderName = senderName,
+                    senderAvatar = senderAvatar,
+                    postId = postId,
+                    type = type
+                )
             }
         }
     }

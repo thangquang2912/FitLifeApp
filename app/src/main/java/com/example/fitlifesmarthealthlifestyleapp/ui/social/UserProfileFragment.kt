@@ -235,10 +235,26 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
     private fun toggleLike(post: Post) {
         if (currentUid == null) return
         val postRef = db.collection("posts").document(post.postId)
+
         if (post.likedBy.contains(currentUid)) {
+            // Unlike
             postRef.update("likeCount", FieldValue.increment(-1), "likedBy", FieldValue.arrayRemove(currentUid))
         } else {
+            // [FIX] Like và Gửi thông báo
             postRef.update("likeCount", FieldValue.increment(1), "likedBy", FieldValue.arrayUnion(currentUid))
+                .addOnSuccessListener {
+                    // Lấy info của mình để gửi sang cho người kia biết ai like
+                    db.collection("users").document(currentUid).get().addOnSuccessListener { myDoc ->
+                        NotificationHelper.sendNotification(
+                            recipientId = post.userId,
+                            senderId = currentUid,
+                            senderName = myDoc.getString("displayName") ?: "Someone",
+                            senderAvatar = myDoc.getString("photoUrl") ?: "",
+                            postId = post.postId,
+                            type = "LIKE"
+                        )
+                    }
+                }
         }
     }
 

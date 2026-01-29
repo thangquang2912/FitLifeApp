@@ -240,6 +240,15 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
 
         db.collection("community_messages").document(msgId).set(message)
             .addOnSuccessListener {
+                // [MỚI] Gửi thông báo đến những người đang follow mình
+                NotificationHelper.sendToAllFollowers(
+                    senderId = currentUid,
+                    senderName = myName,
+                    senderAvatar = myAvatar,
+                    postId = "", // Tin nhắn chat không gắn với bài viết cụ thể
+                    type = "MESSAGE"
+                )
+
                 edtMessage.setText("")
                 selectedImageUri = null
                 layoutPreview.visibility = View.GONE

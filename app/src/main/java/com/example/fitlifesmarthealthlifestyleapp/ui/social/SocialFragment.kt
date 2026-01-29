@@ -172,7 +172,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         if (currentUid == null) return
         notificationBadgeListener = db.collection("users").document(currentUid)
             .collection("notifications")
-            .whereEqualTo("isRead", false)
+            .whereEqualTo("read", false)
             .addSnapshotListener { snapshots, e ->
                 if (e != null || snapshots == null || !isAdded) return@addSnapshotListener
                 badge.visibility = if (!snapshots.isEmpty) View.VISIBLE else View.GONE
@@ -304,15 +304,30 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 
     private fun filterPostsWithDeepLink() {
         val id = targetPostId ?: return
-        val targetPost = allPosts.find { it.postId == id }
-        if (targetPost != null) {
-            // [FIX] Sử dụng submitList và không cho phép quay lại danh sách toàn bộ tự động
-            adapter.submitList(listOf(targetPost))
 
-            // Sau khi đã hiển thị bài viết từ deeplink, xóa ID trong ViewModel
-            // để khi xoay màn hình hoặc resume không bị lọc lại
+        // Tìm vị trí của bài viết trong danh sách tổng
+        val index = allPosts.indexOfFirst { it.postId == id }
+
+        if (index != -1) {
+            val rvCommunity = view?.findViewById<RecyclerView>(R.id.rvCommunity)
+
+            // Cập nhật lại toàn bộ danh sách (hoặc giữ nguyên filter hiện tại)
+            adapter.submitList(allPosts) {
+                // [QUAN TRỌNG] Cuộn đến vị trí bài viết sau khi dữ liệu đã được nạp vào Adapter
+                rvCommunity?.post {
+                    // Cuộn bài viết lên đầu màn hình
+                    (rvCommunity.layoutManager as? LinearLayoutManager)?.scrollToPositionWithOffset(index, 0)
+
+                    // Sau khi cuộn xong thì xóa ID để tránh bị cuộn lại lần sau
+                    deepLinkViewModel.clearPostId()
+                    targetPostId = null
+                }
+            }
+        } else {
+            // Nếu không tìm thấy bài viết (có thể do đã bị xóa hoặc bị Block)
             deepLinkViewModel.clearPostId()
             targetPostId = null
+            Toast.makeText(context, "Post no longer exists", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -332,13 +347,28 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
     private fun toggleLike(post: Post) {
         if (currentUid == null) return
         val postRef = db.collection("posts").document(post.postId)
+
         if (post.likedBy.contains(currentUid)) {
+            // Unlike
             postRef.update("likeCount", FieldValue.increment(-1), "likedBy", FieldValue.arrayRemove(currentUid))
         } else {
+            // [FIX] Like và Gửi thông báo
             postRef.update("likeCount", FieldValue.increment(1), "likedBy", FieldValue.arrayUnion(currentUid))
+                .addOnSuccessListener {
+                    // Lấy info của mình để gửi sang cho người kia biết ai like
+                    db.collection("users").document(currentUid).get().addOnSuccessListener { myDoc ->
+                        NotificationHelper.sendNotification(
+                            recipientId = post.userId,
+                            senderId = currentUid,
+                            senderName = myDoc.getString("displayName") ?: "Someone",
+                            senderAvatar = myDoc.getString("photoUrl") ?: "",
+                            postId = post.postId,
+                            type = "LIKE"
+                        )
+                    }
+                }
         }
     }
-
     private fun showCommentsDialog(post: Post) {
         val dialog = CommentsDialogFragment()
         val bundle = Bundle()
