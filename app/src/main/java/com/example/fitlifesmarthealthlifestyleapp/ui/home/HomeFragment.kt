@@ -60,17 +60,6 @@ class HomeFragment : Fragment() {
     private lateinit var btnStart : MaterialButton
     private lateinit var btnSetGoals : MaterialButton
 
-    private var stepSensorManager: StepSensorManager? = null
-
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            startStepCounter()
-        } else {
-            Toast.makeText(requireContext(), getString(R.string.toast_permission_denied), Toast.LENGTH_SHORT).show()
-        }
-    }
 
 
     override fun onCreateView(
@@ -100,37 +89,6 @@ class HomeFragment : Fragment() {
         homeViewModel.loadTodayCalories()
         homeViewModel.loadTodaySteps()
 
-        checkStepPermission()
-    }
-
-    private fun checkStepPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.ACTIVITY_RECOGNITION
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    startStepCounter()
-                }
-                else -> {
-                    requestPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-                }
-            }
-        } else {
-            startStepCounter()
-        }
-    }
-
-    private fun startStepCounter() {
-        stepSensorManager = StepSensorManager(requireContext()) { steps ->
-            homeViewModel.updateSteps(steps)
-        }
-        stepSensorManager?.startListening()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        stepSensorManager?.stopListening()
     }
 
 
