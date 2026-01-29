@@ -125,7 +125,7 @@ class PersonalProfileFragment : Fragment(R.layout.fragment_personal_profile) {
                 tvFollowers.text = followers.size.toString()
                 tvFollowing.text = following.size.toString()
 
-                Glide.with(this).load(photoUrl).placeholder(R.drawable.ic_user).circleCrop().into(iv)
+                Glide.with(requireContext()).load(photoUrl).placeholder(R.drawable.ic_user).circleCrop().into(iv)
 
                 if (timestamp != null) {
                     val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())

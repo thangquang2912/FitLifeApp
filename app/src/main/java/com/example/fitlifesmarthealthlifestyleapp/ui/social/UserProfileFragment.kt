@@ -41,6 +41,8 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
     private lateinit var tvFollowersCount: TextView
     private lateinit var tvFollowingCount: TextView
     private lateinit var rvPosts: RecyclerView
+    private lateinit var layoutFollowers: View
+    private lateinit var layoutFollowing: View
 
     private lateinit var postAdapter: PostAdapter
     private var isFollowing = false
@@ -82,9 +84,21 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
         tvFollowersCount = view.findViewById(R.id.tvStatFollowersCount)
         tvFollowingCount = view.findViewById(R.id.tvStatFollowingCount)
         rvPosts = view.findViewById(R.id.rvOtherPosts)
+        layoutFollowers = view.findViewById(R.id.layoutOtherFollowers)
+        layoutFollowing = view.findViewById(R.id.layoutOtherFollowing)
 
         btnBack.setOnClickListener { parentFragmentManager.popBackStack() }
         btnMore.setOnClickListener { showOptionsMenu(it) }
+
+        // Nhấn vào avatar người khác để xem ảnh to
+        ivAvatar.setOnClickListener {
+            db.collection("users").document(targetUserId!!).get().addOnSuccessListener { doc ->
+                val url = doc.getString("photoUrl")
+                if (url != null && isAdded) {
+                    FullScreenImageDialogFragment.show(parentFragmentManager, url)
+                }
+            }
+        }
 
         setupRecyclerView()
         loadUserInfo()
@@ -100,8 +114,8 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
             onCommentClick = { post -> showCommentsDialog(post) },
             onShareClick = { post -> sharePost(post) },
             onLikeCountClick = { userIds -> showLikeListDialog(userIds) },
-            onUserClick = { /* Hiện tại đã ở trang cá nhân này rồi */ },
-            onBlockClick = { userId, userName -> /* Logic block đã có trong Menu More */ },
+            onUserClick = { /* Đang ở trang này rồi */ },
+            onBlockClick = { _, _ -> /* Đã có trong menu 3 chấm */ },
             onImageClick = { imageUrl -> FullScreenImageDialogFragment.show(parentFragmentManager, imageUrl) }
         )
         rvPosts.layoutManager = LinearLayoutManager(context)
@@ -138,8 +152,6 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
 
         batch.update(myRef, "blockedUsers", FieldValue.arrayUnion(targetUserId))
         batch.update(targetRef, "blockedBy", FieldValue.arrayUnion(currentUid))
-
-        // Unfollow lẫn nhau khi block
         batch.update(myRef, "following", FieldValue.arrayRemove(targetUserId))
         batch.update(targetRef, "followers", FieldValue.arrayRemove(currentUid))
 
@@ -154,14 +166,23 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
     private fun loadUserInfo() {
         userListener = db.collection("users").document(targetUserId!!)
             .addSnapshotListener { document, _ ->
-                if (document == null) return@addSnapshotListener
+                if (document == null || !isAdded) return@addSnapshotListener
+
                 tvName.text = document.getString("displayName") ?: "User"
                 tvEmail.text = document.getString("email") ?: ""
 
-                val followers = document.get("followers") as? List<*> ?: emptyList<Any>()
-                val following = document.get("following") as? List<*> ?: emptyList<Any>()
+                val followers = document.get("followers") as? List<String> ?: emptyList()
+                val following = document.get("following") as? List<String> ?: emptyList()
                 tvFollowersCount.text = followers.size.toString()
                 tvFollowingCount.text = following.size.toString()
+
+                // Gán sự kiện nhấn vào thống kê để xem danh sách (Fix lỗi không vào được trang cá nhân từ list)
+                layoutFollowers.setOnClickListener {
+                    UserListDialogFragment("Followers", followers).show(childFragmentManager, "Followers")
+                }
+                layoutFollowing.setOnClickListener {
+                    UserListDialogFragment("Following", following).show(childFragmentManager, "Following")
+                }
 
                 val dob = document.getTimestamp("dateOfBirth")
                 if (dob != null) {
@@ -169,18 +190,17 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
                     tvDob.text = "Born: ${sdf.format(dob.toDate())}"
                 }
 
-                if (isAdded) {
-                    Glide.with(this).load(document.getString("photoUrl")).placeholder(R.drawable.ic_user).circleCrop().into(ivAvatar)
-                }
+                Glide.with(this).load(document.getString("photoUrl")).placeholder(R.drawable.ic_user).circleCrop().into(ivAvatar)
             }
     }
 
     private fun checkFollowStatus() {
         if (currentUid == null) return
         db.collection("users").document(targetUserId!!).addSnapshotListener { snapshot, _ ->
-            val followers = snapshot?.get("followers") as? List<String> ?: emptyList()
+            if (snapshot == null || !isAdded) return@addSnapshotListener
+            val followers = snapshot.get("followers") as? List<String> ?: emptyList()
             isFollowing = followers.contains(currentUid)
-            if (isAdded) updateFollowButtonUI()
+            updateFollowButtonUI()
         }
     }
 
@@ -208,14 +228,16 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
             batch.update(targetRef, "followers", FieldValue.arrayUnion(currentUid))
 
             db.collection("users").document(currentUid!!).get().addOnSuccessListener { myDoc ->
-                NotificationHelper.sendNotification(
-                    recipientId = targetUserId!!,
-                    senderId = currentUid!!,
-                    senderName = myDoc.getString("displayName") ?: "User",
-                    senderAvatar = myDoc.getString("photoUrl") ?: "",
-                    postId = "",
-                    type = "FOLLOW"
-                )
+                if (isAdded) {
+                    NotificationHelper.sendNotification(
+                        recipientId = targetUserId!!,
+                        senderId = currentUid!!,
+                        senderName = myDoc.getString("displayName") ?: "User",
+                        senderAvatar = myDoc.getString("photoUrl") ?: "",
+                        postId = "",
+                        type = "FOLLOW"
+                    )
+                }
             }
         }
         batch.commit()
@@ -226,7 +248,8 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
             .whereEqualTo("userId", targetUserId)
             .orderBy("createdAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, _ ->
-                val posts = snapshot?.toObjects(Post::class.java) ?: emptyList()
+                if (snapshot == null || !isAdded) return@addSnapshotListener
+                val posts = snapshot.toObjects(Post::class.java)
                 tvPostCount.text = posts.size.toString()
                 postAdapter.submitList(posts)
             }
@@ -237,22 +260,21 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
         val postRef = db.collection("posts").document(post.postId)
 
         if (post.likedBy.contains(currentUid)) {
-            // Unlike
             postRef.update("likeCount", FieldValue.increment(-1), "likedBy", FieldValue.arrayRemove(currentUid))
         } else {
-            // [FIX] Like và Gửi thông báo
             postRef.update("likeCount", FieldValue.increment(1), "likedBy", FieldValue.arrayUnion(currentUid))
                 .addOnSuccessListener {
-                    // Lấy info của mình để gửi sang cho người kia biết ai like
                     db.collection("users").document(currentUid).get().addOnSuccessListener { myDoc ->
-                        NotificationHelper.sendNotification(
-                            recipientId = post.userId,
-                            senderId = currentUid,
-                            senderName = myDoc.getString("displayName") ?: "Someone",
-                            senderAvatar = myDoc.getString("photoUrl") ?: "",
-                            postId = post.postId,
-                            type = "LIKE"
-                        )
+                        if (isAdded) {
+                            NotificationHelper.sendNotification(
+                                recipientId = post.userId,
+                                senderId = currentUid,
+                                senderName = myDoc.getString("displayName") ?: "Someone",
+                                senderAvatar = myDoc.getString("photoUrl") ?: "",
+                                postId = post.postId,
+                                type = "LIKE"
+                            )
+                        }
                     }
                 }
         }
@@ -261,7 +283,7 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
     private fun sharePost(post: Post) {
         val deepLink = "https://fit-life-app-dl.vercel.app/post/${post.postId}"
         val intent = Intent(Intent.ACTION_SEND).apply {
-            putExtra(Intent.EXTRA_TEXT, "$deepLink")
+            putExtra(Intent.EXTRA_TEXT, "Check out this post on FitLife: $deepLink")
             type = "text/plain"
         }
         shareLauncher.launch(Intent.createChooser(intent, "Share"))
