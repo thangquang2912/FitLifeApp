@@ -210,6 +210,7 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
 
     private fun processSend(user: User, content: String) {
         lifecycleScope.launch {
+            Toast.makeText(context, "Checking content...", Toast.LENGTH_SHORT).show()
             btnSend.isEnabled = false
             progressBar.visibility = View.VISIBLE
 

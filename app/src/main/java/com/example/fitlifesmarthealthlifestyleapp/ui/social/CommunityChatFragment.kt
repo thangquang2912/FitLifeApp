@@ -190,7 +190,7 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
     private fun handleSendMessage() {
         val text = edtMessage.text.toString().trim()
         val context = requireContext()
-
+        Toast.makeText(context, "Checking content safety...", Toast.LENGTH_SHORT).show()
         btnSend.visibility = View.GONE
         progressBar.visibility = View.VISIBLE
         edtMessage.isEnabled = false
@@ -199,7 +199,7 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
             val isSafe = GeminiModerator.isContentSafe(context, selectedImageUri, text)
 
             if (!isSafe) {
-                Toast.makeText(context, "Nội dung vi phạm tiêu chuẩn cộng đồng!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Content violates community guidelines!", Toast.LENGTH_LONG).show()
                 resetInputState()
                 return@launch
             }
@@ -213,7 +213,7 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
                     uploadedImageUrl = url
                     messageType = "IMAGE"
                 } else {
-                    Toast.makeText(context, "Upload ảnh lỗi", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Upload error", Toast.LENGTH_SHORT).show()
                     resetInputState()
                     return@launch
                 }
@@ -255,7 +255,7 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
                 resetInputState()
             }
             .addOnFailureListener {
-                Toast.makeText(context, "Gửi lỗi: ${it.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
                 resetInputState()
             }
     }
