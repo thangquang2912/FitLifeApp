@@ -8,14 +8,21 @@
     <color name="background">#F9FAFB</color>
     <color name="text_grey">#4A5565</color>
     <color name="border">#99A1AF</color>
-
+    <color name="gray_light">#D3D3D3</color>
+    <color name="orange_block">#FF6D00</color>
+    <color name="gray_dark">#333333</color>
     <color name="purple_primary">#9747FF</color>
     <color name="purple_secondary">#B070FF</color>
     <color name="purple_light_alpha">#4DFFFFFF</color>
-
+    <color name="orange_light_transparent">#33FF9800</color>
     <color name="chart_protein">#40E0D0</color>
     <color name="chart_fat">#FFD33C</color>
     <color name="orange_light_bg">#FFF5E5</color>
+    
+    <!-- Màu cho biểu đồ nước -->
+    <color name="blue_primary">#2196F3</color>
+    <color name="blue_light">#82B1FF</color>
+
     <color name="light_blue_600">#FF039BE5</color>
     <color name="light_blue_900">#FF01579B</color>
     <color name="light_blue_A200">#FF40C4FF</color>

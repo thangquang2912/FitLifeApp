@@ -24,10 +24,10 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-// 1. CẬP NHẬT CONSTRUCTOR: Thêm onCommentLongClick
 class CommentsAdapter(
     private val onReplyClick: (Comment) -> Unit,
-    private val onCommentLongClick: (Comment) -> Unit // Thêm dòng này
+    private val onCommentLongClick: (Comment) -> Unit,
+    private val onUserClick: (String) -> Unit // [MỚI] Callback khi bấm vào user
 ) : ListAdapter<Comment, CommentsAdapter.CommentViewHolder>(CommentDiffCallback()) {
 
     private val userRepository = UserRepository()
@@ -42,14 +42,14 @@ class CommentsAdapter(
         val comment = getItem(position)
         holder.bind(comment)
 
-        // 2. THÊM SỰ KIỆN NHẤN GIỮ (LONG CLICK) VÀO TOÀN BỘ ITEM
         holder.itemView.setOnLongClickListener {
             onCommentLongClick(comment)
-            true // Trả về true để hệ thống biết sự kiện đã được xử lý (không kích hoạt click thường nữa)
+            true
         }
     }
 
     inner class CommentViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // View cơ bản
         private val ivAvatar: ImageView = itemView.findViewById(R.id.ivCommentAvatar)
         private val tvName: TextView = itemView.findViewById(R.id.tvCommentUser)
         private val tvContent: TextView = itemView.findViewById(R.id.tvCommentContent)
@@ -58,18 +58,61 @@ class CommentsAdapter(
         private val tvLikes: TextView = itemView.findViewById(R.id.tvCommentLikes)
         private val tvReply: TextView = itemView.findViewById(R.id.tvReply)
 
+        // View Media
+        private val ivMedia: ImageView = itemView.findViewById(R.id.ivCommentMedia)
+        private val layoutAudio: View = itemView.findViewById(R.id.layoutCommentAudio)
+
         private val db = FirebaseFirestore.getInstance()
         private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
 
         fun bind(comment: Comment) {
             tvContent.text = comment.content
 
+            // [MỚI] Sự kiện Click Avatar & Tên -> Mở Profile
+            val openProfile = View.OnClickListener { onUserClick(comment.userId) }
+            ivAvatar.setOnClickListener(openProfile)
+            tvName.setOnClickListener(openProfile)
+
             // Format time
-            val sdf = SimpleDateFormat("HH:mm, dd/MM/yyyy", Locale.getDefault())
-            tvTime.text = sdf.format(comment.timestamp.toDate())
+            val timestamp = comment.timestamp
+            if (timestamp != null) {
+                val sdf = SimpleDateFormat("HH:mm, dd/MM/yyyy", Locale.getDefault())
+                tvTime.text = sdf.format(timestamp.toDate())
+            } else {
+                tvTime.text = ""
+            }
 
             // Hiển thị số like
             tvLikes.text = if (comment.likedBy.isNotEmpty()) comment.likedBy.size.toString() else ""
+
+            // Xử lý hiển thị Media (Ảnh)
+            ivMedia.visibility = View.GONE
+            layoutAudio.visibility = View.GONE
+
+            if (comment.mediaUrl != null && comment.mediaType != null) {
+                when (comment.mediaType) {
+                    "IMAGE" -> {
+                        ivMedia.visibility = View.VISIBLE
+                        Glide.with(itemView.context)
+                            .load(comment.mediaUrl)
+                            .placeholder(R.drawable.bg_search_rounded)
+                            .into(ivMedia)
+
+                        // Sự kiện Click xem ảnh Full Screen
+                        ivMedia.setOnClickListener {
+                            if (comment.mediaUrl == null) return@setOnClickListener
+                            var context = itemView.context
+                            while (context is android.content.ContextWrapper) {
+                                if (context is androidx.appcompat.app.AppCompatActivity) {
+                                    FullScreenImageDialogFragment.show(context.supportFragmentManager, comment.mediaUrl)
+                                    return@setOnClickListener
+                                }
+                                context = context.baseContext
+                            }
+                        }
+                    }
+                }
+            }
 
             // Logic Avatar Realtime
             val cachedUser = userCache[comment.userId]

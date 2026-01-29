@@ -31,10 +31,12 @@ class PostAdapter(
     private val onLikeClick: (Post) -> Unit,
     private val onCommentClick: (Post) -> Unit,
     private val onLikeCountClick: (List<String>) -> Unit,
-    private val onUserClick: (String) -> Unit
+    private val onUserClick: (String) -> Unit,
+    private val onShareClick: (Post) -> Unit,
+    private val onBlockClick: (String, String) -> Unit,
+    private val onImageClick: (String) -> Unit // [MỚI] Callback khi bấm vào ảnh
 ) : ListAdapter<Post, PostAdapter.PostViewHolder>(PostDiffCallback()) {
 
-    // Cache để tránh load lại thông tin user quá nhiều lần
     private val userCache = mutableMapOf<String, User>()
     private val userRepository = UserRepository()
 
@@ -48,7 +50,7 @@ class PostAdapter(
     }
 
     inner class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // Ánh xạ View
+        // --- ÁNH XẠ VIEW ---
         private val ivAvatar: ImageView = itemView.findViewById(R.id.ivUserAvatar)
         private val tvUserName: TextView = itemView.findViewById(R.id.tvUserName)
         private val tvTime: TextView = itemView.findViewById(R.id.tvPostTime)
@@ -59,19 +61,19 @@ class PostAdapter(
         private val btnLike: ImageView = itemView.findViewById(R.id.btnLike)
         private val btnComment: ImageView = itemView.findViewById(R.id.btnComment)
         private val tvCommentCount: TextView = itemView.findViewById(R.id.tvCommentCount)
+        private val btnShare: ImageView = itemView.findViewById(R.id.btnShare)
+        private val tvShareCount: TextView = itemView.findViewById(R.id.tvShareCount)
         private val ivMore: ImageView = itemView.findViewById(R.id.ivMore)
 
-        // Firebase & User
         private val db = FirebaseFirestore.getInstance()
         private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+        private var lastClickTime: Long = 0
 
         fun bind(post: Post) {
-            // 1. Hiển thị nội dung Text
             tvCaption.text = post.caption
             tvLikes.text = if (post.likeCount > 0) "${post.likeCount}" else ""
             tvCommentCount.text = if (post.commentCount > 0) "${post.commentCount}" else ""
 
-            // 2. Hiển thị thông số tập luyện (nếu có)
             if (post.duration.isNotEmpty() && post.duration != "0 mins") {
                 tvStats.visibility = View.VISIBLE
                 val calStr = if (post.calories.isNotEmpty() && post.calories != "0 kcal") " • 🔥 ${post.calories}" else ""
@@ -83,59 +85,60 @@ class PostAdapter(
                 tvStats.visibility = View.GONE
             }
 
-            // 3. Hiển thị ngày giờ
-            val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-            tvTime.text = sdf.format(post.createdAt.toDate())
+            if (post.createdAt != null) {
+                val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+                tvTime.text = sdf.format(post.createdAt.toDate())
+            } else {
+                tvTime.text = "Just now"
+            }
 
-            // 4. Load ảnh bài viết
             Glide.with(itemView.context)
                 .load(post.postImageUrl)
                 .centerCrop()
-                .placeholder(R.drawable.bg_search_rounded) // Đổi thành placeholder của bạn nếu cần
+                .placeholder(R.drawable.bg_search_rounded)
                 .into(ivPostImage)
 
-            // Sự kiện xem ảnh Fullscreen
+            // [MỚI] Xử lý sự kiện click ảnh -> Gọi callback ra ngoài
             ivPostImage.setOnClickListener {
-                val activity = itemView.context as? AppCompatActivity
-                activity?.let {
-                    FullScreenImageDialogFragment.show(it.supportFragmentManager, post.postImageUrl)
+                if (post.postImageUrl.isNotEmpty()) {
+                    onImageClick(post.postImageUrl)
                 }
             }
 
-            // 5. Load thông tin người dùng (Avatar + Tên)
             loadUserRealtime(post)
 
-            // Sự kiện bấm vào Avatar -> Sang trang cá nhân
-            ivAvatar.setOnClickListener { onUserClick(post.userId) }
-            tvUserName.setOnClickListener { onUserClick(post.userId) }
+            val openProfile = View.OnClickListener { onUserClick(post.userId) }
+            ivAvatar.setOnClickListener(openProfile)
+            tvUserName.setOnClickListener(openProfile)
 
-            // 6. Xử lý Like UI & Sự kiện
             val isLiked = post.likedBy.contains(currentUid)
             updateLikeUI(isLiked)
 
-            btnLike.setOnClickListener {
-                onLikeClick(post)
-            }
+            btnLike.setOnClickListener { onLikeClick(post) }
 
-            // Sự kiện bấm vào số Like -> Xem danh sách
             tvLikes.setOnClickListener {
                 if (post.likedBy.isNotEmpty()) {
                     onLikeCountClick(post.likedBy)
                 }
             }
 
-            // 7. Xử lý Comment
-            btnComment.setOnClickListener {
-                onCommentClick(post)
+            btnComment.setOnClickListener { onCommentClick(post) }
+
+            if (post.shareCount > 0) {
+                tvShareCount.visibility = View.VISIBLE
+                tvShareCount.text = "${post.shareCount}"
+            } else {
+                tvShareCount.visibility = View.GONE
             }
 
-            // 8. Menu 3 chấm (Chỉ hiện nếu là bài của mình)
-            if (post.userId == currentUid) {
-                ivMore.visibility = View.VISIBLE
-                ivMore.setOnClickListener { showOptionsMenu(it, post) }
-            } else {
-                ivMore.visibility = View.GONE
+            btnShare.setOnClickListener {
+                if (android.os.SystemClock.elapsedRealtime() - lastClickTime < 1000) return@setOnClickListener
+                lastClickTime = android.os.SystemClock.elapsedRealtime()
+                onShareClick(post)
             }
+
+            ivMore.visibility = View.VISIBLE
+            ivMore.setOnClickListener { showOptionsMenu(it, post) }
         }
 
         private fun loadUserRealtime(post: Post) {
@@ -143,10 +146,8 @@ class PostAdapter(
             if (cachedUser != null) {
                 applyUserToUI(cachedUser)
             } else {
-                // Tạm thời hiện info cũ trong Post trước khi load mới
                 tvUserName.text = post.userName
                 loadAvatar(post.userAvatar)
-
                 CoroutineScope(Dispatchers.Main).launch {
                     val result = withContext(Dispatchers.IO) { userRepository.getUserDetails(post.userId) }
                     result.getOrNull()?.let { user ->
@@ -183,24 +184,18 @@ class PostAdapter(
 
         private fun showOptionsMenu(view: View, post: Post) {
             val popup = PopupMenu(view.context, view)
-            popup.menu.add("Edit")
-            popup.menu.add("Delete")
+            if (post.userId == currentUid) {
+                popup.menu.add(0, 1, 0, "Edit Post")
+                popup.menu.add(0, 2, 0, "Delete Post")
+            } else {
+                popup.menu.add(0, 3, 0, "Block ${post.userName}")
+            }
 
             popup.setOnMenuItemClickListener { item ->
-                when (item.title) {
-                    "Delete" -> {
-                        db.collection("posts").document(post.postId).delete()
-                            .addOnSuccessListener {
-                                Toast.makeText(view.context, "Post deleted", Toast.LENGTH_SHORT).show()
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(view.context, "Error deleting post", Toast.LENGTH_SHORT).show()
-                            }
-                        true
-                    }
-                    "Edit" -> {
-                        val activity = itemView.context as? AppCompatActivity
-                        if (activity != null) {
+                when (item.itemId) {
+                    1 -> {
+                        val context = itemView.context
+                        if (context is AppCompatActivity) {
                             val editDialog = EditPostDialogFragment()
                             val bundle = Bundle().apply {
                                 putString("postId", post.postId)
@@ -210,8 +205,17 @@ class PostAdapter(
                                 putString("imageUrl", post.postImageUrl)
                             }
                             editDialog.arguments = bundle
-                            editDialog.show(activity.supportFragmentManager, "EditPostDialog")
+                            editDialog.show(context.supportFragmentManager, "EditPostDialog")
                         }
+                        true
+                    }
+                    2 -> {
+                        db.collection("posts").document(post.postId).delete()
+                            .addOnSuccessListener { Toast.makeText(view.context, "Post deleted", Toast.LENGTH_SHORT).show() }
+                        true
+                    }
+                    3 -> {
+                        onBlockClick(post.userId, post.userName)
                         true
                     }
                     else -> false

@@ -42,9 +42,44 @@
             android:id="@+id/tvCommentContent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="This is a comment content..."
+            android:text="Comment content..."
             android:textSize="14sp"
             android:textColor="#333333" />
+
+        <ImageView
+            android:id="@+id/ivCommentMedia"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:layout_marginTop="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            android:src="@drawable/bg_search_rounded" />
+
+        <LinearLayout
+            android:id="@+id/layoutCommentAudio"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_search_rounded"
+            android:padding="8dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:src="@drawable/ic_play_circle_24"
+                android:layout_width="24dp"
+                android:layout_height="24dp"/>
+
+            <TextView
+                android:text="Audio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textStyle="bold"/>
+        </LinearLayout>
     </LinearLayout>
 
     <TextView
@@ -84,7 +119,7 @@
         android:id="@+id/tvCommentLikes"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="2"
+        android:text="0"
         android:textSize="10sp"
         android:textColor="@color/gray_text"
         app:layout_constraintEnd_toEndOf="@+id/btnLikeComment"

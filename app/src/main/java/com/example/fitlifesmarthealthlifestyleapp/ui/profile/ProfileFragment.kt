@@ -20,7 +20,7 @@ import com.example.fitlifesmarthealthlifestyleapp.domain.usecase.classifyBMI
 import com.example.fitlifesmarthealthlifestyleapp.domain.utils.LanguageHelper
 import com.google.android.material.imageview.ShapeableImageView
 
-class   ProfileFragment : Fragment() {
+class ProfileFragment : Fragment() {
 
     private lateinit var btnTheme : ImageButton
     private lateinit var ivAvatar: ShapeableImageView
@@ -46,6 +46,9 @@ class   ProfileFragment : Fragment() {
     private lateinit var tvAgeValue : TextView
     private lateinit var tvSubtitle : TextView
 
+    private lateinit var waterWeeklyChart: WaterWeeklyChartView
+    private lateinit var stepsWeeklyChart: StepsWeeklyLineChartView
+
     private val viewModel: ProfileViewModel by activityViewModels()
 
     override fun onCreateView(
@@ -59,7 +62,18 @@ class   ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        btnTheme = view.findViewById<ImageButton>(R.id.btnTheme)
+        initViews(view)
+        setupStaticLabels()
+
+        if (viewModel.user.value == null) {
+            viewModel.fetchUserProfile()
+        }
+
+        observeViewModel()
+        setupClickEvents()
+    }
+
+    private fun initViews(view: View) {
         ivAvatar = view.findViewById<ShapeableImageView>(R.id.ivAvatar)
         tvSubtitle = view.findViewById<TextView>(R.id.tvSubtitle)
         tvName = view.findViewById<TextView>(R.id.tvName)
@@ -91,24 +105,37 @@ class   ProfileFragment : Fragment() {
         btnLanguage = view.findViewById<TextView>(R.id.btnLanguage)
         btnLogout = view.findViewById<TextView>(R.id.btnLogout)
 
-        setupStaticLabels()
+        waterWeeklyChart = view.findViewById(R.id.waterWeeklyChart)
+        stepsWeeklyChart = view.findViewById(R.id.stepsWeeklyChart)
+    }
 
-        if (viewModel.user.value == null) {
-            viewModel.fetchUserProfile()
-        }
-
+    private fun observeViewModel() {
         viewModel.user.observe(viewLifecycleOwner) { user ->
             if (user != null) {
                 updateUI(user)
             }
         }
 
-        // Lắng nghe trạng thái Loading (để hiện ProgressBar nếu cần)
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            // Ví dụ: binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        // Cập nhật nhãn ngày động cho biểu đồ
+        viewModel.weeklyLabels.observe(viewLifecycleOwner) { labels ->
+            waterWeeklyChart.setLabels(labels)
+            stepsWeeklyChart.setLabels(labels)
         }
 
-        setupClickEvents()
+        viewModel.weeklyWaterLogs.observe(viewLifecycleOwner) { logs ->
+            val goal = viewModel.user.value?.dailyWaterGoal ?: 2000
+            waterWeeklyChart.setWeeklyData(logs, goal)
+        }
+
+        viewModel.weeklySteps.observe(viewLifecycleOwner) { steps ->
+            val goal = viewModel.user.value?.dailyStepsGoal ?: 10000
+            stepsWeeklyChart.setWeeklyData(steps, goal)
+        }
+
+        // Lắng nghe trạng thái Loading
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            // if (isLoading) showLoading() else hideLoading()
+        }
     }
 
     private fun setupStaticLabels() {
@@ -135,81 +162,70 @@ class   ProfileFragment : Fragment() {
         // Load Avatar
         Glide.with(this)
             .load(user.photoUrl)
-            .placeholder(R.drawable.ic_user) // Ảnh chờ
-            .error(R.drawable.ic_user)       // Ảnh lỗi
-            .circleCrop()                                   // Cắt ảnh tròn
+            .placeholder(R.drawable.ic_user)
+            .error(R.drawable.ic_user)
+            .circleCrop()
             .into(ivAvatar)
 
-        // Cập nhật các thẻ chỉ số (Height, Weight)
         tvHeightValue.text = "${user.height} cm"
         tvWeightValue.text = "${user.weight} kg"
 
-        // 4. Xử lý hiển thị Tuổi (Age)
         val age = user.age
         if (age <= 0) {
-            // Nếu login Google chưa set ngày sinh -> Hiện nhắc nhở
             tvAgeValue.text = "--"
             tvAgeValue.setTextColor(resources.getColor(android.R.color.holo_red_light, null))
         } else {
             tvAgeValue.text = "$age"
-            tvAgeValue.setTextColor(resources.getColor(R.color.black, null)) // Giả sử bạn có màu black
+            tvAgeValue.setTextColor(resources.getColor(R.color.black, null))
         }
 
-        // Cập nhật BMI & BMR
         val bmi = user.bmi
         tvBMI.text = String.format("%.1f", bmi)
         bmiCategory.text = bmi.classifyBMI()
 
-        // Đổi màu chữ BMI Category theo mức độ
         val colorRes = when {
-            bmi < 18.5 || bmi >= 30 -> android.R.color.holo_red_dark // Gầy/Béo phì -> Đỏ
-            bmi < 25 -> android.R.color.holo_green_dark           // Bình thường -> Xanh
-            else -> android.R.color.holo_orange_dark              // Thừa cân -> Cam
+            bmi < 18.5 || bmi >= 30 -> android.R.color.holo_red_dark
+            bmi < 25 -> android.R.color.holo_green_dark
+            else -> android.R.color.holo_orange_dark
         }
         bmiCategory.setTextColor(resources.getColor(colorRes, null))
 
-        // BMR
         val bmr = user.calculateBMR()
         tvBMR.text = bmr.toString()
     }
 
     private fun setupClickEvents() {
-        // Nút Edit Profile -> Mở màn hình chỉnh sửa
         btnEditProfile.setOnClickListener {
             val currentUser = viewModel.user.value
-
             if (currentUser != null) {
-                // 2. Tạo Action kèm theo gói dữ liệu (User)
                 val action = ProfileFragmentDirections.actionProfileToEditProfile(currentUser)
-
-                // 3. Thực hiện điều hướng
                 findNavController().navigate(action)
             } else {
-                // Trường hợp mạng lag chưa tải xong user
                 Toast.makeText(context, "Please wait, loading data...", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // Nút Logout -> Đăng xuất và về màn hình Login
         btnLogout.setOnClickListener {
             viewModel.signOut()
-
             val rootNavController = requireActivity().findNavController(R.id.navHostFragmentContainerView)
-
             val navOptions = androidx.navigation.NavOptions.Builder()
-                .setPopUpTo(R.id.main_nav_graph, true) // Xóa toàn bộ stack của main_nav_graph
+                .setPopUpTo(R.id.main_nav_graph, true)
                 .build()
-
             rootNavController.navigate(R.id.loginFragment, null, navOptions)
         }
 
-        // Các nút menu khác...
-        // Workout History -> mở màn hình danh sách lịch sử
         btnWorkoutHistory.setOnClickListener {
-            findNavController().navigate(R.id.workoutHistoryFragment)
+            findNavController().navigate(R.id.action_profile_to_workoutHistory)
+        }
+        btnWorkoutPrograms.setOnClickListener {
+            findNavController().navigate(R.id.workoutProgramFragment)
         }
         btnLanguage.setOnClickListener {
             showLanguageBottomSheet()
+        }
+
+        btnLeaderboardChallenges.setOnClickListener {
+            findNavController().navigate(R.id.leaderboardFragment)
         }
     }
 }

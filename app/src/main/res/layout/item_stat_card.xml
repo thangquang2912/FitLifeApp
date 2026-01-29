@@ -2,9 +2,12 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
+
+    android:layout_width="0dp"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_weight="1"
+
+    android:layout_margin="4dp"
 
     app:cardCornerRadius="20dp"
     app:cardBackgroundColor="@color/white"
@@ -13,23 +16,22 @@
     app:cardElevation="4dp"
 
     android:outlineAmbientShadowColor="#1A000000"
-    android:outlineSpotShadowColor="#1A000000"
-
-    app:layout_constraintHorizontal_weight="1">
+    android:outlineSpotShadowColor="#1A000000">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="12dp"
         android:gravity="center">
 
         <ImageView
             android:id="@+id/imgStatIcon"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:src="@drawable/ic_steps"
             android:scaleType="centerInside" />
+
         <TextView
             android:id="@+id/tvStatValue"
             android:layout_width="wrap_content"
@@ -37,6 +39,8 @@
             android:text="8,234"
             android:textSize="18sp"
             android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
             android:textColor="@android:color/black"
             android:layout_marginTop="8dp"/>
 

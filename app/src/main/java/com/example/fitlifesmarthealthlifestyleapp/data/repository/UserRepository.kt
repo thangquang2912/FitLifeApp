@@ -2,12 +2,17 @@ package com.example.fitlifesmarthealthlifestyleapp.data.repository
 
 import android.util.Log
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class UserRepository {
     private val db = FirebaseFirestore.getInstance()
@@ -106,5 +111,59 @@ class UserRepository {
         awaitClose {
             Log.d(TAG, "getUserDetailsStream: Removing listener")
             registration.remove() }
+    }
+
+    // Hàm hỗ trợ lấy ID theo ngày (Format: YYYY-MM-DD)
+    private fun getCurrentDateId(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        return sdf.format(Date())
+    }
+
+    // 1. Lưu Calo: Cộng dồn vào document của ngày hôm nay
+    suspend fun logCalorieBurn(uid: String, calories: Int): Result<Unit> {
+        return try {
+            val dateId = getCurrentDateId()
+
+            // Dùng FieldValue.increment để cộng dồn nguyên tử (Atomic increment)
+            // Không cần quan tâm file đã tồn tại hay chưa
+            val data = hashMapOf(
+                "totalCalories" to FieldValue.increment(calories.toLong()),
+                "lastUpdated" to System.currentTimeMillis()
+            )
+
+            db.collection("users").document(uid)
+                .collection("calories_logs")
+                .document(dateId) // Key chính là ngày hôm nay
+                .set(data, SetOptions.merge()) // Merge: Chỉ update trường totalCalories, giữ nguyên các trường khác nếu có
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 2. Lấy tổng Calo hôm nay: Chỉ cần get đúng document ID ngày hôm nay
+    suspend fun getTodayActiveCalories(uid: String): Result<Int> {
+        return try {
+            val dateId = getCurrentDateId()
+
+            val document = db.collection("users").document(uid)
+                .collection("calories_logs")
+                .document(dateId)
+                .get()
+                .await()
+
+            if (document.exists()) {
+                // Lấy giá trị totalCalories, nếu null thì trả về 0
+                val total = document.getLong("totalCalories")?.toInt() ?: 0
+                Result.success(total)
+            } else {
+                // Chưa có log hôm nay -> 0
+                Result.success(0)
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

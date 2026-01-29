@@ -261,8 +261,10 @@
                             android:layout_height="48dp"
                             android:background="@drawable/bg_white_rounded_small"
                             android:hint="@string/carbs"
+                            android:textColorHint="#99A1AF"
                             android:padding="10dp"
                             android:textSize="14sp"
+                            android:textColor="@color/black"
                             android:inputType="numberDecimal"
                             android:gravity="center_vertical" />
 
@@ -288,8 +290,10 @@
                             android:layout_height="48dp"
                             android:background="@drawable/bg_white_rounded_small"
                             android:hint="@string/protein"
+                            android:textColorHint="#99A1AF"
                             android:padding="10dp"
                             android:textSize="14sp"
+                            android:textColor="@color/black"
                             android:inputType="numberDecimal"
                             android:gravity="center_vertical" />
 
@@ -314,8 +318,10 @@
                             android:layout_height="48dp"
                             android:background="@drawable/bg_white_rounded_small"
                             android:hint="@string/fat"
+                            android:textColorHint="#99A1AF"
                             android:padding="10dp"
                             android:textSize="14sp"
+                            android:textColor="@color/black"
                             android:inputType="numberDecimal"
                             android:gravity="center_vertical" />
 
@@ -340,6 +346,7 @@
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 android:textStyle="bold"
+                android:textColor="@color/white"
                 app:backgroundTint="@color/orange_primary"
                 app:cornerRadius="12dp"
                 app:layout_constraintBottom_toBottomOf="parent"

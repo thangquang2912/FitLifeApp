@@ -4,6 +4,8 @@ import androidx. lifecycle.LiveData
 import androidx. lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.NutritionRepository
+import com.example.fitlifesmarthealthlifestyleapp.data.repository.StepRepository
 import com.example.fitlifesmarthealthlifestyleapp.data. repository.UserRepository
 import com. example.fitlifesmarthealthlifestyleapp.data.repository.WaterRepository
 import com.example.fitlifesmarthealthlifestyleapp.domain.utils.Event
@@ -12,10 +14,13 @@ import com.example.fitlifesmarthealthlifestyleapp.domain.model.WaterLog
 import com.example. fitlifesmarthealthlifestyleapp.domain.utils.DateUtils
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import java.util.Date
 
 class HomeViewModel : ViewModel() {
     private val waterRepository = WaterRepository()
     private val userRepository = UserRepository()
+    private val nutritionRepository = NutritionRepository()
+    private val stepRepository = StepRepository()
     private val auth = FirebaseAuth.getInstance()
     private val TAG = "HomeViewModel"
 
@@ -31,9 +36,49 @@ class HomeViewModel : ViewModel() {
     private val _user = MutableLiveData<User?>()
     val user: LiveData<User?> = _user
 
+    private val _totalCalories = MutableLiveData<Int>()
+    val totalCalories: LiveData<Int> = _totalCalories
+
+    private val _todaySteps = MutableLiveData<Int>()
+    val todaySteps: LiveData<Int> = _todaySteps
+
     init {
         // Kích hoạt lắng nghe Realtime ngay khi ViewModel được tạo
         listenToUserChanges()
+    }
+
+    fun loadTodayCalories() {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            val result = userRepository.getTodayActiveCalories(uid)
+
+            if (result.isSuccess) {
+                val activeCals = result.getOrDefault(0)
+                _totalCalories.value = activeCals
+            } else {
+                // Xử lý lỗi
+                _totalCalories.value = 0
+            }
+        }
+    }
+
+    fun loadTodaySteps() {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            val steps = stepRepository.getTodaySteps(uid)
+            _todaySteps.value = steps
+        }
+    }
+
+    fun updateSteps(steps: Int) {
+        val uid = auth.currentUser?.uid ?: return
+        val currentSteps = _todaySteps.value ?: 0
+        val newTotalSteps = currentSteps + steps
+        _todaySteps.value = newTotalSteps
+        
+        viewModelScope.launch {
+            stepRepository.incrementSteps(uid, steps)
+        }
     }
 
     fun loadTodayWaterLog() {
@@ -172,6 +217,23 @@ class HomeViewModel : ViewModel() {
         // Sync lên Firestore
         viewModelScope.launch {
             waterRepository.saveWaterLog(currentLog)
+        }
+    }
+
+    // Hàm trừ nước
+    fun removeWater(amount: Int) {
+        val currentLog = _waterLog.value ?: return
+
+        // Kiểm tra nếu lượng nước hiện tại > 0 thì mới trừ
+        if (currentLog.currentIntake > 0) {
+            // Sử dụng coerceAtLeast(0) để đảm bảo không bao giờ bị âm
+            currentLog.currentIntake = (currentLog.currentIntake - amount).coerceAtLeast(0)
+            _waterLog.value = currentLog
+
+            // Cập nhật lên Firestore
+            viewModelScope.launch {
+                waterRepository.saveWaterLog(currentLog)
+            }
         }
     }
 
