@@ -32,7 +32,22 @@ class StepRepository {
         }
     }
 
-    // Hàm cộng dồn số bước chân (Dùng FieldValue.increment để tránh ghi đè dữ liệu cũ)
+    // Lắng nghe số bước chân hôm nay Real-time
+    fun getTodayStepsStream(uid: String): Flow<Int> = callbackFlow {
+        val dateId = DateUtils.getCurrentDateId()
+        val registration = db.collection("daily_steps")
+            .document("${uid}_$dateId")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val steps = snapshot?.getLong("steps")?.toInt() ?: 0
+                trySend(steps)
+            }
+        awaitClose { registration.remove() }
+    }
+
     suspend fun incrementSteps(uid: String, delta: Int) {
         try {
             val dateId = DateUtils.getCurrentDateId()
@@ -42,7 +57,6 @@ class StepRepository {
                 "steps" to FieldValue.increment(delta.toLong()),
                 "lastUpdated" to com.google.firebase.Timestamp.now()
             )
-            // Dùng set với merge để tạo mới nếu chưa có hoặc cộng dồn nếu đã có
             db.collection("daily_steps")
                 .document("${uid}_$dateId")
                 .set(data, SetOptions.merge())
@@ -52,7 +66,6 @@ class StepRepository {
         }
     }
 
-    // Lắng nghe dữ liệu số bước chân 7 ngày gần nhất thời gian thực
     fun getWeeklyStepsStream(uid: String): Flow<List<Map<String, Any>>> = callbackFlow {
         val calendar = Calendar.getInstance()
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())

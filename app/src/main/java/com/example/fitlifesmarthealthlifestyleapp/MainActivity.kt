@@ -1,25 +1,34 @@
     package com.example.fitlifesmarthealthlifestyleapp
 
+    import android.Manifest
     import android.content.Context
     import android.content.Intent
+    import android.content.pm.PackageManager
+    import android.os.Build
     import android.os.Bundle
     import androidx.activity.enableEdgeToEdge
     import androidx.appcompat.app.AppCompatActivity
+    import androidx.core.app.ActivityCompat
+    import androidx.core.content.ContextCompat
     import androidx.core.view.ViewCompat
     import androidx.lifecycle.ViewModelProvider
     import androidx.core.view.WindowInsetsCompat
+    import androidx.lifecycle.lifecycleScope
     import androidx.navigation.NavController
     import androidx.navigation.findNavController
     import androidx.navigation.fragment.NavHostFragment
     import androidx.work.ExistingPeriodicWorkPolicy
     import androidx.work.PeriodicWorkRequestBuilder
     import androidx.work.WorkManager
+    import com.example.fitlifesmarthealthlifestyleapp.data.repository.StepRepository
+    import com.example.fitlifesmarthealthlifestyleapp.domain.service.StepSensorManager
     import com.example.fitlifesmarthealthlifestyleapp.workers.WaterReminderWorker
     import com.example.fitlifesmarthealthlifestyleapp.workers.CaloriesReminderWorker
     import com.example.fitlifesmarthealthlifestyleapp.workers.StepsReminderWorker
     import com.example.fitlifesmarthealthlifestyleapp.domain.utils.LanguagePreference
     import com.example.fitlifesmarthealthlifestyleapp.domain.utils.LanguageHelper
     import com.google.firebase.auth.FirebaseAuth
+    import kotlinx.coroutines.launch
     import java.util.Calendar
     import java.util.concurrent.TimeUnit
     import kotlin.math.max
@@ -27,6 +36,10 @@
     class MainActivity : AppCompatActivity() {
         private lateinit var navController : NavController
         private lateinit var deepLinkViewModel: DeepLinkViewModel
+
+        // --- Quản lý đếm bước chân toàn cục ---
+        private var stepSensorManager: StepSensorManager? = null
+        private val stepRepository = StepRepository()
 
         override fun attachBaseContext(newBase: Context?) {
             if (newBase != null) {
@@ -63,34 +76,78 @@
 
             navController = navHostFragment.navController
 
-            // 2. Tạo graph từ file XML
             val navInflater = navController.navInflater
             val graph = navInflater.inflate(R.navigation.main_nav_graph)
 
-            // 3. Kiểm tra user đã đăng nhập chưa
             val currentUser = FirebaseAuth.getInstance().currentUser
 
             if (currentUser != null) {
-                // Đã Login -> Vào thẳng MainFragment (Home)
                 graph.setStartDestination(R.id.mainFragment)
+                // Nếu đã đăng nhập, bắt đầu đếm bước chân ngay
+                checkAndStartStepCounter()
             } else {
-                // Chưa Login -> Vào LoginFragment
                 graph.setStartDestination(R.id.loginFragment)
             }
 
-            // 4. Gán graph đã chỉnh sửa vào Controller để bắt đầu chạy
             navController.graph = graph
 
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
-                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
 
                     requestPermissions(
-                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                        101 // Request Code tùy chọn
+                        arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                        101
                     )
                 }
             }
+        }
+
+        // Kiểm tra quyền và khởi động cảm biến đếm bước
+        private fun checkAndStartStepCounter() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                    startStepCounter()
+                } else {
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACTIVITY_RECOGNITION), 102)
+                }
+            } else {
+                startStepCounter()
+            }
+        }
+
+        private fun startStepCounter() {
+            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+            if (stepSensorManager == null) {
+                stepSensorManager = StepSensorManager(this) { delta ->
+                    // Cộng dồn bước chân vào Firestore ngay khi phát hiện di chuyển
+                    lifecycleScope.launch {
+                        stepRepository.incrementSteps(uid, delta)
+                    }
+                }
+            }
+            stepSensorManager?.startListening()
+        }
+
+        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+            if (requestCode == 102 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startStepCounter()
+            }
+        }
+
+        override fun onResume() {
+            super.onResume()
+            // Tiếp tục lắng nghe khi app vào foreground
+            if (FirebaseAuth.getInstance().currentUser != null) {
+                stepSensorManager?.startListening()
+            }
+        }
+
+        override fun onDestroy() {
+            super.onDestroy()
+            stepSensorManager?.stopListening()
         }
 
         override fun onNewIntent(intent: Intent) {
@@ -98,11 +155,8 @@
             setIntent(intent)
             val newId = getPostIdFromIntent(intent)
             if (newId != null) {
-                // Cập nhật ID mới vào ViewModel
                 deepLinkViewModel.setPostId(newId)
-                // Nếu user đã login, đảm bảo quay về màn hình chính để MainFragment xử lý
                 if (FirebaseAuth.getInstance().currentUser != null) {
-                    // Pop về MainFragment nếu đang ở các trang con
                     navController.popBackStack(R.id.mainFragment, false)
                 }
             }
@@ -134,17 +188,14 @@
 
             val initialDelay = dueTime.timeInMillis - currentTime.timeInMillis
 
-            // 🔹 Water
             val waterWork = PeriodicWorkRequestBuilder<WaterReminderWorker>(24, TimeUnit.HOURS)
                 .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
                 .build()
 
-            // 🔹 Calories
             val caloriesWork = PeriodicWorkRequestBuilder<CaloriesReminderWorker>(24, TimeUnit.HOURS)
                 .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
                 .build()
 
-            // 🔹 Steps
             val stepsWork = PeriodicWorkRequestBuilder<StepsReminderWorker>(24, TimeUnit.HOURS)
                 .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
                 .addTag("water_reminder")
