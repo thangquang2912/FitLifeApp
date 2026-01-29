@@ -87,7 +87,8 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:paddingHorizontal="16dp"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="4dp"
+                android:textColor="@color/black">
 
                 <androidx.appcompat.widget.SearchView
                     android:id="@+id/searchViewPost"
@@ -97,6 +98,8 @@
                     app:iconifiedByDefault="false"
                     app:queryBackground="@android:color/transparent"
                     app:queryHint="@string/search"
+                    android:textColor="@color/black"
+                    android:theme="@style/CustomSearchViewStyle"
                     android:background="@drawable/bg_search_rounded" />
 
                 <ImageView
