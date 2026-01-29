@@ -1,5 +1,6 @@
     package com.example.fitlifesmarthealthlifestyleapp
 
+    import android.content.Context
     import android.content.Intent
     import android.os.Bundle
     import androidx.activity.enableEdgeToEdge
