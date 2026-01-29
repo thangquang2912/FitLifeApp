@@ -41,7 +41,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
     private var currentFilterType = FilterType.ALL
     private var hiddenUserIds: MutableSet<String> = mutableSetOf()
     private var followingUserIds: MutableList<String> = mutableListOf()
-
+    private var searchedUserIdByEmail: String? = null
     // DeepLink & Share
     private lateinit var deepLinkViewModel: DeepLinkViewModel
     private var targetPostId: String? = null
@@ -63,12 +63,6 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         notificationBadgeListener?.remove()
     }
 
-//    override fun onResume() {
-//        super.onResume()
-//        // [FIX LỖI MẤT NAV] Luôn hiện thanh điều hướng khi quay lại màn hình Social
-//        // Lưu ý: ID R.id.bottomNavigationView phải trùng với ID trong file layout chứa menu (thường là fragment_main.xml)
-//        activity?.findViewById<View>(R.id.bottomNavigationView)?.visibility = View.VISIBLE
-//    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -148,7 +142,15 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean = false
             override fun onQueryTextChange(newText: String?): Boolean {
-                filterPosts(newText, currentFilterType)
+                val query = newText?.trim() ?: ""
+
+                // Kiểm tra nếu là định dạng Email (dùng Patterns.EMAIL_ADDRESS)
+                if (query.isNotEmpty() && android.util.Patterns.EMAIL_ADDRESS.matcher(query).matches()) {
+                    searchUserByEmail(query) // Gọi hàm tìm UID
+                } else {
+                    searchedUserIdByEmail = null // Reset nếu không phải email
+                    filterPosts(query, currentFilterType)
+                }
                 return true
             }
         })
@@ -167,7 +169,21 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
 
         listenToPosts()
     }
-
+    private fun searchUserByEmail(email: String) {
+        db.collection("users")
+            .whereEqualTo("email", email)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty) {
+                    // Lấy UID của user đầu tiên khớp email
+                    searchedUserIdByEmail = documents.documents[0].id
+                } else {
+                    searchedUserIdByEmail = "not_found" // Gán giá trị giả nếu không thấy
+                }
+                // Gọi lọc lại danh sách sau khi đã có kết quả UID
+                filterPosts(email, currentFilterType)
+            }
+    }
     private fun setupNotificationBadge(badge: ImageView) {
         if (currentUid == null) return
         notificationBadgeListener = db.collection("users").document(currentUid)
@@ -268,8 +284,18 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
     private fun filterPosts(query: String?, filterType: FilterType) {
         val searchText = query?.lowercase()?.trim() ?: ""
         val filteredList = allPosts.filter { post ->
-            val matchText = if (searchText.isEmpty()) true else
-                (post.userName.lowercase().contains(searchText) || post.caption.lowercase().contains(searchText))
+
+            // LOGIC THAY ĐỔI TẠI ĐÂY:
+            val matchText = if (searchText.isEmpty()) {
+                true
+            } else if (searchedUserIdByEmail != null) {
+                // Nếu đã tìm thấy UID từ email, chỉ hiện bài viết của UID đó
+                post.userId == searchedUserIdByEmail
+            } else {
+                // Ngược lại, tìm theo tên hoặc nội dung bài viết như cũ
+                post.userName.lowercase().contains(searchText) || post.caption.lowercase().contains(searchText)
+            }
+
             val matchFilter = when (filterType) {
                 FilterType.ALL -> true
                 FilterType.MY_POSTS -> post.userId == currentUid
