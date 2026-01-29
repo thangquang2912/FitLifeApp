@@ -261,7 +261,7 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
     private fun sharePost(post: Post) {
         val deepLink = "https://fit-life-app-dl.vercel.app/post/${post.postId}"
         val intent = Intent(Intent.ACTION_SEND).apply {
-            putExtra(Intent.EXTRA_TEXT, "Xem bài tập này trên FitLife: ${post.caption}\n$deepLink")
+            putExtra(Intent.EXTRA_TEXT, "$deepLink")
             type = "text/plain"
         }
         shareLauncher.launch(Intent.createChooser(intent, "Share"))
