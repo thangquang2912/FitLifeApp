@@ -139,7 +139,7 @@
                     android:id="@+id/etDishName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Dish Name"
+                    android:hint="@string/dish_name"
                     android:textColorHint="#99A1AF"
                     android:textColor="@color/black"
                     android:inputType="textCapSentences"

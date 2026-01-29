@@ -63,7 +63,7 @@
         android:id="@+id/tvReply"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Reply"
+        android:text="@string/reply"
         android:textStyle="bold"
         android:textSize="12sp"
         android:textColor="@color/gray_text"

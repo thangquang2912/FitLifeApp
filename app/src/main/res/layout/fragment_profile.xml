@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginTop="24dp"
-            android:text="Profile"
+            android:text="@string/profile"
             android:textSize="28sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -113,7 +113,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:layout_marginStart="24dp"
-            android:text="Health Metrics"
+            android:text="@string/health_metrics"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -237,7 +237,7 @@
 
                 <TextView
                     android:id="@+id/btnEditProfile"
-                    android:text="Edit Profile"
+                    android:text="@string/edit_profile"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>
 
@@ -245,7 +245,7 @@
 
                 <TextView
                     android:id="@+id/btnWorkoutPrograms"
-                    android:text="Workout Programs"
+                    android:text="@string/workout_programs"
                     android:drawableStart="@drawable/icon_workout"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>
@@ -254,7 +254,7 @@
 
                 <TextView
                     android:id="@+id/btnLeaderboardChallenges"
-                    android:text="Leaderboard - Challenges"
+                    android:text="@string/leaderboard_challenges"
                     android:drawableStart="@drawable/icon_leaderboard"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>
@@ -263,7 +263,7 @@
 
                 <TextView
                     android:id="@+id/btnWorkoutHistory"
-                    android:text="Workout History"
+                    android:text="@string/workout_history"
                     android:drawableStart="@drawable/icon_history"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>
@@ -283,7 +283,7 @@
 
                 <TextView
                     android:id="@+id/btnLogout"
-                    android:text="Logout"
+                    android:text="@string/logout"
                     android:drawableStart="@drawable/icon_logout"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>

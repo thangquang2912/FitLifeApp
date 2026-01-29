@@ -47,6 +47,9 @@
     <string name="pace">Nhịp độ</string>
     <string name="avg_speed">Tốc độ trung bình</string>
     <string name="complete_activity">Hoàn thành hoạt động</string>
+    <string name="avg_pace">Nhịp độ</string>
+    <string name="duration_activity">Thời gian</string>
+
 
     <!-- Nutrition-->
     <string name="ai_nutrition">Dinh dưỡng với AI</string>
@@ -71,16 +74,47 @@
     <string name="save_meal">Lưu bữa ăn</string>
     <string name="analyzing">Đang phân tích...</string>
 
+    <!-- Community -->
+    <string name="community">Cộng đồng</string>
+    <string name="search">Tìm kiếm...</string>
+    <string name="create_post">Tạo bài viết</string>
+    <string name="add_photo">Chạm để thay đổi hoặc thêm ảnh</string>
+    <string name="duration">Thời gian (ví dụ: 45 phút)</string>
+    <string name="calories_post">Calo (ví dụ: 420 kcal)</string>
+    <string name="share_hint">Chia sẻ hành trình sức khỏe của bạn...</string>
+    <string name="share_post">Chia sẻ</string>
+    <string name="reply">Phản hồi</string>
+
     <!-- Profile Screen -->
     <string name="height">Chiều cao</string>
     <string name="weight">Cân nặng</string>
     <string name="age">Tuổi</string>
+    <string name="health_metrics">Số liệu sức khỏe</string>
     <string name="edit_profile">Chỉnh sửa hồ sơ</string>
     <string name="workout_programs">Chương trình tập luyện</string>
     <string name="leaderboard_challenges">Bảng xếp hạng - Thử thách</string>
     <string name="workout_history">Lịch sử tập luyện</string>
     <string name="language">Ngôn ngữ</string>
     <string name="logout">Đăng xuất</string>
+    <string name="running">Chạy bộ</string>
+    <string name="activity_detail">Hoạt động chi tiết</string>
+
+    <!-- Edit Profile-->
+    <string name="tap_to_change_photo">Chạm để đổi ảnh</string>
+    <string name="save">Lưu</string>
+    <string name="full_name">Họ và tên</string>
+    <string name="activity_level">Mức độ vận động</string>
+    <string name="gender">Giới tính</string>
+    <string name="date_of_birth">Ngày sinh</string>
+    <string name="male">Nam</string>
+    <string name="female">Nữ</string>
+    <string name="other">Khác</string>
+    <string name="weight_kg">Cân nặng (kg)</string>
+    <string name="height_cm">Chiều cao (cm)</string>
+    <string name="activity_sedentary">Ít vận động</string>
+    <string name="activity_lightly_active">Vận động nhẹ</string>
+    <string name="activity_moderately_active">Vận động vừa phải</string>
+    <string name="activity_very_active">Vận động nhiều</string>
 
     <!-- Language Dialog -->
     <string name="select_language">Chọn ngôn ngữ</string>

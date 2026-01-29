@@ -45,6 +45,8 @@
     <string name="pace">Pace</string>
     <string name="avg_speed">Avg Speed</string>
     <string name="complete_activity">Complete Activity</string>
+    <string name="avg_pace">Avg Pace</string>
+    <string name="duration_activity">Duration</string>
 
     <!-- Nutrition-->
     <string name="ai_nutrition">AI Nutrition</string>
@@ -68,16 +70,48 @@
     <string name="quick_macros">Quick Macros</string>
     <string name="save_meal">Save Meal</string>
     <string name="analyzing">Analyzing macros...</string>
+
+    <!-- Community -->
+    <string name="community">Community</string>
+    <string name="search">Search...</string>
+    <string name="create_post">Create Post</string>
+    <string name="add_photo">Tap to change or add photo</string>
+    <string name="duration">Duration (e.g. 45 mins)</string>
+    <string name="calories_post">Calories (e.g. 420 kcal)</string>
+    <string name="share_hint">Share your fitness journey...</string>
+    <string name="share_post">Share Post</string>
+    <string name="reply">Reply</string>
+
     <!-- Profile Screen -->
     <string name="height">Height</string>
     <string name="weight">Weight</string>
     <string name="age">Age</string>
+    <string name="health_metrics">Health Metrics</string>
     <string name="edit_profile">Edit Profile</string>
     <string name="workout_programs">Workout Programs</string>
     <string name="leaderboard_challenges">Leaderboard - Challenges</string>
     <string name="workout_history">Workout History</string>
     <string name="language">Language</string>
     <string name="logout">Logout</string>
+    <string name="running">Running</string>
+    <string name="activity_detail">Activity Details</string>
+
+    <!-- Edit Profile-->
+    <string name="tap_to_change_photo">Tap to change photo</string>
+    <string name="save">Save</string>
+    <string name="full_name">Full Name</string>
+    <string name="activity_level">Activity Level</string>
+    <string name="gender">Gender</string>
+    <string name="date_of_birth">Date of Birth</string>
+    <string name="male">Male</string>
+    <string name="female">Female</string>
+    <string name="other">Other</string>
+    <string name="weight_kg">Weight (kg)</string>
+    <string name="height_cm">Height (cm)</string>
+    <string name="activity_sedentary">Sedentary</string>
+    <string name="activity_lightly_active">Lightly Active</string>
+    <string name="activity_moderately_active">Moderately Active</string>
+    <string name="activity_very_active">Very Active</string>
 
     <!-- Language Dialog -->
     <string name="select_language">Select Language</string>

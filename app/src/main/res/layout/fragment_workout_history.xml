@@ -10,7 +10,7 @@
         android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Workout History"
+        android:text="@string/workout_history"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="@color/black"

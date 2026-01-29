@@ -9,7 +9,7 @@
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Create Post"
+        android:text="@string/create_post"
         android:textSize="20sp"
         android:textStyle="bold"/>
 
@@ -33,7 +33,7 @@
             android:id="@+id/tvUploadHint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tap to change or add photo"
+            android:text="@string/tap_to_add_photo"
             android:layout_gravity="center"
             android:drawableStart="@android:drawable/ic_menu_camera"
             android:drawablePadding="8dp"/>
@@ -55,7 +55,7 @@
                 android:id="@+id/etDuration"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Duration (e.g. 45 mins)"/>
+                android:hint="@string/duration"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -68,14 +68,14 @@
                 android:id="@+id/etCalories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Calories (e.g. 420 kcal)"/>
+                android:hint="@string/calories_post"/>
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
     <EditText
         android:id="@+id/etCaption"
         android:layout_width="match_parent"
         android:layout_height="100dp"
-        android:hint="Share your fitness journey..."
+        android:hint="@string/share_hint"
         android:background="@drawable/bg_edittext"
         android:gravity="top"
         android:padding="10dp"
@@ -87,7 +87,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:backgroundTint="@color/orange_primary"
-        android:text="Share Post"
+        android:text="@string/share_post"
         android:textColor="@color/white" />
 
     <ProgressBar
