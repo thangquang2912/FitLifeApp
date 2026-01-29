@@ -146,10 +146,6 @@ class ProfileFragment : Fragment() {
 
     private fun showLanguageBottomSheet() {
         val bottomSheet = LanguageBottomSheet { selectedLanguage ->
-            // Apply new language
-            LanguageHelper.updateResources(requireContext(), selectedLanguage)
-
-            // Restart activity to apply language changes
             requireActivity().recreate()
         }
         bottomSheet.show(childFragmentManager, "LanguageBottomSheet")
