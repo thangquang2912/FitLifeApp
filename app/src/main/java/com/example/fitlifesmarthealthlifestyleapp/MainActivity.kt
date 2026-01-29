@@ -41,15 +41,13 @@
         private var stepSensorManager: StepSensorManager? = null
         private val stepRepository = StepRepository()
 
-        override fun attachBaseContext(newBase: Context?) {
-            if (newBase != null) {
-                val languagePreference = LanguagePreference(newBase)
-                val savedLanguage = languagePreference.getLanguage()
-                val localeContext = LanguageHelper.setLocale(newBase, savedLanguage)
-                super.attachBaseContext(localeContext)
-            } else {
-                super.attachBaseContext(newBase)
-            }
+        override fun attachBaseContext(newBase: Context) {
+            val languagePreference = LanguagePreference(newBase)
+            val language = languagePreference.getLanguage()
+
+            val context = LanguageHelper.setLocale(newBase, language)
+
+            super.attachBaseContext(context)
         }
 
         override fun onCreate(savedInstanceState: Bundle?) {
