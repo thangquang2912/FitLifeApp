@@ -1,10 +1,14 @@
 package com.example.fitlifesmarthealthlifestyleapp.ui.profile
 
+import android.app.Dialog
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
@@ -202,12 +206,7 @@ class ProfileFragment : Fragment() {
         }
 
         btnLogout.setOnClickListener {
-            viewModel.signOut()
-            val rootNavController = requireActivity().findNavController(R.id.navHostFragmentContainerView)
-            val navOptions = androidx.navigation.NavOptions.Builder()
-                .setPopUpTo(R.id.main_nav_graph, true)
-                .build()
-            rootNavController.navigate(R.id.loginFragment, null, navOptions)
+            showLogoutDialog()
         }
 
         btnWorkoutHistory.setOnClickListener {
@@ -223,5 +222,40 @@ class ProfileFragment : Fragment() {
         btnLeaderboardChallenges.setOnClickListener {
             findNavController().navigate(R.id.leaderboardFragment)
         }
+    }
+
+    private fun showLogoutDialog() {
+        val dialog = Dialog(requireContext())
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setContentView(R.layout.dialog_logout)
+
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val width = (resources.displayMetrics.widthPixels * 0.90).toInt()
+        dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        val btnCancel = dialog.findViewById<View>(R.id.btnCancelLogout)
+        val btnConfirm = dialog.findViewById<View>(R.id.btnConfirmLogout)
+
+        // 1. Nút Hủy -> Đóng dialog
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // 2. Nút Đồng ý -> Thực hiện đăng xuất
+        btnConfirm.setOnClickListener {
+            dialog.dismiss()
+            performLogout() // Gọi hàm xử lý đăng xuất
+        }
+
+        dialog.show()
+    }
+
+    private fun performLogout() {
+        viewModel.signOut()
+        val rootNavController = requireActivity().findNavController(R.id.navHostFragmentContainerView)
+        val navOptions = androidx.navigation.NavOptions.Builder()
+            .setPopUpTo(R.id.main_nav_graph, true)
+            .build()
+        rootNavController.navigate(R.id.loginFragment, null, navOptions)
     }
 }

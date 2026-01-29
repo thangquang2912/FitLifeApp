@@ -138,6 +138,7 @@
     <string name="workout_history">Workout History</string>
     <string name="language">Language</string>
     <string name="logout">Logout</string>
+    <string name="confirm_logout">Are you sure you want to log out of your account?</string>
     <string name="running">Running</string>
     <string name="activity_detail">Activity Details</string>
     <string name="weekly_water_intake">Weekly Water Intake</string>
