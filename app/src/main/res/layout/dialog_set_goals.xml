@@ -35,7 +35,7 @@
                 android:id="@+id/tvDialogTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Set Your Goals"
+                android:text="@string/set_your_goals"
                 android:textColor="@color/black"
                 android:textSize="24sp"
                 android:textStyle="bold"
@@ -49,7 +49,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Customize your daily and weekly targets\nto stay motivated"
+                android:text="@string/goals_subtitle"
                 android:textColor="@color/gray_text"
                 android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -100,7 +100,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Daily Steps"
+                                android:text="@string/daily_steps"
                                 android:textColor="@color/black"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
@@ -109,7 +109,7 @@
                                 android:id="@+id/tvStepsTarget"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Target: 10,000 steps"
+                                android:text="@string/target_steps"
                                 android:textColor="@color/gray_text"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -151,7 +151,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="steps"
+                                android:text="@string/steps"
                                 android:textColor="@color/gray_text"
                                 android:textSize="14sp" />
                         </LinearLayout>
@@ -226,7 +226,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Water Intake"
+                                android:text="@string/water_intake"
                                 android:textColor="@color/black"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
@@ -235,7 +235,7 @@
                                 android:id="@+id/tvWaterTarget"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Target: 2,000 ml"
+                                android:text="@string/target_water_intake"
                                 android:textColor="@color/gray_text"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -352,7 +352,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Active Calories"
+                                android:text="@string/active_calories"
                                 android:textColor="@color/black"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
@@ -361,7 +361,7 @@
                                 android:id="@+id/tvActiveCaloriesTarget"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Target: 500 kcal"
+                                android:text="@string/target_active_calories"
                                 android:textColor="@color/gray_text"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -479,7 +479,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Calories Consume"
+                                android:text="@string/calories_consume"
                                 android:textColor="@color/black"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
@@ -488,7 +488,7 @@
                                 android:id="@+id/tvCaloriesConsumeTarget"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Target: 2,000 kcal"
+                                android:text="@string/target_calories_consume"
                                 android:textColor="@color/gray_text"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -606,7 +606,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Weekly Running"
+                                android:text="@string/weekly_running"
                                 android:textColor="@color/black"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
@@ -615,7 +615,7 @@
                                 android:id="@+id/tvWeeklyRunningTarget"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Target: 20 km"
+                                android:text="@string/target_weekly_running"
                                 android:textColor="@color/gray_text"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -695,7 +695,7 @@
                 android:layout_width="0dp"
                 android:layout_height="56dp"
                 android:layout_marginTop="24dp"
-                android:text="Save Goals"
+                android:text="@string/save_goals"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
                 android:textSize="16sp"

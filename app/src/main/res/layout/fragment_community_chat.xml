@@ -38,7 +38,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Community Chat"
+                android:text="@string/community_chat"
                 android:textStyle="bold"
                 android:textSize="14sp"
                 android:textColor="@color/black"
@@ -117,7 +117,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/bg_search_rounded"
-                android:hint="Type a message..."
+                android:hint="@string/hint_type_message"
                 android:textSize="15sp"
                 android:paddingVertical="10dp"
                 android:paddingHorizontal="16dp"

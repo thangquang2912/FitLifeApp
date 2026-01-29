@@ -47,7 +47,7 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:text="Time"
+                    android:text="@string/time"
                     android:textColor="#999999"
                     android:textSize="12sp"
                     android:layout_width="wrap_content"
@@ -73,7 +73,7 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:text="Distance"
+                    android:text="@string/distance"
                     android:textColor="#999999"
                     android:textSize="12sp"
                     android:layout_width="wrap_content"
@@ -99,7 +99,7 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:text="Pace"
+                    android:text="@string/pace"
                     android:textColor="#999999"
                     android:textSize="12sp"
                     android:layout_width="wrap_content"
@@ -151,7 +151,7 @@
                 android:padding="16dp">
 
                 <TextView
-                    android:text="Avg Speed"
+                    android:text="@string/avg_speed"
                     android:textColor="#999999"
                     android:textSize="12sp"
                     android:layout_width="wrap_content"
@@ -188,7 +188,7 @@
                 android:padding="16dp">
 
                 <TextView
-                    android:text="Calories"
+                    android:text="@string/calories"
                     android:textColor="#999999"
                     android:textSize="12sp"
                     android:layout_width="wrap_content"
@@ -213,7 +213,7 @@
         android:layout_width="0dp"
         android:layout_height="56dp"
         android:layout_margin="24dp"
-        android:text="Start Activity"
+        android:text="@string/start_activity"
         android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="16sp"

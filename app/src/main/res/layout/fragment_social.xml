@@ -31,7 +31,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Community"
+                    android:text="@string/community"
                     android:textColor="@color/black"
                     android:textSize="26sp"
                     android:textStyle="bold" />
@@ -96,7 +96,7 @@
                     android:layout_weight="1"
                     app:iconifiedByDefault="false"
                     app:queryBackground="@android:color/transparent"
-                    app:queryHint="Search..."
+                    app:queryHint="@string/search"
                     android:background="@drawable/bg_search_rounded" />
 
                 <ImageView

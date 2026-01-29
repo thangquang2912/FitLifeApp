@@ -3,35 +3,37 @@
     <string name="vn">Tiếng Việt</string>
     <string name="en">Tiếng Anh</string>
     <string name="app_name">FitLife – Ứng dụng Sức khỏe &amp; Phong cách sống</string>
-    <!-- Days of the week -->
-    <string name="monday">Thứ Hai</string>
-    <string name="tuesday">Thứ Ba</string>
-    <string name="wednesday">Thứ Tư</string>
-    <string name="thursday">Thứ Năm</string>
-    <string name="friday">Thứ Sáu</string>
-    <string name="saturday">Thứ Bảy</string>
-    <string name="sunday">Chủ Nhật</string>
+    <string-array name="days_of_week">
+        <item>Chủ nhật</item>
+        <item>Thứ hai</item>
+        <item>Thứ ba</item>
+        <item>Thứ tư</item>
+        <item>Thứ năm</item>
+        <item>Thứ sáu</item>
+        <item>Thứ bảy</item>
+    </string-array>
 
-    <!-- Months -->
-    <string name="month_january">Tháng 1</string>
-    <string name="month_february">Tháng 2</string>
-    <string name="month_march">Tháng 3</string>
-    <string name="month_april">Tháng 4</string>
-    <string name="month_may">Tháng 5</string>
-    <string name="month_june">Tháng 6</string>
-    <string name="month_july">Tháng 7</string>
-    <string name="month_august">Tháng 8</string>
-    <string name="month_september">Tháng 9</string>
-    <string name="month_october">Tháng 10</string>
-    <string name="month_november">Tháng 11</string>
-    <string name="month_december">Tháng 12</string>
+    <string-array name="months_of_year">
+        <item>Tháng 1</item>
+        <item>Tháng 2</item>
+        <item>Tháng 3</item>
+        <item>Tháng 4</item>
+        <item>Tháng 5</item>
+        <item>Tháng 6</item>
+        <item>Tháng 7</item>
+        <item>Tháng 8</item>
+        <item>Tháng 9</item>
+        <item>Tháng 10</item>
+        <item>Tháng 11</item>
+        <item>Tháng 12</item>
+    </string-array>
 
     <!-- Home -->
-
     <string name="morning">Chào buổi sáng</string>
     <string name="afternoon">Chào buổi chiều</string>
     <string name="evening">Chào buổi tối</string>
     <string name="night">Chúc bạn ngủ ngon</string>
+    <string name="label_active_kcal">Calo hoạt động</string>
     <string name="steps">Số bước</string>
     <string name="calories">Calo</string>
     <string name="water">Nước</string>
@@ -40,6 +42,29 @@
     <string name="try_activity_or_goals">Hãy thử bắt đầu hoạt động hoặc đặt mục tiêu!</string>
     <string name="start_activity">Bắt đầu</string>
     <string name="set_goals">Đặt mục tiêu</string>
+    <string name="set_your_goals">Thiết lập mục tiêu</string>
+    <string name="goals_subtitle">
+        Tùy chỉnh mục tiêu hằng ngày và hằng tuần
+        để luôn có động lực
+    </string>
+    <string name="save_goals">Lưu mục tiêu</string>
+    <string name="daily_steps">Số bước hằng ngày</string>
+    <string name="target_steps">Mục tiêu: %1$d bước</string>
+    <string name="target_water_intake">Mục tiêu: %1$d ml</string>
+    <string name="active_calories">Calo vận động</string>
+    <string name="kcal">kcal</string>
+    <string name="target_active_calories">Mục tiêu: %1$d kcal</string>
+    <string name="calories_consume">Calo tiêu thụ</string>
+    <string name="target_calories_consume">Mục tiêu: %1$d kcal</string>
+    <string name="weekly_running">Chạy bộ hằng tuần</string>
+    <string name="km">km</string>
+    <string name="target_weekly_running">Mục tiêu: %1$d km</string>
+    <!-- Toast messages -->
+    <string name="toast_permission_denied">Không có quyền đếm bước chân</string>
+    <string name="toast_goals_saved">Lưu mục tiêu thành công!</string>
+    <string name="toast_goals_failed">Lưu mục tiêu thất bại</string>
+    <string name="toast_load_failed">Tải dữ liệu thất bại</string>
+    <string name="toast_navigation_error">Không thể chuyển sang màn hình Hoạt động</string>
 
     <!-- Activity-->
     <string name="time">Thời gian</string>
@@ -84,6 +109,21 @@
     <string name="share_hint">Chia sẻ hành trình sức khỏe của bạn...</string>
     <string name="share_post">Chia sẻ</string>
     <string name="reply">Phản hồi</string>
+    <!-- Community Chat -->
+    <string name="community_chat">Trò chuyện cộng đồng</string>
+    <string name="hint_type_message">Nhập tin nhắn...</string>
+    <!-- Notifications -->
+    <string name="notifications">Thông báo</string>
+    <!-- Community Profile -->
+    <string name="my_community_profile">Hồ sơ cộng đồng</string>
+    <string name="default_user_name">Tên người dùng</string>
+    <string name="born_date">Sinh ngày: %1$s</string>
+    <string name="posts">Bài viết</string>
+    <string name="followers">Người theo dõi</string>
+    <string name="following">Đang theo dõi</string>
+    <string name="posts_title">BÀI VIẾT</string>
+    <string name="empty_posts">Bạn chưa đăng bài viết nào</string>
+
 
     <!-- Profile Screen -->
     <string name="height">Chiều cao</string>
@@ -120,6 +160,16 @@
     <string name="select_language">Chọn ngôn ngữ</string>
     <string name="confirm">Xác nhận</string>
     <string name="cancel">Hủy</string>
+    <!-- Workout Playing -->
+    <string name="workout_status_work">TẬP</string>
+    <string name="pause">Tạm dừng</string>
+    <string name="resume">Tiếp tục</string>
+    <!-- Workout Detail -->
+    <string name="description">Mô tả</string>
+    <string name="exercises">Bài tập</string>
+    <string name="start_workout">Bắt đầu tập</string>
+    <string name="minutes_format">%1$d phút</string>
+    <string name="calories_format">%1$d calo</string>
 
     <!-- Navigation -->
     <string name="activity">Hoạt động</string>

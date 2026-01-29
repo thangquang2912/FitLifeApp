@@ -68,7 +68,7 @@ class HomeFragment : Fragment() {
         if (isGranted) {
             startStepCounter()
         } else {
-            Toast.makeText(requireContext(), "Permission denied for step counting", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_permission_denied), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -197,33 +197,40 @@ class HomeFragment : Fragment() {
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
 
         val greetingText = when (hour) {
-            in 5..11 -> "Good Morning"
-            in 12..17 -> "Good Afternoon"
-            in 18..21 -> "Good Evening"
-            else -> "Good Night"
+            in 5..11 -> getString(R.string.morning)
+            in 12..17 -> getString(R.string.afternoon)
+            in 18..21 -> getString(R.string.evening)
+            else -> getString(R.string.night)
         }
         tvGreeting.text = "$greetingText! 👋"
 
         // --- Xử lý Ngày tháng ---
-        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.US)
-        tvDate.text = dateFormat.format(Date())
+        val days = resources.getStringArray(R.array.days_of_week)
+        val months = resources.getStringArray(R.array.months_of_year)
+
+        val dayOfWeek = days[calendar.get(Calendar.DAY_OF_WEEK) - 1]
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+        val month = months[calendar.get(Calendar.MONTH)]
+        val year = calendar.get(Calendar.YEAR)
+
+        tvDate.text = "$dayOfWeek, $day $month $year"
     }
 
     private fun setupDashboard() {
         // 1. Steps
         stepsIcon.setImageResource(R.drawable.ic_steps)
         stepsValue.text = "0"
-        stepsLabel.text = "Steps"
+        stepsLabel.text = getString(R.string.steps)
 
         // 2. Calories
         caloriesIcon.setImageResource(R.drawable.ic_calories)
         caloriesValue.text = "0"
-        caloriesLabel.text = "Active Kcal"
+        caloriesLabel.text = getString(R.string.label_active_kcal)
 
         // 3. Water
         waterIcon.setImageResource(R.drawable.ic_stat_water)
 //        waterValue.text = "6"
-        waterLabel.text = "Water"
+        waterLabel.text = getString(R.string.water)
     }
 
     private fun setupButtonListeners() {
@@ -250,7 +257,7 @@ class HomeFragment : Fragment() {
         } catch (e: Exception) {
             Toast.makeText(
                 requireContext(),
-                "Cannot navigate to Activity tab",
+                getString(R.string.toast_navigation_error),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -498,8 +505,14 @@ class HomeFragment : Fragment() {
         }
 
         // Khi có thông báo lỗi hoặc thành công (Toast)
-        homeViewModel.toastMessage.observe(viewLifecycleOwner) {  event ->
-            event.getContentIfNotHandled()?.let { message ->
+        homeViewModel.toastMessage.observe(viewLifecycleOwner) { event ->
+            event.getContentIfNotHandled()?.let { key ->
+                val message = when (key) {
+                    "toast_goals_saved" -> getString(R.string.toast_goals_saved)
+                    "toast_goals_failed" -> getString(R.string.toast_goals_failed)
+                    "toast_load_failed" -> getString(R.string.toast_load_failed)
+                    else -> key
+                }
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
             }
         }

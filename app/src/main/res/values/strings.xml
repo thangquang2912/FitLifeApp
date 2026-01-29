@@ -2,34 +2,38 @@
     <string name="vn">Vietnamese</string>
     <string name="en">English</string>
     <string name="app_name">FitLife – Smart Health &amp; Lifestyle App</string>
-    <!-- Days of the week -->
-    <string name="monday">Monday</string>
-    <string name="tuesday">Tuesday</string>
-    <string name="wednesday">Wednesday</string>
-    <string name="thursday">Thursday</string>
-    <string name="friday">Friday</string>
-    <string name="saturday">Saturday</string>
-    <string name="sunday">Sunday</string>
+    <string-array name="days_of_week">
+        <item>Sunday</item>
+        <item>Monday</item>
+        <item>Tuesday</item>
+        <item>Wednesday</item>
+        <item>Thursday</item>
+        <item>Friday</item>
+        <item>Saturday</item>
+    </string-array>
 
-    <!-- Months -->
-    <string name="month_january">January</string>
-    <string name="month_february">February</string>
-    <string name="month_march">March</string>
-    <string name="month_april">April</string>
-    <string name="month_may">May</string>
-    <string name="month_june">June</string>
-    <string name="month_july">July</string>
-    <string name="month_august">August</string>
-    <string name="month_september">September</string>
-    <string name="month_october">October</string>
-    <string name="month_november">November</string>
-    <string name="month_december">December</string>
+    <string-array name="months_of_year">
+        <item>January</item>
+        <item>February</item>
+        <item>March</item>
+        <item>April</item>
+        <item>May</item>
+        <item>June</item>
+        <item>July</item>
+        <item>August</item>
+        <item>September</item>
+        <item>October</item>
+        <item>November</item>
+        <item>December</item>
+    </string-array>
+
 
     <!-- Home -->
     <string name="morning">Good Morning</string>
     <string name="afternoon">Good Afternoon</string>
     <string name="evening">Good Evening</string>
     <string name="night">Good Night</string>
+    <string name="label_active_kcal">Active Kcal</string>
     <string name="steps">Steps</string>
     <string name="calories">Calories</string>
     <string name="water">Water</string>
@@ -38,6 +42,29 @@
     <string name="try_activity_or_goals">Try with Activity or Setting Goals!</string>
     <string name="start_activity">Start Activity</string>
     <string name="set_goals">Set Goals</string>
+    <string name="set_your_goals">Set Your Goals</string>
+    <string name="goals_subtitle">
+        Customize your daily and weekly targets
+        to stay motivated
+    </string>
+    <string name="save_goals">Save Goals</string>
+    <string name="daily_steps">Daily Steps</string>
+    <string name="target_steps">Target: %1$d steps</string>
+    <string name="target_water_intake">Target: %1$d ml</string>
+    <string name="active_calories">Active Calories</string>
+    <string name="kcal">kcal</string>
+    <string name="target_active_calories">Target: %1$d kcal</string>
+    <string name="calories_consume">Calories Consume</string>
+    <string name="target_calories_consume">Target: %1$d kcal</string>
+    <string name="weekly_running">Weekly Running</string>
+    <string name="km">km</string>
+    <string name="target_weekly_running">Target: %1$d km</string>
+    <!-- Toast messages -->
+    <string name="toast_permission_denied">Permission denied for step counting</string>
+    <string name="toast_goals_saved">Goals saved successfully!</string>
+    <string name="toast_goals_failed">Failed to save goals</string>
+    <string name="toast_load_failed">Failed to load data</string>
+    <string name="toast_navigation_error">Cannot navigate to Activity tab</string>
 
     <!-- Activity-->
     <string name="time">Time</string>
@@ -81,6 +108,21 @@
     <string name="share_hint">Share your fitness journey...</string>
     <string name="share_post">Share Post</string>
     <string name="reply">Reply</string>
+    <!-- Community Chat -->
+    <string name="community_chat">Community Chat</string>
+    <string name="hint_type_message">Type a message...</string>
+    <!-- Notifications -->
+    <string name="notifications">Notifications</string>
+    <!-- Community Profile -->
+    <string name="my_community_profile">My Community Profile</string>
+    <string name="default_user_name">User Name</string>
+    <string name="born_date">Born: %1$s</string>
+    <string name="posts">Posts</string>
+    <string name="followers">Followers</string>
+    <string name="following">Following</string>
+    <string name="posts_title">POSTS</string>
+    <string name="empty_posts">You haven’t posted anything yet</string>
+
 
     <!-- Profile Screen -->
     <string name="height">Height</string>
@@ -117,6 +159,17 @@
     <string name="select_language">Select Language</string>
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Workout Playing -->
+    <string name="workout_status_work">WORK</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
+    <!-- Workout Detail -->
+    <string name="description">Description</string>
+    <string name="exercises">Exercises</string>
+    <string name="start_workout">Start Workout</string>
+    <string name="minutes_format">%1$d mins</string>
+    <string name="calories_format">%1$d cal</string>
 
     <!-- Navigation -->
     <string name="activity">Activity</string>

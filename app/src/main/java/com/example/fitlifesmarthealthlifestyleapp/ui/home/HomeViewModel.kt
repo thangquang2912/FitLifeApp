@@ -150,9 +150,9 @@ class HomeViewModel : ViewModel() {
 
                 // Reload user data
                 loadUserGoals()
-                _toastMessage.value = Event("Goals saved successfully! ")
+                _toastMessage.value = Event("toast_goals_saved")
             } else {
-                _toastMessage.value = Event("Failed to save goals: ${result. exceptionOrNull()?.message}")
+                _toastMessage.value = Event("toast_goals_failed")
             }
 
             _isLoading.value = false

@@ -26,7 +26,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="My Community Profile"
+            android:text="@string/my_community_profile"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/black"
@@ -61,7 +61,7 @@
                 android:id="@+id/tvUserName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="User Name"
+                android:text="@string/default_user_name"
                 android:textStyle="bold"
                 android:textSize="18sp"
                 android:textColor="@color/black" />
@@ -79,7 +79,7 @@
                 android:id="@+id/tvUserDob"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Born: 01/01/2000"
+                android:text="@string/born_date"
                 android:textSize="12sp"
                 android:textColor="@color/gray_text"
                 android:layout_marginTop="2dp"/>
@@ -121,7 +121,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Posts"
+                android:text="@string/posts"
                 android:textSize="12sp"
                 android:textColor="@color/gray_text"/>
         </LinearLayout>
@@ -147,7 +147,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Followers"
+                android:text="@string/followers"
                 android:textSize="12sp"
                 android:textColor="@color/gray_text"/>
         </LinearLayout>
@@ -173,7 +173,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Following"
+                android:text="@string/following"
                 android:textSize="12sp"
                 android:textColor="@color/gray_text"/>
         </LinearLayout>
@@ -183,7 +183,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="POSTS"
+        android:text="@string/posts_title"
         android:padding="16dp"
         android:textStyle="bold"
         android:textSize="18sp"
@@ -204,7 +204,7 @@
             android:id="@+id/tvEmptyPosts"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Bạn chưa đăng bài viết nào"
+            android:text="@string/empty_posts"
             android:textColor="@color/gray_text"
             android:layout_gravity="center"
             android:visibility="gone"/>
