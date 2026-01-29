@@ -34,50 +34,83 @@ class NotificationAdapter(
         val item = notifications[position]
         val context = holder.itemView.context
 
-        // 1. HIỂN THỊ THÔNG TIN NỘI DUNG
-        holder.tvContent.text = "${item.senderName} ${item.message}"
+        // ===== 1. LOCALIZE MESSAGE (PATCH CHÍNH) =====
+        val localizedMessage = when (item.type) {
+            "LIKE" ->
+                context.getString(R.string.notify_like_post)
+
+            "LIKE_COMMENT" ->
+                context.getString(
+                    R.string.notify_like_comment,
+                    item.content
+                )
+
+            "COMMENT" ->
+                context.getString(
+                    R.string.notify_comment,
+                    item.content
+                )
+
+            "SHARE" ->
+                context.getString(R.string.notify_share_post)
+
+            "POST" ->
+                context.getString(R.string.notify_post)
+
+            "MESSAGE" ->
+                context.getString(R.string.notify_message)
+
+            "FOLLOW" ->
+                context.getString(R.string.notify_follow)
+
+            else -> null
+        }
+
+        // 👉 ƯU TIÊN MESSAGE ĐÃ LOCALIZE, FALLBACK MESSAGE CŨ
+        val finalMessage = localizedMessage ?: item.message
+
+        // ===== 2. HIỂN THỊ NỘI DUNG =====
+        holder.tvContent.text = "${item.senderName} $finalMessage"
 
         val sdf = SimpleDateFormat("HH:mm dd/MM", Locale.getDefault())
         holder.tvTime.text = sdf.format(item.timestamp.toDate())
 
-        // 2. HIỂN THỊ AVATAR (Quan trọng: Load đúng ảnh người gửi)
+        // ===== 3. HIỂN THỊ AVATAR =====
         Glide.with(context)
             .load(item.senderAvatar)
             .placeholder(R.drawable.ic_user)
             .error(R.drawable.ic_user)
-            .circleCrop() // Đảm bảo ảnh bo tròn theo layout
+            .circleCrop()
             .into(holder.ivAvatar)
 
-        // Hiển thị Icon loại thông báo (Like/Comment/Message...)
+        // ===== 4. ICON LOẠI NOTIFICATION =====
         val iconTypeRes = when(item.type) {
             "MESSAGE" -> R.drawable.ic_chat
             else -> R.drawable.ic_notifications
         }
         holder.ivType.setImageResource(iconTypeRes)
-
-        // 3. LOGIC MÀU NỀN (Chưa đọc: CAM, Đã đọc: TRẮNG)
+        // ===== 5. TRẠNG THÁI ĐỌC / CHƯA ĐỌC =====
         if (!item.isRead) {
-            // TRẠNG THÁI CHƯA ĐỌC
-            holder.itemView.setBackgroundColor(Color.parseColor("#FFF3E0")) // Màu cam nhạt
+            holder.itemView.setBackgroundColor(Color.parseColor("#FFF3E0"))
             holder.tvContent.setTypeface(null, Typeface.BOLD)
             holder.ivUnreadDot.visibility = View.VISIBLE
         } else {
-            // TRẠNG THÁI ĐÃ ĐỌC
-            holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.white))
+            holder.itemView.setBackgroundColor(
+                ContextCompat.getColor(context, R.color.white)
+            )
             holder.tvContent.setTypeface(null, Typeface.NORMAL)
             holder.ivUnreadDot.visibility = View.GONE
         }
 
-        // 4. SỰ KIỆN CLICK
         holder.itemView.setOnClickListener {
             if (!item.isRead) {
-                // Cập nhật giao diện ngay lập tức sang màu trắng
                 item.isRead = true
-                holder.itemView.setBackgroundColor(ContextCompat.getColor(context, R.color.white))
+                holder.itemView.setBackgroundColor(
+                    ContextCompat.getColor(context, R.color.white)
+                )
                 holder.tvContent.setTypeface(null, Typeface.NORMAL)
                 holder.ivUnreadDot.visibility = View.GONE
             }
-            // Gọi callback xử lý Firebase và điều hướng
             onItemClick(item)
         }
     }

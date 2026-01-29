@@ -33,7 +33,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="Activity Details"
+            android:text="@string/activity_detail"
             android:textSize="26sp"
             android:textStyle="bold"
             android:textColor="@color/black"
@@ -104,7 +104,7 @@
                     android:padding="14dp">
 
                     <TextView
-                        android:text="Distance"
+                        android:text="@string/distance"
                         android:textSize="12sp"
                         android:textColor="@color/gray_text"
                         android:layout_width="wrap_content"
@@ -141,7 +141,7 @@
                     android:padding="14dp">
 
                     <TextView
-                        android:text="Avg Pace"
+                        android:text="@string/avg_pace"
                         android:textSize="12sp"
                         android:textColor="@color/gray_text"
                         android:layout_width="wrap_content"
@@ -191,7 +191,7 @@
                     android:padding="14dp">
 
                     <TextView
-                        android:text="Calories"
+                        android:text="@string/calories"
                         android:textSize="12sp"
                         android:textColor="@color/gray_text"
                         android:layout_width="wrap_content"
@@ -228,7 +228,7 @@
                     android:padding="14dp">
 
                     <TextView
-                        android:text="Duration"
+                        android:text="@string/duration_activity"
                         android:textSize="12sp"
                         android:textColor="@color/gray_text"
                         android:layout_width="wrap_content"
@@ -247,18 +247,6 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvExtra"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:text="Tap back to return to history"
-            android:textColor="@color/gray_text"
-            android:textSize="13sp"
-            app:layout_constraintTop_toBottomOf="@id/row2"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

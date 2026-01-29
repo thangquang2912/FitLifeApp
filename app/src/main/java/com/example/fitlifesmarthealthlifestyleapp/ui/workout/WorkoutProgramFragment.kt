@@ -43,7 +43,7 @@ class WorkoutProgramFragment : Fragment() {
             progressBar.visibility = if (it) View.VISIBLE else View.GONE
         }
 
-        // Lắng nghe danh sách hiển thị
+            // Lắng nghe danh sách hiển thị
         viewModel.displayPrograms.observe(viewLifecycleOwner) { list ->
             adapter.updateData(list)
         }
@@ -67,11 +67,11 @@ class WorkoutProgramFragment : Fragment() {
     private fun setupListeners() {
         chipGroup.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
-                R.id.chipAll -> viewModel.filterPrograms("All")
-                R.id.chipWeightLoss -> viewModel.filterPrograms("Weight Loss")
-                R.id.chipMuscleGain -> viewModel.filterPrograms("Muscle Gain")
-                R.id.chipYoga -> viewModel.filterPrograms("Yoga")
-                else -> viewModel.filterPrograms("All")
+                R.id.chipAll -> viewModel.filterPrograms(WorkoutCategory.ALL)
+                R.id.chipWeightLoss -> viewModel.filterPrograms(WorkoutCategory.WEIGHT_LOSS)
+                R.id.chipMuscleGain -> viewModel.filterPrograms(WorkoutCategory.MUSCLE_GAIN)
+                R.id.chipYoga -> viewModel.filterPrograms(WorkoutCategory.YOGA)
+                else -> viewModel.filterPrograms(WorkoutCategory.ALL)
             }
         }
     }

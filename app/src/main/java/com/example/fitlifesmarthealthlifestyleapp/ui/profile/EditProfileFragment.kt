@@ -48,7 +48,8 @@ class EditProfileFragment : BottomSheetDialogFragment() {
     private lateinit var etHeight : TextInputEditText
     private lateinit var btnSave : MaterialButton
     private lateinit var actvActivityLevel : MaterialAutoCompleteTextView
-    val activityLevels = arrayOf("Sedentary", "Lightly Active", "Moderately Active", "Very Active")
+    private lateinit var activityLevelKeys: List<String>
+    private lateinit var activityLevelDisplay: List<String>
 
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -69,6 +70,18 @@ class EditProfileFragment : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        activityLevelKeys = listOf(
+            "Sedentary",
+            "Lightly Active",
+            "Moderately Active",
+            "Very Active"
+        )
+        activityLevelDisplay = listOf(
+            getString(R.string.activity_sedentary),
+            getString(R.string.activity_lightly_active),
+            getString(R.string.activity_moderately_active),
+            getString(R.string.activity_very_active)
+        )
 
         btnClose = view.findViewById<ImageView>(R.id.btnClose)
         ivAvatarEdit = view.findViewById<ShapeableImageView>(R.id.ivAvatarEdit)
@@ -84,7 +97,7 @@ class EditProfileFragment : BottomSheetDialogFragment() {
         val adapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_dropdown_item_1line,
-            activityLevels
+            activityLevelDisplay
         )
 
         actvActivityLevel = view.findViewById<MaterialAutoCompleteTextView>(R.id.actvActivityLevel)
@@ -118,7 +131,10 @@ class EditProfileFragment : BottomSheetDialogFragment() {
             .into(ivAvatarEdit)
 
         // activity level
-        actvActivityLevel.setText(currentUser.activityLevel, false)
+        val index = activityLevelKeys.indexOf(currentUser.activityLevel)
+        if (index >= 0) {
+            actvActivityLevel.setText(activityLevelDisplay[index], false)
+        }
 
         // Date of Birth
         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.US)
@@ -137,8 +153,7 @@ class EditProfileFragment : BottomSheetDialogFragment() {
         }
 
         actvActivityLevel.setOnItemClickListener { _, _, position, _ ->
-            val selectedLevel = activityLevels[position]
-            currentUser.activityLevel = selectedLevel
+            currentUser.activityLevel = activityLevelKeys[position]
         }
 
         // Xử lý Logic chọn giới tính
