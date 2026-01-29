@@ -132,6 +132,8 @@
     <string name="health_metrics">Health Metrics</string>
     <string name="edit_profile">Edit Profile</string>
     <string name="workout_programs">Workout Programs</string>
+    <string name="leaderboard">Leaderboard</string>
+    <string name="all_time_distance_ranking">All time distance ranking</string>
     <string name="leaderboard_challenges">Leaderboard - Challenges</string>
     <string name="workout_history">Workout History</string>
     <string name="language">Language</string>
@@ -184,6 +186,25 @@
     <string name="notify_message">sent a message to community group.</string>
     <string name="notify_follow">started following you.</string>
     <string name="notify_default">interacted with you.</string>
+    <!-- Blocked users dialog -->
+    <string name="title_blocked_users">Blocked Users</string>
+    <string name="btn_close">Close</string>
+
+    <string name="msg_no_blocked_users">No blocked users</string>
+    <string name="msg_unblock_success">Unblocked %1$s</string>
+    <string name="msg_unblock_failed">Failed to unblock user</string>
+
+    <string name="title_workouts">Workouts</string>
+
+    <!-- Workout filters -->
+    <string name="filter_all">All</string>
+    <string name="filter_weight_loss">Weight Loss</string>
+    <string name="filter_muscle_gain">Muscle Gain</string>
+    <string name="filter_yoga">Yoga</string>
+
+    <string name="difficulty_beginner">Beginner</string>
+    <string name="difficulty_intermediate">Intermediate</string>
+    <string name="difficulty_advanced">Advanced</string>
 
     <!-- Navigation -->
     <string name="activity">Activity</string>

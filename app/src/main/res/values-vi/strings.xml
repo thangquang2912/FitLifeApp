@@ -134,6 +134,8 @@
     <string name="health_metrics">Số liệu sức khỏe</string>
     <string name="edit_profile">Chỉnh sửa hồ sơ</string>
     <string name="workout_programs">Chương trình tập luyện</string>
+    <string name="leaderboard">Bảng xếp hạng</string>
+    <string name="all_time_distance_ranking">Bảng xếp hạng quãng đường chạy</string>
     <string name="leaderboard_challenges">Bảng xếp hạng - Thử thách</string>
     <string name="workout_history">Lịch sử tập luyện</string>
     <string name="language">Ngôn ngữ</string>
@@ -184,6 +186,25 @@
     <string name="notify_message">đã gửi một tin nhắn trong nhóm cộng đồng.</string>
     <string name="notify_follow">đã bắt đầu theo dõi bạn.</string>
     <string name="notify_default">đã tương tác với bạn.</string>
+    <!-- Blocked users dialog -->
+    <string name="title_blocked_users">Người dùng đã chặn</string>
+    <string name="btn_close">Đóng</string>
+
+    <string name="msg_no_blocked_users">Không có người dùng bị chặn</string>
+    <string name="msg_unblock_success">Đã bỏ chặn %1$s</string>
+    <string name="msg_unblock_failed">Lỗi khi bỏ chặn</string>
+
+    <string name="title_workouts">Bài tập</string>
+
+    <!-- Bộ lọc bài tập -->
+    <string name="filter_all">Tất cả</string>
+    <string name="filter_weight_loss">Giảm cân</string>
+    <string name="filter_muscle_gain">Tăng cơ</string>
+    <string name="filter_yoga">Yoga</string>
+    <string name="difficulty_beginner">Người mới</string>
+    <string name="difficulty_intermediate">Trung cấp</string>
+    <string name="difficulty_advanced">Nâng cao</string>
+
 
     <!-- Navigation -->
     <string name="activity">Hoạt động</string>

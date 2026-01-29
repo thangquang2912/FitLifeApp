@@ -10,7 +10,8 @@ data class Notification(
     val senderAvatar: String = "",
     val postId: String = "",      // ID bài viết liên quan (nếu có)
     val type: String = "",        // LIKE, COMMENT, SHARE, POST, MESSAGE
-    val message: String = "",     // Nội dung thông báo (VD: "đã thích bài viết của bạn")
+    val message: String = "",
+    val content: String = "",// Nội dung thông báo (VD: "đã thích bài viết của bạn")
     var isRead: Boolean = false,
     val timestamp: Timestamp = Timestamp.now()
 )

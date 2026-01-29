@@ -40,7 +40,7 @@ class WorkoutViewModel : ViewModel() {
 
     // Logic lọc cực đơn giản
     fun filterPrograms(category: String) {
-        if (category == "All") {
+        if (category == WorkoutCategory.ALL ) {
             _displayPrograms.value = fullProgramList
         } else {
             // Lọc theo category (Không phân biệt hoa thường)

@@ -139,9 +139,9 @@ class ProfileFragment : Fragment() {
     }
 
     private fun setupStaticLabels() {
-        tvHeightLabel.text = "Height"
-        tvWeightLabel.text = "Weight"
-        tvAgeLabel.text = "Age"
+        tvHeightLabel.text = getString(R.string.height)
+        tvWeightLabel.text = getString(R.string.weight)
+        tvAgeLabel.text = getString(R.string.age)
     }
 
     private fun showLanguageBottomSheet() {

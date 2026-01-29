@@ -36,9 +36,9 @@ class BlockedUsersDialogFragment : DialogFragment() {
         fetchBlockedUsers()
 
         return AlertDialog.Builder(requireContext())
-            .setTitle("Blocked Users")
+            .setTitle(getString(R.string.title_blocked_users))
             .setView(rv)
-            .setPositiveButton("Close", null)
+            .setPositiveButton(getString(R.string.btn_close), null)
             .create()
     }
 
@@ -50,7 +50,11 @@ class BlockedUsersDialogFragment : DialogFragment() {
             val blockedIds = doc.get("blockedUsers") as? List<String> ?: emptyList()
 
             if (blockedIds.isEmpty()) {
-                Toast.makeText(context, "No blocked users", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    getString(R.string.msg_no_blocked_users),
+                    Toast.LENGTH_SHORT
+                ).show()
                 return@addOnSuccessListener
             }
 
@@ -83,16 +87,30 @@ class BlockedUsersDialogFragment : DialogFragment() {
                 // [FIX] Check an toàn trước khi dùng context/adapter
                 if (!isAdded || context == null) return@addOnSuccessListener
 
-                Toast.makeText(context, "Đã bỏ chặn ${user.displayName}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    getString(R.string.msg_unblock_success, user.displayName),
+                    Toast.LENGTH_SHORT
+                ).show()
                 blockedUsersList.remove(user)
                 adapter.notifyDataSetChanged()
 
                 if (blockedUsersList.isEmpty()) {
-                    Toast.makeText(context, "No blocked users", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        getString(R.string.msg_no_blocked_users),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
             .addOnFailureListener {
-                if (isAdded) Toast.makeText(context, "Lỗi khi bỏ chặn", Toast.LENGTH_SHORT).show()
+                if (isAdded) {
+                    Toast.makeText(
+                        context,
+                        getString(R.string.msg_unblock_failed),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
     }
 }
