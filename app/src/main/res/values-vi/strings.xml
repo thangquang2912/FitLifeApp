@@ -98,10 +98,13 @@
     <string name="quick_macros">Thông tin nhanh</string>
     <string name="save_meal">Lưu bữa ăn</string>
     <string name="analyzing">Đang phân tích...</string>
+    <string name="try_another">Thử món khác ↻</string>
+    <string name="today">Hôm nay, </string>
 
     <!-- Community -->
     <string name="community">Cộng đồng</string>
     <string name="search">Tìm kiếm...</string>
+    <string name="gallery">Bộ sưu tập</string>
     <string name="create_post">Tạo bài viết</string>
     <string name="add_photo">Chạm để thay đổi hoặc thêm ảnh</string>
     <string name="duration">Thời gian (ví dụ: 45 phút)</string>
@@ -124,7 +127,6 @@
     <string name="posts_title">BÀI VIẾT</string>
     <string name="empty_posts">Bạn chưa đăng bài viết nào</string>
 
-
     <!-- Profile Screen -->
     <string name="height">Chiều cao</string>
     <string name="weight">Cân nặng</string>
@@ -138,6 +140,8 @@
     <string name="logout">Đăng xuất</string>
     <string name="running">Chạy bộ</string>
     <string name="activity_detail">Hoạt động chi tiết</string>
+    <string name="weekly_water_intake">Nước uống hàng tuần</string>
+    <string name="weekly_steps_history">Lịch sử bước chân hàng tuần</string>
 
     <!-- Edit Profile-->
     <string name="tap_to_change_photo">Chạm để đổi ảnh</string>
@@ -170,6 +174,16 @@
     <string name="start_workout">Bắt đầu tập</string>
     <string name="minutes_format">%1$d phút</string>
     <string name="calories_format">%1$d calo</string>
+
+    <!-- Hành động thông báo -->
+    <string name="notify_like_post">đã thích bài viết của bạn.</string>
+    <string name="notify_like_comment">đã thích bình luận của bạn: "%1$s"</string>
+    <string name="notify_comment">đã bình luận: "%1$s"</string>
+    <string name="notify_share_post">đã chia sẻ bài viết của bạn.</string>
+    <string name="notify_post">đã đăng một cập nhật mới.</string>
+    <string name="notify_message">đã gửi một tin nhắn trong nhóm cộng đồng.</string>
+    <string name="notify_follow">đã bắt đầu theo dõi bạn.</string>
+    <string name="notify_default">đã tương tác với bạn.</string>
 
     <!-- Navigation -->
     <string name="activity">Hoạt động</string>

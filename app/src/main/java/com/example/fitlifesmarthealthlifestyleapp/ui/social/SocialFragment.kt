@@ -384,6 +384,7 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
                     // Lấy info của mình để gửi sang cho người kia biết ai like
                     db.collection("users").document(currentUid).get().addOnSuccessListener { myDoc ->
                         NotificationHelper.sendNotification(
+                            context = requireContext(),
                             recipientId = post.userId,
                             senderId = currentUid,
                             senderName = myDoc.getString("displayName") ?: "Someone",

@@ -385,6 +385,7 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
 
             // Gọi Helper để gửi thông báo
             NotificationHelper.sendNotification(
+                context = requireContext(),
                 recipientId = ownerId,
                 senderId = senderId,
                 senderName = senderName,

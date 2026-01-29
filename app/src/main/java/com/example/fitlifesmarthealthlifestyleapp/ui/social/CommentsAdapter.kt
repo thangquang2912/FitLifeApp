@@ -171,6 +171,7 @@ class CommentsAdapter(
                     // [MỚI] Gửi thông báo "Tim bình luận"
                     if (comment.userId != currentUid) {
                         NotificationHelper.sendNotification(
+                            context = itemView.context,
                             recipientId = comment.userId,
                             senderId = currentUid,
                             senderName = currentUserName,

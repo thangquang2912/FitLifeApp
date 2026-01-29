@@ -173,7 +173,7 @@ class CreatePostDialogFragment : BottomSheetDialogFragment() {
 
                     db.collection("posts").document(postId).set(post).addOnSuccessListener {
                         if (isAdded) {
-                            NotificationHelper.sendToAllFollowers(user.uid, user.displayName, user.photoUrl, postId)
+                            NotificationHelper.sendToAllFollowers(context = requireContext(),user.uid, user.displayName, user.photoUrl, postId)
                             dismiss()
                         }
                     }

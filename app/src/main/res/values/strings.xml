@@ -27,7 +27,6 @@
         <item>December</item>
     </string-array>
 
-
     <!-- Home -->
     <string name="morning">Good Morning</string>
     <string name="afternoon">Good Afternoon</string>
@@ -97,10 +96,13 @@
     <string name="quick_macros">Quick Macros</string>
     <string name="save_meal">Save Meal</string>
     <string name="analyzing">Analyzing macros...</string>
+    <string name="try_another">Try another dish ↻</string>
+    <string name="today">Today, </string>
 
     <!-- Community -->
     <string name="community">Community</string>
     <string name="search">Search...</string>
+    <string name="gallery">Gallery</string>
     <string name="create_post">Create Post</string>
     <string name="add_photo">Tap to change or add photo</string>
     <string name="duration">Duration (e.g. 45 mins)</string>
@@ -123,7 +125,6 @@
     <string name="posts_title">POSTS</string>
     <string name="empty_posts">You haven’t posted anything yet</string>
 
-
     <!-- Profile Screen -->
     <string name="height">Height</string>
     <string name="weight">Weight</string>
@@ -137,6 +138,9 @@
     <string name="logout">Logout</string>
     <string name="running">Running</string>
     <string name="activity_detail">Activity Details</string>
+    <string name="weekly_water_intake">Weekly Water Intake</string>
+    <string name="weekly_steps_history">Weekly Steps History</string>
+
 
     <!-- Edit Profile-->
     <string name="tap_to_change_photo">Tap to change photo</string>
@@ -171,11 +175,23 @@
     <string name="minutes_format">%1$d mins</string>
     <string name="calories_format">%1$d cal</string>
 
+    <!-- Notification actions -->
+    <string name="notify_like_post">liked your post.</string>
+    <string name="notify_like_comment">liked your comment: "%1$s"</string>
+    <string name="notify_comment">commented: "%1$s"</string>
+    <string name="notify_share_post">shared your post.</string>
+    <string name="notify_post">posted a new update.</string>
+    <string name="notify_message">sent a message to community group.</string>
+    <string name="notify_follow">started following you.</string>
+    <string name="notify_default">interacted with you.</string>
+
     <!-- Navigation -->
     <string name="activity">Activity</string>
     <string name="home">Home</string>
     <string name="nutrition">Nutrition</string>
     <string name="social">Social</string>
     <string name="profile">Profile</string>
+
+
 
 </resources>

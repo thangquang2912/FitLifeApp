@@ -230,6 +230,7 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
             db.collection("users").document(currentUid!!).get().addOnSuccessListener { myDoc ->
                 if (isAdded) {
                     NotificationHelper.sendNotification(
+                        context = requireContext(),
                         recipientId = targetUserId!!,
                         senderId = currentUid!!,
                         senderName = myDoc.getString("displayName") ?: "User",
@@ -267,6 +268,7 @@ class UserProfileFragment : Fragment(R.layout.fragment_user_profile) {
                     db.collection("users").document(currentUid).get().addOnSuccessListener { myDoc ->
                         if (isAdded) {
                             NotificationHelper.sendNotification(
+                                context = requireContext(),
                                 recipientId = post.userId,
                                 senderId = currentUid,
                                 senderName = myDoc.getString("displayName") ?: "Someone",
