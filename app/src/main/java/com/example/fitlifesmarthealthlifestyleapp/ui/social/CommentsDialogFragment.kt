@@ -183,7 +183,11 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
                 transaction.commit()
             }
         )
-
+        profileViewModel.user.observe(viewLifecycleOwner) { user ->
+            user?.let {
+                adapter.setCurrentUserInfo(it.displayName, it.photoUrl ?: "")
+            }
+        }
         rvComments.layoutManager = LinearLayoutManager(context)
         rvComments.adapter = adapter
     }
@@ -210,6 +214,7 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
 
     private fun processSend(user: User, content: String) {
         lifecycleScope.launch {
+            Toast.makeText(context, "Checking content...", Toast.LENGTH_SHORT).show()
             btnSend.isEnabled = false
             progressBar.visibility = View.VISIBLE
 
@@ -269,7 +274,7 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
                 progressBar.visibility = View.GONE
                 etInput.setText("")
                 clearPreview()
-                sendNotificationToPostOwner(postId!!, user.uid, user.displayName, user.photoUrl, "commented on your post")
+                sendNotificationToPostOwner(postId!!, user.uid, user.displayName, user.photoUrl, content)
             }
             .addOnFailureListener {
                 btnSend.isEnabled = true
@@ -385,7 +390,7 @@ class CommentsDialogFragment : DialogFragment(R.layout.fragment_comments) {
                 senderName = senderName,
                 senderAvatar = senderAvatar,
                 postId = postId,
-                type = "MESSAGE",
+                type = "COMMENT",
                 content = message
             )
         }

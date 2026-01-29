@@ -93,4 +93,5 @@ dependencies {
     implementation("org.osmdroid:osmdroid-android:6.1.17")
     implementation("com.github.chrisbanes:PhotoView:2.3.0")
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    implementation("com.google.android.material:material:1.9.0")
 }

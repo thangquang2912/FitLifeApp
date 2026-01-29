@@ -21,6 +21,7 @@ object NotificationHelper {
 
         val messageText = when (type) {
             "LIKE" -> "liked your post."
+            "LIKE_COMMENT" -> "liked your comment: \"$content\""
             "COMMENT" -> "commented: \"$content\""
             "SHARE" -> "shared your post."
             "POST" -> "posted a new update."

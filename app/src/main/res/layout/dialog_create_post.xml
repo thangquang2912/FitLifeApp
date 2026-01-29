@@ -1,147 +1,152 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="20dp"
+    android:fillViewport="true"
     android:background="@drawable/bg_bottom_sheet">
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Create Post"
-        android:textSize="20sp"
-        android:textStyle="bold"/>
-
-    <ImageView
-        android:id="@+id/imgPreview"
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:scaleType="centerCrop"
-        android:visibility="gone"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_edittext"
-        android:clipToOutline="true"/>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="12dp"
-        android:weightSum="2">
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Post"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"/>
+
+        <ImageView
+            android:id="@+id/imgPreview"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_edittext"
+            android:clipToOutline="true"/>
 
         <LinearLayout
-            android:id="@+id/btnOpenGallery"
-            android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_dash_border"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_image"
-                app:tint="@color/orange_primary"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Gallery"
-                android:textSize="12sp"
-                android:layout_marginTop="4dp"/>
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
+            android:weightSum="2">
+            <LinearLayout
+                android:id="@+id/btnOpenGallery"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_dash_border"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_image"
+                    app:tint="@color/orange_primary"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gallery"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/btnOpenCamera"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_dash_border"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:clickable="true"
+                android:focusable="true">
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_camera_alt_24"
+                    app:tint="@color/orange_primary"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Camera"
+                    android:textSize="12sp"
+                    android:layout_marginTop="4dp"/>
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/btnOpenCamera"
-            android:layout_width="0dp"
-            android:layout_height="80dp"
-            android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            android:background="@drawable/bg_dash_border"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_camera_alt_24"
-                app:tint="@color/orange_primary"/>
-            <TextView
-                android:layout_width="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:weightSum="2">
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Camera"
-                android:textSize="12sp"
-                android:layout_marginTop="4dp"/>
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDuration"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Duration (e.g. 45 mins)"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCalories"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Calories (e.g. 420 kcal)"/>
+            </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
-    </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="16dp"
-        android:weightSum="2">
+        <EditText
+            android:id="@+id/etCaption"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:hint="Share your fitness journey..."
+            android:background="@drawable/bg_edittext"
+            android:gravity="top"
+            android:padding="10dp"
+            android:layout_marginTop="16dp"
+            android:inputType="textMultiLine"
+            android:imeOptions="actionDone"/>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
+        <Button
+            android:id="@+id/btnSharePost"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etDuration"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Duration (e.g. 45 mins)"/>
-        </com.google.android.material.textfield.TextInputLayout>
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/orange_primary"
+            android:text="Share Post"
+            android:textStyle="bold"
+            android:textColor="@color/white" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
+        <ProgressBar
+            android:id="@+id/progressBarCreatePost"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etCalories"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Calories (e.g. 420 kcal)"/>
-        </com.google.android.material.textfield.TextInputLayout>
+            android:layout_gravity="center"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"
+            android:indeterminateTint="@color/orange_primary" />
     </LinearLayout>
-
-    <EditText
-        android:id="@+id/etCaption"
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:hint="Share your fitness journey..."
-        android:background="@drawable/bg_edittext"
-        android:gravity="top"
-        android:padding="10dp"
-        android:layout_marginTop="16dp"/>
-
-    <Button
-        android:id="@+id/btnSharePost"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:backgroundTint="@color/orange_primary"
-        android:text="Share Post"
-        android:textColor="@color/white" />
-
-    <ProgressBar
-        android:id="@+id/progressBarCreatePost"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="10dp"
-        android:visibility="gone"
-        android:indeterminateTint="@color/orange_primary" />
-</LinearLayout>
+</androidx.core.widget.NestedScrollView>
