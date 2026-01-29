@@ -203,9 +203,6 @@ class NutritionFragment : Fragment() {
         val today = Calendar.getInstance()
         val target = Calendar.getInstance()
         target.time = date
-        return when {
-            android.text.format.DateUtils.isToday(date.time) -> "Today, " + SimpleDateFormat("dd MMM", Locale.getDefault()).format(date)
-            else -> SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(date)
-        }
+        return SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(date)
     }
 }
