@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.fitlifesmarthealthlifestyleapp.R
 import com.example.fitlifesmarthealthlifestyleapp.domain.model.CommunityMessage
 import com.example.fitlifesmarthealthlifestyleapp.ui.nutrition.CloudinaryHelper
@@ -30,22 +31,29 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
     private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
 
     private lateinit var adapter: CommunityChatAdapter
-    private lateinit var rvChat: RecyclerView
+    private lateinit var rvCommunityChat: RecyclerView
     private lateinit var edtMessage: EditText
     private lateinit var btnSend: ImageView
-    private lateinit var progressBar: ProgressBar
+    private lateinit var btnPickImage: ImageView
     private lateinit var layoutPreview: RelativeLayout
     private lateinit var ivPreview: ImageView
+    private lateinit var btnClosePreview: ImageView
+    private lateinit var progressBarChat: ProgressBar
 
     private var selectedImageUri: Uri? = null
-    private var myName: String = "User"
-    private var myAvatar: String = ""
+    private var myName = ""
+    private var myAvatar = ""
+
+    // Tracking message being edited
+    private var editingMessage: CommunityMessage? = null
+    private var isImageRemovedDuringEdit = false
 
     private val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             selectedImageUri = uri
             ivPreview.setImageURI(uri)
             layoutPreview.visibility = View.VISIBLE
+            isImageRemovedDuringEdit = false
             updateSendButtonState()
         }
     }
@@ -53,40 +61,17 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val btnBack = view.findViewById<ImageView>(R.id.btnBack)
-        val btnPickImage = view.findViewById<ImageView>(R.id.btnPickImage)
-        val btnClosePreview = view.findViewById<ImageView>(R.id.btnClosePreview)
-        rvChat = view.findViewById(R.id.rvCommunityChat)
+        rvCommunityChat = view.findViewById(R.id.rvCommunityChat)
         edtMessage = view.findViewById(R.id.edtMessage)
         btnSend = view.findViewById(R.id.btnSend)
-        progressBar = view.findViewById(R.id.progressBarChat)
+        btnPickImage = view.findViewById(R.id.btnPickImage)
         layoutPreview = view.findViewById(R.id.layoutPreview)
         ivPreview = view.findViewById(R.id.ivPreview)
+        btnClosePreview = view.findViewById(R.id.btnClosePreview)
+        progressBarChat = view.findViewById(R.id.progressBarChat)
 
-        btnBack.setOnClickListener { parentFragmentManager.popBackStack() }
+        setupRecyclerView()
         fetchMyInfo()
-
-        // [CẬP NHẬT] Setup Adapter với đầy đủ callback
-        adapter = CommunityChatAdapter(
-            messages = emptyList(),
-            onMessageLongClick = { msg, v -> showMessageOptions(msg, v) },
-
-            // 1. Callback Xem ảnh
-            onImageClick = { imageUrl ->
-                FullScreenImageDialogFragment.show(parentFragmentManager, imageUrl)
-            },
-
-            // 2. Callback Xem Profile
-            onUserClick = { userId ->
-                openUserProfile(userId)
-            }
-        )
-
-        val layoutManager = LinearLayoutManager(context).apply { stackFromEnd = true }
-        rvChat.layoutManager = layoutManager
-        rvChat.adapter = adapter
-        rvChat.setPadding(0, 0, 0, dpToPx(16))
-
         listenMessages()
 
         btnPickImage.setOnClickListener {
@@ -95,169 +80,200 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
 
         btnClosePreview.setOnClickListener {
             selectedImageUri = null
+            isImageRemovedDuringEdit = true // Mark that image was removed
             layoutPreview.visibility = View.GONE
             updateSendButtonState()
         }
 
         edtMessage.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) = updateSendButtonState()
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                updateSendButtonState()
+            }
+            override fun afterTextChanged(s: Editable?) {}
         })
 
-        btnSend.setOnClickListener { handleSendMessage() }
-    }
+        btnSend.setOnClickListener {
+            val text = edtMessage.text.toString().trim()
 
-    // [MỚI] Hàm xử lý điều hướng Profile
-    private fun openUserProfile(userId: String) {
-        val transaction = parentFragmentManager.beginTransaction()
+            // Determine which URI to check for safety
+            val uriForCheck = if (selectedImageUri != null) {
+                selectedImageUri
+            } else if (editingMessage != null && !isImageRemovedDuringEdit && editingMessage?.imageUrl?.isNotEmpty() == true) {
+                Uri.parse(editingMessage?.imageUrl)
+            } else {
+                null
+            }
 
-        if (userId == currentUid) {
-            // Nếu click vào chính mình -> Vào Personal Profile
-            transaction.replace(R.id.navHostFragmentContainerView, PersonalProfileFragment())
-        } else {
-            // Nếu click vào người khác -> Vào User Profile (dùng newInstance để truyền ID)
-            transaction.replace(R.id.navHostFragmentContainerView, UserProfileFragment.newInstance(userId))
-        }
-
-        transaction.addToBackStack(null)
-        transaction.commit()
-    }
-
-    private fun showMessageOptions(msg: CommunityMessage, view: View) {
-        val popup = PopupMenu(context, view)
-        if (msg.senderId == currentUid) {
-            popup.menu.add("Edit")
-            popup.menu.add("Delete")
-
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title) {
-                    "Edit" -> {
-                        if (msg.type == "TEXT") {
-                            showEditDialog(msg)
-                        } else {
-                            Toast.makeText(context, "Cannot edit image message", Toast.LENGTH_SHORT).show()
-                        }
-                        true
-                    }
-                    "Delete" -> {
-                        showDeleteConfirmDialog(msg)
-                        true
-                    }
-                    else -> false
+            checkSafetyAndProceed(text, uriForCheck) {
+                if (editingMessage != null) {
+                    performUpdateMessage(editingMessage!!.id, text)
+                } else {
+                    performSendMessage(text)
                 }
             }
-            popup.show()
+        }
+
+        view.findViewById<ImageView>(R.id.btnBack).setOnClickListener {
+            parentFragmentManager.popBackStack()
         }
     }
 
-    private fun showEditDialog(msg: CommunityMessage) {
-        val input = EditText(context)
-        input.setText(msg.text)
-
-        AlertDialog.Builder(context)
-            .setTitle("Edit Message")
-            .setView(input)
-            .setPositiveButton("Save") { _, _ ->
-                val newText = input.text.toString().trim()
-                if (newText.isNotEmpty()) {
-                    db.collection("community_messages").document(msg.id)
-                        .update("text", newText)
-                        .addOnSuccessListener {
-                            Toast.makeText(context, "Updated", Toast.LENGTH_SHORT).show()
-                        }
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun showDeleteConfirmDialog(msg: CommunityMessage) {
-        AlertDialog.Builder(context)
-            .setTitle("Delete Message")
-            .setMessage("Are you sure you want to delete this message?")
-            .setPositiveButton("Delete") { _, _ ->
-                db.collection("community_messages").document(msg.id)
-                    .delete()
-                    .addOnSuccessListener {
-                        Toast.makeText(context, "Deleted", Toast.LENGTH_SHORT).show()
-                    }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
-    private fun handleSendMessage() {
-        val text = edtMessage.text.toString().trim()
-        val context = requireContext()
+    private fun checkSafetyAndProceed(text: String, uri: Uri?, onSafe: () -> Unit) {
         Toast.makeText(context, "Checking content safety...", Toast.LENGTH_SHORT).show()
-        btnSend.visibility = View.GONE
-        progressBar.visibility = View.VISIBLE
+        progressBarChat.visibility = View.VISIBLE
+        btnSend.isEnabled = false
         edtMessage.isEnabled = false
 
         lifecycleScope.launch {
-            val isSafe = GeminiModerator.isContentSafe(context, selectedImageUri, text)
-
+            val isSafe = GeminiModerator.isContentSafe(requireContext(), uri, text)
             if (!isSafe) {
+                progressBarChat.visibility = View.GONE
+                btnSend.isEnabled = true
+                edtMessage.isEnabled = true
                 Toast.makeText(context, "Content violates community guidelines!", Toast.LENGTH_LONG).show()
-                resetInputState()
                 return@launch
             }
-
-            var uploadedImageUrl = ""
-            var messageType = "TEXT"
-
-            if (selectedImageUri != null) {
-                val url = CloudinaryHelper.uploadImage(selectedImageUri!!, "community_chat")
-                if (url != null) {
-                    uploadedImageUrl = url
-                    messageType = "IMAGE"
-                } else {
-                    Toast.makeText(context, "Upload error", Toast.LENGTH_SHORT).show()
-                    resetInputState()
-                    return@launch
-                }
-            }
-
-            saveToFirestore(text, uploadedImageUrl, messageType)
+            onSafe()
         }
     }
 
-    private fun saveToFirestore(text: String, imageUrl: String, type: String) {
-        if (currentUid == null) return
+    private fun performSendMessage(text: String) {
+        lifecycleScope.launch {
+            try {
+                var imageUrl = ""
+                // Bước 1: Nếu có chọn ảnh cục bộ, upload lên trước
+                if (selectedImageUri != null) {
+                    imageUrl = CloudinaryHelper.uploadImage(selectedImageUri!!, "community_chats") ?: ""
+                }
 
-        val msgId = UUID.randomUUID().toString()
-        val message = CommunityMessage(
-            id = msgId,
-            senderId = currentUid,
-            senderName = myName,
-            senderAvatar = myAvatar,
-            text = text,
-            imageUrl = imageUrl,
-            type = type,
-            timestamp = Timestamp.now()
-        )
-
-        db.collection("community_messages").document(msgId).set(message)
-            .addOnSuccessListener {
-                // [MỚI] Gửi thông báo đến những người đang follow mình
-                NotificationHelper.sendToAllFollowers(
-                    senderId = currentUid,
+                // Bước 2: Tạo Message Object chứa CẢ text và imageUrl
+                val msgId = UUID.randomUUID().toString()
+                val message = CommunityMessage(
+                    id = msgId,
+                    senderId = currentUid!!,
                     senderName = myName,
                     senderAvatar = myAvatar,
-                    postId = "", // Tin nhắn chat không gắn với bài viết cụ thể
-                    type = "MESSAGE"
+                    text = text, // Văn bản
+                    imageUrl = imageUrl, // Ảnh (nếu có)
+                    type = if (imageUrl.isNotEmpty()) "IMAGE" else "TEXT", // Để Adapter biết có ảnh hay không
+                    timestamp = Timestamp.now()
                 )
 
-                edtMessage.setText("")
-                selectedImageUri = null
-                layoutPreview.visibility = View.GONE
+                db.collection("community_messages").document(msgId).set(message)
+                    .addOnSuccessListener {
+                        clearInputs()
+                        resetInputState()
+                    }
+                    .addOnFailureListener {
+                        resetInputState()
+                        Toast.makeText(context, "Send failed", Toast.LENGTH_SHORT).show()
+                    }
+            } catch (e: Exception) {
                 resetInputState()
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-            .addOnFailureListener {
-                Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun performUpdateMessage(messageId: String, newText: String) {
+        lifecycleScope.launch {
+            try {
+                var finalImageUrl = editingMessage?.imageUrl ?: ""
+
+                // 1. Nếu chọn ảnh MỚI từ gallery/camera
+                if (selectedImageUri != null && !selectedImageUri.toString().startsWith("http")) {
+                    finalImageUrl = CloudinaryHelper.uploadImage(selectedImageUri!!, "community_chats") ?: ""
+                }
+                // 2. Nếu đã nhấn nút xóa ảnh trên Preview
+                else if (isImageRemovedDuringEdit) {
+                    finalImageUrl = ""
+                }
+
+                // Gộp cập nhật cả chữ và ảnh
+                val updates = mapOf(
+                    "text" to newText,
+                    "imageUrl" to finalImageUrl,
+                    "type" to if (finalImageUrl.isNotEmpty()) "IMAGE" else "TEXT"
+                )
+
+                db.collection("community_messages").document(messageId).update(updates)
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Message updated!", Toast.LENGTH_SHORT).show()
+                        editingMessage = null
+                        isImageRemovedDuringEdit = false
+                        clearInputs()
+                        resetInputState()
+                    }
+            } catch (e: Exception) {
                 resetInputState()
+                Toast.makeText(context, "Update failed", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun showEditDeleteMenu(msg: CommunityMessage, view: View) {
+        val popup = PopupMenu(requireContext(), view)
+        popup.menu.add("Edit Message")
+        popup.menu.add("Delete Message")
+
+        popup.setOnMenuItemClickListener {
+            when (it.title) {
+                "Edit Message" -> {
+                    editingMessage = msg
+                    isImageRemovedDuringEdit = false
+                    edtMessage.setText(msg.text)
+
+                    // Nếu tin nhắn có ảnh, hiện ảnh lên ô Preview để cho phép XÓA hoặc THAY THẾ
+                    if (msg.imageUrl.isNotEmpty()) {
+                        layoutPreview.visibility = View.VISIBLE
+                        Glide.with(requireContext()).load(msg.imageUrl).into(ivPreview)
+                        // Giả lập Uri từ URL cũ để AI check vẫn hoạt động
+                        selectedImageUri = Uri.parse(msg.imageUrl)
+                    } else {
+                        layoutPreview.visibility = View.GONE
+                        selectedImageUri = null
+                    }
+
+                    edtMessage.requestFocus()
+                    btnSend.setColorFilter(ContextCompat.getColor(requireContext(), R.color.orange_primary))
+                    Toast.makeText(context, "Editing mode enabled", Toast.LENGTH_SHORT).show()
+                }
+                "Delete Message" -> {
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("Delete Message")
+                        .setMessage("Are you sure you want to permanent delete this message?")
+                        .setPositiveButton("Delete") { _, _ ->
+                            db.collection("community_messages").document(msg.id).delete()
+                                .addOnSuccessListener { Toast.makeText(context, "Message deleted", Toast.LENGTH_SHORT).show() }
+                        }
+                        .setNegativeButton("Cancel", null).show()
+                }
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun clearInputs() {
+        edtMessage.setText("")
+        selectedImageUri = null
+        layoutPreview.visibility = View.GONE
+    }
+
+    private fun resetInputState() {
+        progressBarChat.visibility = View.GONE
+        btnSend.isEnabled = true
+        edtMessage.isEnabled = true
+        btnSend.setColorFilter(ContextCompat.getColor(requireContext(), R.color.gray_text))
+        updateSendButtonState()
+    }
+
+    private fun updateSendButtonState() {
+        val hasContent = edtMessage.text.toString().trim().isNotEmpty() || selectedImageUri != null || (editingMessage != null && !isImageRemovedDuringEdit)
+        btnSend.isEnabled = hasContent
+        btnSend.setColorFilter(ContextCompat.getColor(requireContext(),
+            if (hasContent) R.color.orange_primary else R.color.gray_text))
     }
 
     private fun fetchMyInfo() {
@@ -269,36 +285,30 @@ class CommunityChatFragment : Fragment(R.layout.fragment_community_chat) {
     }
 
     private fun listenMessages() {
-        db.collection("community_messages")
-            .orderBy("timestamp", Query.Direction.ASCENDING)
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) return@addSnapshotListener
+        db.collection("community_messages").orderBy("timestamp", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, _ ->
                 val messages = snapshot?.toObjects(CommunityMessage::class.java) ?: emptyList()
                 adapter.updateList(messages)
-                if (messages.isNotEmpty()) {
-                    rvChat.smoothScrollToPosition(messages.size - 1)
-                }
+                if (messages.isNotEmpty()) rvCommunityChat.smoothScrollToPosition(messages.size - 1)
             }
     }
 
-    private fun resetInputState() {
-        btnSend.visibility = View.VISIBLE
-        progressBar.visibility = View.GONE
-        edtMessage.isEnabled = true
-        updateSendButtonState()
-    }
+    private fun setupRecyclerView() {
+        adapter = CommunityChatAdapter(
+            messages = emptyList(),
+            onMessageLongClick = { msg, view ->
+                if (msg.senderId == currentUid) showEditDeleteMenu(msg, view)
+            },
+            onImageClick = { url -> FullScreenImageDialogFragment.show(parentFragmentManager, url) },
+            onUserClick = { uid ->
+                val fragment = if (uid == currentUid) PersonalProfileFragment() else UserProfileFragment.newInstance(uid)
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.navHostFragmentContainerView, fragment)
+                    .addToBackStack(null).commit()
+            }
+        )
 
-    private fun updateSendButtonState() {
-        val hasText = edtMessage.text.toString().trim().isNotEmpty()
-        val hasImage = selectedImageUri != null
-        val enable = hasText || hasImage
-
-        btnSend.isEnabled = enable
-        btnSend.setColorFilter(ContextCompat.getColor(requireContext(),
-            if (enable) R.color.orange_primary else R.color.gray_text))
-    }
-
-    private fun dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).toInt()
+        rvCommunityChat.layoutManager = LinearLayoutManager(context)
+        rvCommunityChat.adapter = adapter
     }
 }

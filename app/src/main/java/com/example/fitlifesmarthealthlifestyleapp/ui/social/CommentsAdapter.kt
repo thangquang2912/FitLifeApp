@@ -29,7 +29,13 @@ class CommentsAdapter(
     private val onCommentLongClick: (Comment) -> Unit,
     private val onUserClick: (String) -> Unit // [MỚI] Callback khi bấm vào user
 ) : ListAdapter<Comment, CommentsAdapter.CommentViewHolder>(CommentDiffCallback()) {
+    private var currentUserName: String = ""
+    private var currentUserAvatar: String = ""
 
+    fun setCurrentUserInfo(name: String, avatar: String) {
+        this.currentUserName = name
+        this.currentUserAvatar = avatar
+    }
     private val userRepository = UserRepository()
     private val userCache = mutableMapOf<String, User>()
 
@@ -161,6 +167,19 @@ class CommentsAdapter(
                     commentRef.update("likedBy", FieldValue.arrayRemove(currentUid))
                 } else {
                     commentRef.update("likedBy", FieldValue.arrayUnion(currentUid))
+
+                    // [MỚI] Gửi thông báo "Tim bình luận"
+                    if (comment.userId != currentUid) {
+                        NotificationHelper.sendNotification(
+                            recipientId = comment.userId,
+                            senderId = currentUid,
+                            senderName = currentUserName,
+                            senderAvatar = currentUserAvatar,
+                            postId = comment.postId,
+                            type = "LIKE_COMMENT",
+                            content = comment.content // Truyền nội dung bình luận để hiển thị trong thông báo
+                        )
+                    }
                 }
             }
         }

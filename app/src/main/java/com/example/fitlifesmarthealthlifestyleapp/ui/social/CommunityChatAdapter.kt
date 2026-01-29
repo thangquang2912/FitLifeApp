@@ -16,8 +16,8 @@ import java.util.Locale
 class CommunityChatAdapter(
     private var messages: List<CommunityMessage>,
     private val onMessageLongClick: (CommunityMessage, View) -> Unit,
-    private val onImageClick: (String) -> Unit, // [MỚI] Callback xem ảnh full
-    private val onUserClick: (String) -> Unit   // [MỚI] Callback xem profile
+    private val onImageClick: (String) -> Unit,
+    private val onUserClick: (String) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val currentUid = FirebaseAuth.getInstance().currentUser?.uid
@@ -29,97 +29,74 @@ class CommunityChatAdapter(
         notifyDataSetChanged()
     }
 
-    override fun getItemViewType(position: Int): Int {
-        return if (messages[position].senderId == currentUid) TYPE_ME else TYPE_OTHER
-    }
+    override fun getItemViewType(position: Int): Int =
+        if (messages[position].senderId == currentUid) TYPE_ME else TYPE_OTHER
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-        return if (viewType == TYPE_ME) {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_community_msg_me, parent, false)
-            MeViewHolder(view)
-        } else {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_community_msg_other, parent, false)
-            OtherViewHolder(view)
-        }
+        val layout = if (viewType == TYPE_ME) R.layout.item_community_msg_me else R.layout.item_community_msg_other
+        val view = LayoutInflater.from(parent.context).inflate(layout, parent, false)
+        return if (viewType == TYPE_ME) MeViewHolder(view) else OtherViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val msg = messages[position]
-        if (holder is MeViewHolder) holder.bind(msg)
-        else if (holder is OtherViewHolder) holder.bind(msg)
+        if (holder is MeViewHolder) holder.bind(msg) else if (holder is OtherViewHolder) holder.bind(msg)
     }
 
     override fun getItemCount() = messages.size
 
-    private fun formatTime(timestamp: com.google.firebase.Timestamp): String {
-        val sdf = SimpleDateFormat("HH:mm dd/MM", Locale.getDefault())
-        return sdf.format(timestamp.toDate())
-    }
-
-    // --- VIEWHOLDER CỦA TÔI ---
-    inner class MeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvText: TextView = itemView.findViewById(R.id.tvMsgText)
-        val ivImage: ImageView = itemView.findViewById(R.id.ivMsgImage)
-        val tvTime: TextView = itemView.findViewById(R.id.tvMsgTime)
-
+    // SỬA LỖI: Thêm 'val v: View'
+    inner class MeViewHolder(val v: View) : RecyclerView.ViewHolder(v) {
         fun bind(msg: CommunityMessage) {
-            tvTime.text = formatTime(msg.timestamp)
+            val tv = v.findViewById<TextView>(R.id.tvMsgText)
+            val iv = v.findViewById<ImageView>(R.id.ivMsgImage)
+            v.findViewById<TextView>(R.id.tvMsgTime).text = formatTime(msg.timestamp)
 
-            if (msg.type == "IMAGE") {
-                tvText.visibility = View.GONE
-                ivImage.visibility = View.VISIBLE
-                Glide.with(itemView.context).load(msg.imageUrl).into(ivImage)
+            // Logic gộp nội dung: Hiển thị cả text và image nếu có
+            tv.text = msg.text
+            tv.visibility = if (msg.text.isNotEmpty()) View.VISIBLE else View.GONE
 
-                // [MỚI] Click vào ảnh -> Xem Full Screen
-                ivImage.setOnClickListener {
-                    if (msg.imageUrl.isNotEmpty()) onImageClick(msg.imageUrl)
-                }
+            if (msg.imageUrl.isNotEmpty()) {
+                iv.visibility = View.VISIBLE
+                Glide.with(v.context).load(msg.imageUrl).into(iv)
+                iv.setOnClickListener { onImageClick(msg.imageUrl) }
+                iv.setOnLongClickListener { onMessageLongClick(msg, it); true }
             } else {
-                tvText.visibility = View.VISIBLE
-                ivImage.visibility = View.GONE
-                tvText.text = msg.text
+                iv.visibility = View.GONE
             }
-
-            itemView.setOnLongClickListener {
-                onMessageLongClick(msg, itemView)
-                true
-            }
+            v.setOnLongClickListener { onMessageLongClick(msg, it); true }
         }
     }
 
-    // --- VIEWHOLDER NGƯỜI KHÁC ---
-    inner class OtherViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvText: TextView = itemView.findViewById(R.id.tvMsgText)
-        val ivImage: ImageView = itemView.findViewById(R.id.ivMsgImage)
-        val ivAvatar: ImageView = itemView.findViewById(R.id.ivAvatar)
-        val tvName: TextView = itemView.findViewById(R.id.tvSenderName)
-        val tvTime: TextView = itemView.findViewById(R.id.tvMsgTime)
-
+    inner class OtherViewHolder(val v: View) : RecyclerView.ViewHolder(v) {
         fun bind(msg: CommunityMessage) {
-            tvName.text = msg.senderName
-            tvTime.text = formatTime(msg.timestamp)
+            v.findViewById<TextView>(R.id.tvSenderName).text = msg.senderName
+            v.findViewById<TextView>(R.id.tvMsgTime).text = formatTime(msg.timestamp)
+            val ivAvatar = v.findViewById<ImageView>(R.id.ivAvatar)
 
-            Glide.with(itemView.context).load(msg.senderAvatar).placeholder(R.drawable.ic_user).circleCrop().into(ivAvatar)
+            Glide.with(v.context).load(msg.senderAvatar).placeholder(R.drawable.ic_user).circleCrop().into(ivAvatar)
+            ivAvatar.setOnClickListener { onUserClick(msg.senderId) }
 
-            // [MỚI] Click Avatar hoặc Tên -> Xem Profile
-            val openProfile = View.OnClickListener { onUserClick(msg.senderId) }
-            ivAvatar.setOnClickListener(openProfile)
-            tvName.setOnClickListener(openProfile)
+            val tv = v.findViewById<TextView>(R.id.tvMsgText)
+            val iv = v.findViewById<ImageView>(R.id.ivMsgImage)
 
-            if (msg.type == "IMAGE") {
-                tvText.visibility = View.GONE
-                ivImage.visibility = View.VISIBLE
-                Glide.with(itemView.context).load(msg.imageUrl).into(ivImage)
+            tv.text = msg.text
+            tv.visibility = if (msg.text.isNotEmpty()) View.VISIBLE else View.GONE
 
-                // [MỚI] Click vào ảnh -> Xem Full Screen
-                ivImage.setOnClickListener {
-                    if (msg.imageUrl.isNotEmpty()) onImageClick(msg.imageUrl)
-                }
+            if (msg.imageUrl.isNotEmpty()) {
+                iv.visibility = View.VISIBLE
+                Glide.with(v.context).load(msg.imageUrl).into(iv)
+                iv.setOnClickListener { onImageClick(msg.imageUrl) }
+                iv.setOnLongClickListener { onMessageLongClick(msg, it); true }
             } else {
-                tvText.visibility = View.VISIBLE
-                ivImage.visibility = View.GONE
-                tvText.text = msg.text
+                iv.visibility = View.GONE
             }
+            v.setOnLongClickListener { onMessageLongClick(msg, it); true }
         }
+    }
+
+    private fun formatTime(ts: com.google.firebase.Timestamp?): String {
+        if (ts == null) return ""
+        return SimpleDateFormat("HH:mm", Locale.getDefault()).format(ts.toDate())
     }
 }
