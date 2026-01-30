@@ -29,7 +29,10 @@ class MealHistoryBottomSheet(
         val rvMeals = view.findViewById<RecyclerView>(R.id.rvMealHistory)
         val tvEmpty = view.findViewById<TextView>(R.id.tvEmptyHistory)
 
-        tvTitle.text = "Meal History (${mealList.size})"
+        tvTitle.text = getString(
+            R.string.meal_history_title,
+            mealList.size
+        )
 
         if (mealList.isNotEmpty()) {
             tvEmpty.visibility = View.GONE

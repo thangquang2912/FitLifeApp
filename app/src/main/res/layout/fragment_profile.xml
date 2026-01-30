@@ -309,7 +309,7 @@
 
                 <TextView
                     android:id="@+id/btnLeaderboardChallenges"
-                    android:text="@string/leaderboard_challenges"
+                    android:text="@string/leaderboard"
                     android:drawableStart="@drawable/icon_leaderboard"
                     android:drawableEnd="@drawable/ic_arrow_right"
                     style="@style/ProfileMenuItem"/>

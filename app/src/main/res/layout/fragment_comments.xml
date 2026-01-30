@@ -14,7 +14,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Comments"
+            android:text="@string/comments"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@color/black"
@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@drawable/bg_edittext"
-            android:hint="Add a comment..."
+            android:hint="@string/comments_hint"
             android:maxLines="3"
             android:padding="10dp" />
 

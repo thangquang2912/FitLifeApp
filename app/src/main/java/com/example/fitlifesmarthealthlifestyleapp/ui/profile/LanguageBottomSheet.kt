@@ -53,14 +53,12 @@ class LanguageBottomSheet(
                 else -> Language.VIETNAMESE
             }
 
-            // Save language preference
             languagePreference.saveLanguage(selectedLanguage)
-
-            // Notify parent
             onLanguageSelected(selectedLanguage)
-
             dismiss()
+
         }
+
 
         btnCancel.setOnClickListener {
             dismiss()

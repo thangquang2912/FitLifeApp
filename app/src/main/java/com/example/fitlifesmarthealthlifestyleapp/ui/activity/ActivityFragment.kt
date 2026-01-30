@@ -87,7 +87,11 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
     ) { permissions ->
         when {
             permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true -> startRealtimeLocationUpdates()
-            else -> Toast.makeText(requireContext(), "Location permission required", Toast.LENGTH_LONG).show()
+            else -> Toast.makeText(
+                requireContext(),
+                getString(R.string.toast_location_permission_required),
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
@@ -205,12 +209,12 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
 
     private fun showEnableGPSDialog() {
         AlertDialog.Builder(requireContext())
-            .setTitle("GPS Required")
-            .setMessage("Please enable GPS/Location services to track your activity")
-            .setPositiveButton("Open Settings") { _, _ ->
+            .setTitle(getString(R.string.gps_required_title))
+            .setMessage(getString(R.string.gps_required_message))
+            .setPositiveButton(getString(R.string.gps_open_settings)) { _, _ ->
                 startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
@@ -256,7 +260,11 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
 
         seconds = 0
         handler.post(timeRunnable)
-        Toast.makeText(requireContext(), "Activity tracking started!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            requireContext(),
+            getString(R.string.toast_activity_started),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun completeTracking() {
@@ -271,7 +279,6 @@ class ActivityFragment : Fragment(), ActivityTrackingService.TrackingListener {
             lifecycleScope.launch {
                 // Lưu với source là "Running" hoặc "Cycling" tùy mode
                 userRepository.logCalorieBurn(uid, burnedCalories)
-                Toast.makeText(context, "Calories saved to history!", Toast.LENGTH_SHORT).show()
             }
         }
 

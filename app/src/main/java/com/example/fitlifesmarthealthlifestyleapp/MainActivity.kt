@@ -46,6 +46,7 @@
                 val languagePreference = LanguagePreference(newBase)
                 val savedLanguage = languagePreference.getLanguage()
                 val localeContext = LanguageHelper.setLocale(newBase, savedLanguage)
+
                 super.attachBaseContext(localeContext)
             } else {
                 super.attachBaseContext(newBase)

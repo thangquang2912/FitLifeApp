@@ -73,6 +73,11 @@
     <string name="complete_activity">Complete Activity</string>
     <string name="avg_pace">Avg Pace</string>
     <string name="duration_activity">Duration</string>
+    <string name="toast_location_permission_required">Location permission required</string>
+    <string name="toast_activity_started">Activity tracking started!</string>
+    <string name="gps_required_title">GPS Required</string>
+    <string name="gps_required_message">Please enable GPS/Location services to track your activity</string>
+    <string name="gps_open_settings">Open Settings</string>
 
     <!-- Nutrition-->
     <string name="ai_nutrition">AI Nutrition</string>
@@ -98,6 +103,14 @@
     <string name="analyzing">Analyzing macros...</string>
     <string name="try_another">Try another dish ↻</string>
     <string name="today">Today, </string>
+    <string name="meal_history_title">
+    Meal History (%1$d)
+</string>
+
+    <string name="meal_history_empty">
+    No meals recorded yet
+</string>
+
 
     <!-- Community -->
     <string name="community">Community</string>
@@ -110,6 +123,10 @@
     <string name="share_hint">Share your fitness journey...</string>
     <string name="share_post">Share Post</string>
     <string name="reply">Reply</string>
+    <string name="comments">Comments</string>
+    <string name="comments_hint">Add a comment...</string>
+    <string name="edit_post">Edit Post</string>
+    <string name="update_post">Update Post</string>
     <!-- Community Chat -->
     <string name="community_chat">Community Chat</string>
     <string name="hint_type_message">Type a message...</string>

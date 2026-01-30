@@ -19,5 +19,6 @@ class LanguagePreference(context: Context) {
     fun getLanguage(): Language {
         val code = prefs.getString(KEY_LANGUAGE, Language.VIETNAMESE.code)
         return Language.values().find { it.code == code } ?: Language.VIETNAMESE
+
     }
 }

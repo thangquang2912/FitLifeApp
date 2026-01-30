@@ -59,12 +59,12 @@ class EditPostDialogFragment : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<TextView>(R.id.textView2).text = "Edit Post"
+        view.findViewById<TextView>(R.id.textView2).text = getString(R.string.edit_post)
         imgPreview = view.findViewById(R.id.imgPreview)
         etCaption = view.findViewById(R.id.etCaption)
         btnUpdate = view.findViewById(R.id.btnSharePost)
         progressBar = view.findViewById(R.id.progressBarCreatePost)
-        btnUpdate.text = "Update Post"
+        btnUpdate.text = getString(R.string.update_post)
 
         etCaption.setText(arguments?.getString("caption"))
         Glide.with(this).load(currentImageUrl).into(imgPreview)
