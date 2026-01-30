@@ -34,6 +34,9 @@
         android:background="@drawable/bg_search_rounded"
         app:iconifiedByDefault="false"
         app:queryHint="Search user..."
+        android:theme="@style/CustomSearchViewStyle"
+        android:textColor="@color/black"
+        android:textColorHint="#545454"
         app:queryBackground="@android:color/transparent"/>
 
     <androidx.recyclerview.widget.RecyclerView

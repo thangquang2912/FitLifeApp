@@ -3,6 +3,7 @@ package com.example.fitlifesmarthealthlifestyleapp.ui.social
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.PopupMenu
@@ -207,10 +208,26 @@ class SocialFragment : Fragment(R.layout.fragment_social) {
     }
 
     private fun loadCurrentUserAvatar(imageView: ImageView) {
-        val user = FirebaseAuth.getInstance().currentUser
-        if (user?.photoUrl != null) {
-            Glide.with(this).load(user.photoUrl).circleCrop().into(imageView)
-        }
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        db.collection("users").document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val url = document.getString("photoUrl")
+
+                    if (!url.isNullOrEmpty()) {
+                        Glide.with(this)
+                            .load(url)
+                            .circleCrop()
+                            .placeholder(R.drawable.ic_user_social)
+                            .error(R.drawable.ic_user_social)
+                            .into(imageView)
+                    }
+                }
+            }
+            .addOnFailureListener {
+                Log.e("AvatarCheck", "Lỗi lấy dữ liệu user", it)
+            }
     }
 
     // --- FETCH DATA ---

@@ -28,4 +28,8 @@
     <color name="light_blue_A200">#FF40C4FF</color>
     <color name="light_blue_A400">#FF00B0FF</color>
     <color name="black_overlay">#66000000</color>
+
+    <color name="chart_bar_primary">#FF6B35</color>
+    <color name="chart_bar_secondary">#FF8B5C</color>
+    <color name="chart_bar_low">#FFD8C9</color>
 </resources>

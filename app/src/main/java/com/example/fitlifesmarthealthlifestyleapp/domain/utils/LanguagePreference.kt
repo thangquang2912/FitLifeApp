@@ -13,7 +13,7 @@ class LanguagePreference(context: Context) {
     }
 
     fun saveLanguage(language: Language) {
-        prefs.edit().putString(KEY_LANGUAGE, language.code).apply()
+        prefs.edit().putString(KEY_LANGUAGE, language.code).commit()
     }
 
     fun getLanguage(): Language {

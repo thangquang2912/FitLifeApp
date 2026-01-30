@@ -33,6 +33,8 @@ class EditPostDialogFragment : BottomSheetDialogFragment() {
 
     private lateinit var imgPreview: ImageView
     private lateinit var etCaption: EditText
+    private lateinit var etDuration: EditText
+    private lateinit var etCalories: EditText
     private lateinit var btnUpdate: Button
     private lateinit var progressBar: ProgressBar
 
@@ -62,11 +64,15 @@ class EditPostDialogFragment : BottomSheetDialogFragment() {
         view.findViewById<TextView>(R.id.textView2).text = getString(R.string.edit_post)
         imgPreview = view.findViewById(R.id.imgPreview)
         etCaption = view.findViewById(R.id.etCaption)
+        etDuration = view.findViewById(R.id.etDuration)
+        etCalories = view.findViewById(R.id.etCalories)
         btnUpdate = view.findViewById(R.id.btnSharePost)
         progressBar = view.findViewById(R.id.progressBarCreatePost)
         btnUpdate.text = getString(R.string.update_post)
 
         etCaption.setText(arguments?.getString("caption"))
+        etDuration.setText(arguments?.getString("duration"))
+        etCalories.setText(arguments?.getString("calories"))
         Glide.with(this).load(currentImageUrl).into(imgPreview)
         imgPreview.visibility = View.VISIBLE
 
@@ -126,8 +132,8 @@ class EditPostDialogFragment : BottomSheetDialogFragment() {
                 val finalUrl = if (selectedNewUri != null) CloudinaryHelper.uploadImage(selectedNewUri!!, "community_posts") else currentImageUrl
                 val updates = mapOf(
                     "caption" to etCaption.text.toString(),
-                    "duration" to view?.findViewById<EditText>(R.id.etDuration)?.text.toString(),
-                    "calories" to view?.findViewById<EditText>(R.id.etCalories)?.text.toString(),
+                    "duration" to view?.findViewById<EditText>(R.id.etDuration)?.text.toString() + " mins",
+                    "calories" to view?.findViewById<EditText>(R.id.etCalories)?.text.toString() + " kcal",
                     "postImageUrl" to finalUrl
                 )
                 db.collection("posts").document(postId!!).update(updates).addOnSuccessListener { dismiss() }

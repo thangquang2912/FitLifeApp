@@ -99,7 +99,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:paddingHorizontal="8dp"
-            android:paddingVertical="8dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="36dp"
             android:gravity="center_vertical">
 
             <ImageView
@@ -118,6 +119,8 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_search_rounded"
                 android:hint="@string/hint_type_message"
+                android:textColorHint="#545454"
+                android:theme="@style/CustomSearchViewStyle"
                 android:textSize="15sp"
                 android:paddingVertical="10dp"
                 android:paddingHorizontal="16dp"

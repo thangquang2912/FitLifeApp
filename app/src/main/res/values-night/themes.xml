@@ -9,4 +9,9 @@
         <item name="fullscreenBackgroundColor">@color/light_blue_900</item>
         <item name="fullscreenTextColor">@color/light_blue_A400</item>
     </style>
+    <style name="CustomSearchViewStyle" parent="Widget.AppCompat.SearchView">
+        <item name="android:textColorPrimary">#000000</item>
+        <item name="android:textColorHint">#666666</item>
+        <item name="android:tint">#000000</item>
+    </style>
 </resources>

@@ -48,6 +48,8 @@
             android:layout_weight="1"
             android:background="@drawable/bg_edittext"
             android:hint="@string/comments_hint"
+            android:textColorHint="#545454"
+            android:textColor="@color/black"
             android:maxLines="3"
             android:padding="10dp" />
 

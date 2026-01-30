@@ -9,10 +9,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.example.fitlifesmarthealthlifestyleapp.R
-import com.example.fitlifesmarthealthlifestyleapp.domain.model.User // Đảm bảo đúng package User của bạn
+import com.example.fitlifesmarthealthlifestyleapp.domain.model.User
 
-class LikesAdapter(context: Context, private val users: ArrayList<User>) :
-    ArrayAdapter<User>(context, 0, users) {
+class LikesAdapter(
+    context: Context,
+    private val users: ArrayList<User>,
+    private val onUserClick: (String) -> Unit // [MỚI] Callback truyền User ID ra ngoài
+) : ArrayAdapter<User>(context, 0, users) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         var itemView = convertView
@@ -29,9 +32,14 @@ class LikesAdapter(context: Context, private val users: ArrayList<User>) :
 
             Glide.with(context)
                 .load(user.photoUrl)
-                .placeholder(R.drawable.ic_user) // Ảnh mặc định nếu lỗi
-                .circleCrop() // Bo tròn ảnh
+                .placeholder(R.drawable.ic_user)
+                .circleCrop()
                 .into(ivAvatar)
+
+            // [MỚI] Gắn sự kiện click vào toàn bộ item (hoặc chỉ avatar/tên tùy bạn)
+            itemView.setOnClickListener {
+                onUserClick(user.uid)
+            }
         }
 
         return itemView

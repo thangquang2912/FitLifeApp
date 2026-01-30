@@ -158,6 +158,7 @@
     <string name="workout_history">Lịch sử tập luyện</string>
     <string name="language">Ngôn ngữ</string>
     <string name="logout">Đăng xuất</string>
+    <string name="confirm_logout">Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?</string>
     <string name="running">Chạy bộ</string>
     <string name="activity_detail">Chi tiết hoạt động</string>
     <string name="weekly_water_intake">Nước uống hàng tuần</string>

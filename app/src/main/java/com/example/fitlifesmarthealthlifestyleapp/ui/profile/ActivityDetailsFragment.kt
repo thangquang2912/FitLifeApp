@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -25,9 +26,13 @@ import kotlin.math.max
 class ActivityDetailsFragment : Fragment() {
 
     private lateinit var mapView: MapView
+    private lateinit var speedChartView: SpeedBarChartView
     private lateinit var btnBack: ImageButton
     private lateinit var tvTitle: TextView
     private lateinit var tvSubtitle: TextView
+    private lateinit var tvMaxSpeed: TextView
+    private lateinit var tvAvgSpeed: TextView
+    private lateinit var tvMinSpeed: TextView
 
     private lateinit var tvDistanceValue: TextView
     private lateinit var tvPaceValue: TextView
@@ -51,6 +56,9 @@ class ActivityDetailsFragment : Fragment() {
         btnBack = view.findViewById(R.id.btnBack)
         tvTitle = view.findViewById(R.id.tvTitle)
         tvSubtitle = view.findViewById(R.id.tvSubtitle)
+        tvMaxSpeed = view.findViewById(R.id.tvMaxSpeed)
+        tvAvgSpeed = view.findViewById(R.id.tvAvgSpeed)
+        tvMinSpeed = view.findViewById(R.id.tvMinSpeed)
 
         tvDistanceValue = view.findViewById(R.id.tvDistanceValue)
         tvPaceValue = view.findViewById(R.id.tvPaceValue)
@@ -58,6 +66,17 @@ class ActivityDetailsFragment : Fragment() {
         tvDurationValue = view.findViewById(R.id.tvDurationValue)
 
         mapView = view.findViewById(R.id.mapViewDetails)
+        speedChartView = SpeedBarChartView(requireContext()).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        }
+
+        val cardSpeedChart = view.findViewById<androidx.cardview.widget.CardView>(R.id.cardSpeedChart)
+        cardSpeedChart.removeAllViews()
+        cardSpeedChart.addView(speedChartView)
+
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
 
@@ -104,6 +123,11 @@ class ActivityDetailsFragment : Fragment() {
         tvCaloriesValue.text = ui.caloriesText
         tvDurationValue.text = ui.durationText
 
+        // Update speed stats
+        tvMaxSpeed.text = String.format("%.1f km/h", ui.speedData.maxSpeed)
+        tvAvgSpeed.text = String.format("%.1f km/h", ui.speedData.avgSpeed)
+        tvMinSpeed.text = String.format("%.1f km/h", ui.speedData.minSpeed)
+
         val clean = sanitizeRoute(ui.raw.routePoints)
         val geoPoints = clean.map { GeoPoint(it.lat, it.lng) }
 
@@ -117,6 +141,14 @@ class ActivityDetailsFragment : Fragment() {
             mapView.controller.setZoom(17.0)
             mapView.controller.setCenter(geoPoints.first())
         }
+
+        // Update speed chart với custom view đơn giản
+        val speeds = ui.speedData.speedSegments.map { it.speedKmh }
+        speedChartView.setSpeedData(speeds)
+
+        // Cập nhật nhãn thời gian
+        val timeLabels = ui.speedData.speedSegments.map { it.timeLabel }
+        speedChartView.setLabels(timeLabels)
     }
 
     private fun sanitizeRoute(points: List<LatLngPoint>): List<LatLngPoint> {
