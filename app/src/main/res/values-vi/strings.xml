@@ -155,7 +155,7 @@
     <string name="leaderboard">Bảng xếp hạng</string>
     <string name="all_time_distance_ranking">Bảng xếp hạng quãng đường chạy</string>
     <string name="leaderboard_challenges">Bảng xếp hạng - Thử thách</string>
-    <string name="workout_history">Lịch sử tập luyện</string>
+    <string name="workout_history">Lịch sử hoạt động</string>
     <string name="language">Ngôn ngữ</string>
     <string name="logout">Đăng xuất</string>
     <string name="confirm_logout">Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?</string>

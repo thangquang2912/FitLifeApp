@@ -152,7 +152,7 @@
     <string name="leaderboard">Leaderboard</string>
     <string name="all_time_distance_ranking">All time distance ranking</string>
     <string name="leaderboard_challenges">Leaderboard - Challenges</string>
-    <string name="workout_history">Workout History</string>
+    <string name="workout_history">Activity History</string>
     <string name="language">Language</string>
     <string name="logout">Logout</string>
     <string name="confirm_logout">Are you sure you want to log out of your account?</string>
